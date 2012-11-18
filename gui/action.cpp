@@ -24,6 +24,7 @@
 
 #include "../ui.h"
 #include "../adb_install.h"
+#include "../multirom.h"
 
 extern "C" {
 #include "../common.h"
@@ -626,6 +627,20 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		usleep(atoi(arg.c_str()));
 		operation_end(0, simulate);
 		return 0;
+	}
+
+	if (function == "multirom")
+	{
+		if(MultiROM::folderExists())
+			return gui_changePage("multirom_main");
+		else
+			return gui_changePage("multirom_not_installed");
+	}
+
+	if (function == "multirom_list")
+	{
+		DataManager::SetValue("tw_multirom_folder", MultiROM::getRomsPath());
+		return gui_changePage("multirom_list");
 	}
 
     if (isThreaded)

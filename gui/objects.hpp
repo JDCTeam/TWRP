@@ -442,6 +442,7 @@ protected:
 protected:
     std::vector<FileData> mFolderList;
     std::vector<FileData> mFileList;
+	std::vector<std::string> mExcludeFiles;
     std::string mPathVar;
     std::string mExtn;
     std::string mVariable;

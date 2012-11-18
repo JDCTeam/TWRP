@@ -2634,6 +2634,14 @@
 				</actions>
 			</object>
 
+			<object type="button">
+				<placement x="%col2_x%" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>MultiROM</text>
+				<image resource="main_button" />
+				<action function="multirom"/>
+			</object>
+
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
@@ -3572,6 +3580,194 @@
 				<touch key="back" />
 				<action function="page">terminalfolder</action>
 			</object>
+		</page>
+
+		<page name="multirom_not_installed">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row4_text_y%" placement="5"/>
+				<text>MultiROM is not installed!</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row7_text_y%" placement="5"/>
+				<text>/data/media/multirom not found.</text>
+			</object>
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row8_text_y%" placement="5"/>
+				<text>/data/media/0/multirom not found.</text>
+			</object>
+
+			<object type="button">
+				<placement x="%col_center_x%" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Back</text>
+				<image resource="main_button" />
+				<action function="page">advanced</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">advanced</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="multirom_main">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM</text>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row1_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Add ROM</text>
+				<image resource="main_button" />
+				<action function="page">multirom_add</action>
+			</object>
+			
+			<object type="button">
+				<placement x="%col2_x%" y="%row1_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>List ROMs</text>
+				<image resource="main_button" />
+				<action function="multirom_list"></action>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Inject boot.img</text>
+				<image resource="main_button" />
+				<action function="page">multirom_inject</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">advanced</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="multirom_list">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - ROM list</text>
+			</object>
+
+			<object type="fileselector">
+				<placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>Tap ROM to manage it:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<filter folders="1" files="0" nav="0" />
+				<path name="tw_multirom_folder" />
+				<data name="tw_multirom_rom" default="" />
+				<excludes>
+					<exclude>Internal</exclude>
+				</excludes>
+				<selection name="tw_multirom_rom_name" />
+			</object>
+
+			<object type="template" name="sort_options" />
+
+			<object type="action">
+				<condition var1="tw_multirom_rom" op="modified" />
+				<actions>
+					<action function="page">multirom_manage</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">multirom_main</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="multirom_manage">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - manage ROM</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row2_text_y%" placement="5"/>
+				<text>ROM: %tw_multirom_rom_name%</text>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Rename</text>
+				<image resource="main_button" />
+				<action function="multirom_rename"/>
+			</object>
+
+			<object type="button">
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Delete</text>
+				<image resource="main_button" />
+				<action function="page">multirom_delete</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row3_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Flash ZIP</text>
+				<image resource="main_button" />
+				<action function="page">multirom_flash</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="multirom_list"></action>
+			</object>
+
+			<object type="template" name="footer" />
 		</page>
 	</pages>
 </recovery>

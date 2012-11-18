@@ -44,6 +44,7 @@ GUIFileSelector::GUIFileSelector(xml_node<>* node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
+	xml_node<>* parent;
 	int header_separator_color_specified = 0, header_separator_height_specified = 0, header_text_color_specified = 0, header_background_color_specified = 0;
 
 	mStart = mLineSpacing = startY = mFontHeight = mSeparatorH = scrollingY = scrollingSpeed = 0;
@@ -250,6 +251,17 @@ GUIFileSelector::GUIFileSelector(xml_node<>* node)
 			mSelection = "0";
 	} else
 		mSelection = "0";
+
+	// Load excludes
+	parent = node->first_node("excludes");
+	if (parent) child = parent->first_node("exclude");
+	else        child = node->first_node("exclude");
+
+	while (child)
+	{
+		mExcludeFiles.push_back(child->value());
+		child = child->next_sibling("exclude");
+	}
 
 	// Retrieve the line height
 	gr_getFontDetails(mFont ? mFont->GetResource() : NULL, &mFontHeight, NULL);
@@ -797,6 +809,10 @@ int GUIFileSelector::GetFileList(const std::string folder)
 		data.lastAccess = st.st_atime;
 		data.lastModified = st.st_mtime;
 		data.lastStatChange = st.st_ctime;
+
+		// skip excludes
+		if(std::find(mExcludeFiles.begin(), mExcludeFiles.end(), data.fileName) != mExcludeFiles.end())
+			continue;
 
 		if (data.fileType == DT_DIR)
 		{
