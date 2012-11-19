@@ -3701,7 +3701,7 @@
 			<object type="action">
 				<condition var1="tw_multirom_rom" op="modified" />
 				<actions>
-					<action function="page">multirom_manage</action>
+					<action function="multirom_manage"/>
 				</actions>
 			</object>
 
@@ -3738,7 +3738,11 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Rename</text>
 				<image resource="main_button" />
-				<action function="multirom_rename"/>
+				<actions>
+					<action function="set">tw_multirom_new_rom_name=%tw_multirom_rom_name%</action>
+					<action function="set">tw_fileexists=0</action>
+					<action function="page">multirom_rename</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -3746,15 +3750,25 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Delete</text>
 				<image resource="main_button" />
-				<action function="page">multirom_delete</action>
+				<actions>
+					<action function="set">tw_back=multirom_list</action>
+					<action function="set">tw_action=multirom_delete</action>
+					<action function="set">tw_text1=Delete ROM "%tw_multirom_rom_name%"?</action>
+					<action function="set">tw_action_text1=Deleting ROM...</action>
+					<action function="set">tw_complete_text1=ROM deleted</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
 			</object>
 
 			<object type="button">
+				<condition var1="tw_multirom_is_android" var2="1" />
 				<placement x="%col1_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Flash ZIP</text>
 				<image resource="main_button" />
-				<action function="page">multirom_flash</action>
+				<action function="page">multirom_flash_select</action>
 			</object>
 
 			<object type="action">
@@ -3769,5 +3783,242 @@
 
 			<object type="template" name="footer" />
 		</page>
+
+		<page name="multirom_rename">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - rename ROM</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row2_text_y%" placement="5"/>
+				<text>Rename ROM: "%tw_multirom_rom_name%"</text>
+			</object>
+
+			<object type="input">
+				<placement x="%col1_x%" y="%row3_text_y%" w="%input_width%" h="%input_height%" placement="0" />
+				<background color="%input_background_color%" />
+				<cursor color="%input_cursor_color%" hasfocus="1" width="%input_cursor_width%" />
+				<font resource="font" color="%text_color%" />
+				<text>%tw_multirom_new_rom_name%</text>
+				<data name="tw_multirom_new_rom_name" />
+				<restrict minlen="1" maxlen="26" allow=" abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_.{}[]" />
+				<actions>
+					<action function="set">tw_filecheck=%tw_multirom_folder%/%tw_multirom_new_rom_name%</action>
+					<action function="set">tw_existpage=multirom_rename</action>
+					<action function="set">tw_notexistpage=multirom_do_rename</action>
+					<action function="page">filecheck</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_fail_color%">
+				<condition var1="tw_fileexists" var2="1" />
+				<placement x="%center_x%" y="%row5_text_y%" placement="5" />
+				<font resource="font" />
+				<text>This name is already taken!</text>
+			</object>
+
+			<object type="button">
+				<placement x="%col_center_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Cancel</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="page">multirom_manage</action>
+				</actions>
+			</object>
+
+			<object type="template" name="keyboardtemplate" />
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">multirom_manage</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="multirom_do_rename">
+			<object type="action">
+				<action function="multirom_rename">%tw_multirom_new_rom_name%</action>
+			</object>
+		</page>
+
+		<page name="multirom_flash_select">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>Select Zip to Install</text>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<font resource="mediumfont" color="%text_color%" />
+				<conditions>
+					<condition var1="tw_has_dual_storage" var2="1" />
+					<condition var1="tw_use_external_storage" var2="1" />
+				</conditions>
+				<text>Use external SD</text>
+				<image resource="radio_true" />
+				<action function="togglestorage">external</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<font resource="mediumfont" color="%text_color%" />
+				<conditions>
+					<condition var1="tw_has_dual_storage" var2="1" />
+					<condition var1="tw_use_external_storage" var2="0" />
+				</conditions>
+				<text>Use external SD</text>
+				<image resource="radio_false" />
+				<action function="togglestorage">external</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col2_x%" y="%row1_text_y%" />
+				<font resource="mediumfont" color="%text_color%" />
+				<conditions>
+					<condition var1="tw_has_dual_storage" var2="1" />
+					<condition var1="tw_use_external_storage" var2="1" />
+				</conditions>
+				<text>Use internal storage</text>
+				<image resource="radio_false" />
+				<action function="togglestorage">internal</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col2_x%" y="%row1_text_y%" />
+				<font resource="mediumfont" color="%text_color%" />
+				<conditions>
+					<condition var1="tw_has_dual_storage" var2="1" />
+					<condition var1="tw_use_external_storage" var2="0" />
+				</conditions>
+				<text>Use internal storage</text>
+				<image resource="radio_true" />
+				<action function="togglestorage">internal</action>
+			</object>
+
+			<object type="fileselector">
+				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>%tw_zip_location%</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<filter extn=".zip" folders="1" files="1" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="tw_filename" />
+				<selection name="tw_file" />
+			</object>
+
+			<object type="template" name="sort_options" />
+
+			<object type="action">
+				<condition var1="tw_filename" op="modified" />
+				<actions>
+					<action function="queuezip"></action>
+					<action function="page">multirom_flash_confirm</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="multirom_flash_confirm">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - flash zip</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
+				<text>ROM: %tw_multirom_rom_name%</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row3_text_y%" placement="5" />
+				<text>Folder:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="mediumfont" />
+				<placement x="%center_x%" y="%row4_text_y%" placement="5" />
+				<text>%tw_zip_location%</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row5_text_y%" placement="5" />
+				<text>File to flash:</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="mediumfont" />
+				<placement x="%center_x%" y="%row6_text_y%" placement="5" />
+				<text>%tw_file%</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row10_text_y%" placement="5" />
+				<text>Do NOT flash ROMs, kernels and OTAs via this menu!</text>
+			</object>
+
+			<object type="slider">
+				<placement x="%slider_x%" y="%slider_y%" placement="5" />
+				<resource base="slider" used="slider-used" touch="slider-touch" />
+				<action function="multirom_flash_zip"></action>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
+				<text>Swipe to Confirm Flash</text>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<actions>
+					<action function="page">multirom_manage</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
 	</pages>
 </recovery>

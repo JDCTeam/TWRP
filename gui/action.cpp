@@ -643,8 +643,41 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return gui_changePage("multirom_list");
 	}
 
+	if (function == "multirom_rename")
+	{
+		MultiROM::move(DataManager::GetStrValue("tw_multirom_rom_name"), arg);
+		return gui_changePage("multirom_list");
+	}
+
+	if (function == "multirom_manage")
+	{
+		int type = MultiROM::getType(DataManager::GetStrValue("tw_multirom_rom_name"));
+		DataManager::SetValue("tw_multirom_is_android", (type == ROM_ANDROID_INTERNAL));
+		return gui_changePage("multirom_manage");
+	}
+
     if (isThreaded)
     {
+		if (function == "multirom_delete")
+		{
+			int op_status = 0;
+			operation_start("Delete ROM");
+			if(!MultiROM::erase(DataManager::GetStrValue("tw_multirom_rom_name")))
+				op_status = 1;
+			PartitionManager.Update_System_Details();
+			operation_end(op_status, simulate);
+			return 0;
+		}
+
+		if (function == "multirom_flash_zip")
+		{
+			operation_start("Flashing");
+			int op_status = MultiROM::flashZip(DataManager::GetStrValue("tw_multirom_rom_name"),
+												DataManager::GetStrValue("tw_filename"));
+			PartitionManager.Update_System_Details();
+			operation_end(op_status, simulate);
+		}
+
         if (function == "fileexists")
 		{
 			struct stat st;

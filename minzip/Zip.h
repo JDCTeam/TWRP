@@ -223,6 +223,9 @@ bool mzExtractRecursive(const ZipArchive *pArchive,
         struct selabel_handle *sehnd);
 
 #ifdef __cplusplus
+
+int read_data(ZipArchive *zip, const ZipEntry *entry, char** ppData, int* pLength);
+
 }
 #endif
 
