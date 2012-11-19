@@ -656,6 +656,37 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return gui_changePage("multirom_manage");
 	}
 
+	if (function == "multirom_settings")
+	{
+		MultiROM::config cfg = MultiROM::loadConfig();
+		DataManager::SetValue("tw_multirom_enable_auto_boot", cfg.auto_boot_seconds > 0);
+		if(cfg.auto_boot_seconds <= 0)
+			DataManager::SetValue("tw_multirom_delay", 5);
+		else
+			DataManager::SetValue("tw_multirom_delay", cfg.auto_boot_seconds);
+		DataManager::SetValue("tw_multirom_second_boot", cfg.is_second_boot);
+		DataManager::SetValue("tw_multirom_current", cfg.current_rom);
+		DataManager::SetValue("tw_multirom_auto_boot_rom", cfg.auto_boot_rom);
+		std::string s = MultiROM::listRoms();
+		ui_print("roms %s\n", s.c_str());
+		DataManager::SetValue("tw_multirom_roms", s);
+		return gui_changePage("multirom_settings");
+	}
+
+	if (function == "multirom_settings_save")
+	{
+		MultiROM::config cfg;
+		cfg.is_second_boot = DataManager::GetIntValue("tw_multirom_second_boot");
+		cfg.current_rom = DataManager::GetStrValue("tw_multirom_current");
+		if(DataManager::GetIntValue("tw_multirom_enable_auto_boot"))
+			cfg.auto_boot_seconds = DataManager::GetIntValue("tw_multirom_delay");
+		else
+			cfg.auto_boot_seconds = 0;
+		cfg.auto_boot_rom = DataManager::GetStrValue("tw_multirom_auto_boot_rom");
+		MultiROM::saveConfig(cfg);
+		return gui_changePage("multirom_main");
+	}
+
     if (isThreaded)
     {
 		if (function == "multirom_delete")

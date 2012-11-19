@@ -525,6 +525,7 @@ protected:
     std::string mVariable;
 	std::string mSelection;
 	std::string currentValue;
+	std::string mItemsVar;
     int mStart;
     int mLineSpacing;
     int mUpdate;

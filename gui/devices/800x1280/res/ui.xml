@@ -3656,6 +3656,14 @@
 				<action function="page">multirom_inject</action>
 			</object>
 
+			<object type="button">
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Settings</text>
+				<image resource="main_button" />
+				<action function="multirom_settings"/>
+			</object>
+
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
@@ -3769,6 +3777,14 @@
 				<text>Flash ZIP</text>
 				<image resource="main_button" />
 				<action function="page">multirom_flash_select</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col2_x%" y="%row3_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Add/replace boot.img</text>
+				<image resource="main_button" />
+				<action function="page">multirom_add_bootimg</action>
 			</object>
 
 			<object type="action">
@@ -4015,6 +4031,100 @@
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="multirom_settings">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - settings</text>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Enable auto-boot</text>
+				<data variable="tw_multirom_enable_auto_boot" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<placement x="%col1_x%" y="%row3_text_y%" />
+				<font resource="font"/>
+				<text>Delay: </text>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<condition var1="tw_multirom_delay" op=">" var2="1" />
+				<placement x="%col2_medium_x%" y="%row2_medium_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>-</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="addsubtract">tw_multirom_delay-1</action>
+					<action function="page">multirom_settings</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<placement x="420" y="%row3_text_y%" />
+				<font resource="font"/>
+				<text>%tw_multirom_delay%s</text>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<placement x="470" y="%row2_medium_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>+</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="addsubtract">tw_multirom_delay+1</action>
+					<action function="page">multirom_settings</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
+				<font resource="font"/>
+				<text>Select ROM to auto-boot:</text>
+			</object>
+			
+			<object type="listbox">
+				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<placement x="20" y="%row2_y%" w="760" h="440" />
+				<icon selected="radio_true" unselected="radio_false" />
+				<background color="%listbox_background%" />
+				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" />
+				<data name="tw_multirom_auto_boot_rom" />
+				<items>tw_multirom_roms</items>
+			</object>
+
+			<object type="button">
+				<placement x="%col_center_x%" y="%tz_set_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Save</text>
+				<image resource="main_button" />
+				<action function="multirom_settings_save"></action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">multirom_main</action>
 			</object>
 
 			<object type="template" name="footer" />

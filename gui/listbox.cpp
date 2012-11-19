@@ -135,8 +135,6 @@ GUIListBox::GUIListBox(xml_node<>* node)
 
 	// Get the data for the list
 	child = node->first_node("listitem");
-    if (!child) return;
-	
 	while (child)
     {
         ListData data;
@@ -156,8 +154,16 @@ GUIListBox::GUIListBox(xml_node<>* node)
         child = child->next_sibling("listitem");
     }
 
+	// Load dynamic data
+	child = node->first_node("items");
+	if (child)
+		mItemsVar = child->value();
+
+
 	// Call this to get the selected item to be shown in the list on first render
 	NotifyVarChange(mVariable, currentValue);
+	if(!mItemsVar.empty())
+		NotifyVarChange(mItemsVar, DataManager::GetStrValue(mItemsVar));
 }
 
 GUIListBox::~GUIListBox()
@@ -326,8 +332,41 @@ int GUIListBox::NotifyVarChange(std::string varName, std::string value)
 			var_changed = 1;
 		}
     }
+    else if(mItemsVar == varName)
+	{
+		std::string n;
+		char *cstr = new char[value.size()+1];
+		strcpy(cstr, value.c_str());
+
+		mList.clear();
+
+		char *p = strtok(cstr, "\n");
+		while(p)
+		{
+			n = std::string(p);
+
+			ListData data;
+			data.displayName = n;
+			data.variableValue = n;
+			if(n == currentValue)
+				data.selected = 1;
+			else
+				data.selected = 0;
+
+			mList.push_back(data);
+
+			p = strtok(NULL, "\n");
+		}
+		delete[] cstr;
+		mUpdate = 1;
+		return 0;
+	}
+
     if (varName == mVariable || var_changed != 0)
     {
+		if(mList.empty())
+			return 0;
+
         int i, listSize = mList.size(), selected_index = 0;
 
 		currentValue = value;
@@ -350,6 +389,9 @@ int GUIListBox::NotifyVarChange(std::string varName, std::string value)
 		} else if (selected_index < mStart) {
 			mStart = selected_index;
 		}
+
+		if(mStart < 0)
+			mStart = 0;
 
 		mUpdate = 1;
         return 0;
@@ -375,6 +417,8 @@ void GUIListBox::SetPageFocus(int inFocus)
 {
     if (inFocus)
     {
+		if(!mItemsVar.empty())
+			NotifyVarChange(mItemsVar, DataManager::GetStrValue(mItemsVar));
         mUpdate = 1;
     }
 }

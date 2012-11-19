@@ -3,6 +3,8 @@
 
 #include <string>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <algorithm>
 
 enum
 {
@@ -15,17 +17,37 @@ enum
     ROM_UNKNOWN           = 5
 };
 
+#define INTERNAL_NAME "Internal"
+
 class MultiROM
 {
 public:
+	struct config {
+		config() {
+			is_second_boot = 0;
+			current_rom = INTERNAL_NAME;
+			auto_boot_seconds = 5;
+			auto_boot_rom = INTERNAL_NAME;
+		}
+
+		int is_second_boot;
+		std::string current_rom;
+		int auto_boot_seconds;
+		std::string auto_boot_rom;
+	};
+
 	static bool folderExists();
 	static std::string getRomsPath();
 	static int getType(std::string name);
+	static std::string listRoms();
 
 	static bool move(std::string from, std::string to);
 	static bool erase(std::string name);
 
 	static bool flashZip(std::string rom, std::string file);
+
+	static config loadConfig();
+	static void saveConfig(const config& cfg);
 
 private:
 	static void findPath();
@@ -96,9 +118,96 @@ int MultiROM::getType(std::string name)
 	return ROM_UNKNOWN;
 }
 
+static bool rom_sort(std::string a, std::string b)
+{
+	if(a == INTERNAL_NAME)
+		return true;
+	if(b == INTERNAL_NAME)
+		return false;
+	return a.compare(b) > 0;
+}
+
+std::string MultiROM::listRoms()
+{
+	DIR *d = opendir(getRomsPath().c_str());
+	if(!d)
+		return "";
+
+	std::vector<std::string> vec;
+	struct dirent *dr;
+	while((dr = readdir(d)) != NULL)
+	{
+		if(dr->d_type != DT_DIR)
+			continue;
+
+		if(dr->d_name[0] == '.')
+			continue;
+
+		vec.push_back(dr->d_name);
+	}
+	closedir(d);
+
+	std::sort(vec.begin(), vec.end(), rom_sort);
+
+	std::string res = "";
+	for(size_t i = 0; i < vec.size(); ++i)
+		res += vec[i] + "\n";
+	return res;
+}
+
+MultiROM::config MultiROM::loadConfig()
+{
+	config cfg;
+
+	FILE *f = fopen((m_path + "/multirom.ini").c_str(), "r");
+	if(f)
+	{
+		char line[512];
+		char *p;
+		std::string name, val;
+		while(fgets(line, sizeof(line), f))
+		{
+			p = strtok(line, "=\n");
+			if(!p)
+				continue;
+			name = p;
+
+			p = strtok(NULL, "=\n");
+			if(!p)
+				continue;
+			val = p;
+
+			if(name == "is_second_boot")
+				cfg.is_second_boot = atoi(val.c_str());
+			else if(name == "current_rom")
+				cfg.current_rom = val;
+			else if(name == "auto_boot_seconds")
+				cfg.auto_boot_seconds = atoi(val.c_str());
+			else if(name == "auto_boot_rom")
+				cfg.auto_boot_rom = val;
+		}
+		fclose(f);
+	}
+	return cfg;
+}
+
+void MultiROM::saveConfig(const MultiROM::config& cfg)
+{
+	FILE *f = fopen((m_path + "/multirom.ini").c_str(), "w");
+	if(!f)
+		return;
+
+	fprintf(f, "is_second_boot=%d\n", cfg.is_second_boot);
+	fprintf(f, "current_rom=%s\n", cfg.current_rom.c_str());
+	fprintf(f, "auto_boot_seconds=%d\n", cfg.auto_boot_seconds);
+	fprintf(f, "auto_boot_rom=%s\n", cfg.auto_boot_rom.c_str());
+
+	fclose(f);
+}
+
 bool MultiROM::flashZip(std::string rom, std::string file)
 {
-	
+	return false;
 }
 
 #endif
