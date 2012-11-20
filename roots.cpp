@@ -53,6 +53,18 @@ static int parse_options(char* options, Volume* volume) {
 }
 
 void load_volume_table() {
+	if(device_volumes)
+	{
+		for(int i = 1; i < num_volumes; ++i)
+		{
+			free((char*)device_volumes[i].mount_point);
+			free((char*)device_volumes[i].fs_type);
+			free((char*)device_volumes[i].device);
+			free((char*)device_volumes[i].device2);
+		}
+		free(device_volumes);
+	}
+
     int alloc = 2;
     device_volumes = (Volume*)malloc(alloc * sizeof(Volume));
 

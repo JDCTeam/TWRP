@@ -253,9 +253,13 @@ exit:
 static int
 really_install_package(const char *path, int* wipe_cache)
 {
+	ui_print("5");
     ui->SetBackground(RecoveryUI::INSTALLING);
+	ui_print("6");
     ui->Print("Finding update package...\n");
+	ui_print("7");
     ui->SetProgressType(RecoveryUI::INDETERMINATE);
+	ui_print("8");
     LOGI("Update location: %s\n", path);
 
     if (ensure_path_mounted(path) != 0) {
@@ -312,7 +316,9 @@ install_package(const char* path, int* wipe_cache, const char* install_file)
     } else {
         LOGE("failed to open last_install: %s\n", strerror(errno));
     }
+    ui_print("3");
     int result = really_install_package(path, wipe_cache);
+	ui_print("4");
     if (install_log) {
         fputc(result == INSTALL_SUCCESS ? '1' : '0', install_log);
         fputc('\n', install_log);

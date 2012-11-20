@@ -703,7 +703,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		if (function == "multirom_flash_zip")
 		{
 			operation_start("Flashing");
-			int op_status = MultiROM::flashZip(DataManager::GetStrValue("tw_multirom_rom_name"),
+			int op_status = !MultiROM::flashZip(DataManager::GetStrValue("tw_multirom_rom_name"),
 												DataManager::GetStrValue("tw_filename"));
 			PartitionManager.Update_System_Details();
 			operation_end(op_status, simulate);

@@ -4012,7 +4012,14 @@
 			<object type="slider">
 				<placement x="%slider_x%" y="%slider_y%" placement="5" />
 				<resource base="slider" used="slider-used" touch="slider-touch" />
-				<action function="multirom_flash_zip"></action>
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action_text1=Flashing ZIP...</action>
+					<action function="set">tw_complete_text1=ZIP flashed</action>
+					<action function="set">tw_show_reboot=1</action>
+					<action function="page">action_page</action>
+					<action function="multirom_flash_zip"></action>
+				</actions>
 			</object>
 
 			<object type="text" color="%text_color%">
