@@ -12,6 +12,7 @@
 #include "twinstall.h"
 #include "minzip/Zip.h"
 #include "roots.h"
+#include "boot_img_hdr.h"
 
 enum { INSTALL_SUCCESS, INSTALL_ERROR, INSTALL_CORRUPT };
 
@@ -64,6 +65,7 @@ public:
 	static bool erase(std::string name);
 
 	static bool flashZip(std::string rom, std::string file);
+	static bool injectBoot(std::string img_path);
 
 	static config loadConfig();
 	static void saveConfig(const config& cfg);
@@ -444,6 +446,91 @@ exit:
 	mzCloseZipArchive(&zip);
 	fclose(new_script);
 	return false;
+}
+
+bool MultiROM::injectBoot(std::string img_path)
+{
+	char cmd[256];
+	std::string path_trampoline = m_path + "/trampoline";
+	struct stat info;
+
+	if (stat(path_trampoline.c_str(), &info) < 0)
+	{
+		ui_print("%s not found!\n", path_trampoline.c_str());
+		return false;
+	}
+
+	// EXTRACT BOOTIMG
+	ui_print("Extracting boot image...\n");
+	system("rm -r /tmp/boot; mkdir /tmp/boot");
+	sprintf(cmd, "unpackbootimg -i \"%s\" -o /tmp/boot/", img_path.c_str());
+	system(cmd);
+
+	std::string p = img_path.substr(img_path.find_last_of("/")+1);
+	sprintf(cmd, "/tmp/boot/%s-zImage", p.c_str());
+	if(stat(cmd, &info) < 0)
+	{
+		ui_print("Failed to unpack boot img!\n");
+		return false;
+	}
+
+	// DECOMPRESS RAMDISK
+	ui_print("Decompressing ramdisk...\n");
+	system("mkdir /tmp/boot/rd");
+	sprintf(cmd, "cd /tmp/boot/rd && gzip -d -c ../%s-ramdisk.gz | cpio -i", p.c_str());
+	system(cmd);
+	if(stat("/tmp/boot/rd/init", &info) < 0)
+	{
+		ui_print("Failed to decompress ramdisk!\n");
+		return false;
+	}
+
+	// COPY TRAMPOLINE
+	ui_print("Copying trampoline...\n");
+	if(stat("/tmp/boot/rd/main_init", &info) < 0)
+		system("mv /tmp/boot/rd/init /tmp/boot/rd/main_init");
+
+	sprintf(cmd, "cp \"%s\" /tmp/boot/rd/init", path_trampoline.c_str());
+	system(cmd);
+	system("chmod 750 /tmp/boot/rd/init");
+	system("ln -sf ../main_init /tmp/boot/rd/sbin/ueventd");
+
+	// COMPRESS RAMDISK
+	ui_print("Compressing ramdisk...\n");
+	sprintf(cmd, "cd /tmp/boot/rd && find . | cpio -o -H newc | gzip > ../%s-ramdisk.gz", p.c_str());
+	system(cmd);
+
+	// PACK BOOT IMG
+	ui_print("Packing boot image\n");
+	FILE *script = fopen("/tmp/boot/create.sh", "w");
+	if(!script)
+	{
+		ui_print("Failed to open script file!\n");
+		return false;
+	}
+	std::string base_cmd = "mkbootimg --kernel /tmp/boot/%s-zImage --ramdisk /tmp/boot/%s-ramdisk.gz "
+		"--cmdline \"$(cat /tmp/boot/%s-cmdline)\" --base $(cat /tmp/boot/%s-base) --output /tmp/newboot.img\n";
+	for(size_t idx = base_cmd.find("%s", 0); idx != std::string::npos; idx = base_cmd.find("%s", idx))
+		base_cmd.replace(idx, 2, p);
+
+	fputs(base_cmd.c_str(), script);
+	fclose(script);
+
+	system("chmod 777 /tmp/boot/create.sh && /tmp/boot/create.sh");
+	if(stat("/tmp/newboot.img", &info) < 0)
+	{
+		ui_print("Failed to pack boot image!\n");
+		return false;
+	}
+	system("rm -r /tmp/boot");
+	if(img_path == "/dev/block/mmcblk0p2")
+		system("dd bs=4096 if=/tmp/newboot.img of=/dev/block/mmcblk0p2");
+	else
+	{
+		sprintf(cmd, "cp /tmp/newboot.img \"%s\"", img_path.c_str());;
+		system(cmd);
+	}
+	return true;
 }
 
 #endif

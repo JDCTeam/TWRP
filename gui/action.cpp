@@ -709,6 +709,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 		}
 
+		if (function == "multirom_inject")
+		{
+			operation_start("Injecting");
+			int op_status = !MultiROM::injectBoot(DataManager::GetStrValue("tw_filename"));
+			operation_end(op_status, simulate);
+		}
+
         if (function == "fileexists")
 		{
 			struct stat st;
