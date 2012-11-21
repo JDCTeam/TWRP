@@ -3653,7 +3653,14 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Inject boot.img</text>
 				<image resource="main_button" />
-				<action function="page">multirom_inject_select</action>
+				<actions>
+					<action function="set">tw_multirom_add_bootimg=0</action>
+					<action function="set">tw_back=multirom_main</action>
+					<action function="set">tw_action=multirom_inject</action>
+					<action function="set">tw_text1=Inject boot image </action>
+					<action function="set">tw_text3=?</action>
+					<action function="page">multirom_inject_select</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -3784,7 +3791,14 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Add/replace boot.img</text>
 				<image resource="main_button" />
-				<action function="page">multirom_add_bootimg</action>
+				<actions>
+					<action function="set">tw_multirom_add_bootimg=1</action>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_inject</action>
+					<action function="set">tw_text1=Add/replace boot.img</action>
+					<action function="set">tw_text3=to rom %tw_multirom_rom%?</action>
+					<action function="page">multirom_inject_select</action>
+				</actions>
 			</object>
 
 			<object type="action">
@@ -4166,11 +4180,7 @@
 			<object type="action">
 				<condition var1="tw_filename" op="modified" />
 				<actions>
-					<action function="set">tw_back=multirom_main</action>
-					<action function="set">tw_action=multirom_inject</action>
-					<action function="set">tw_text1=Inject</action>
 					<action function="set">tw_text2=%tw_filename%</action>
-					<action function="set">tw_text3=?</action>
 					<action function="set">tw_action_text1=Injecting...</action>
 					<action function="set">tw_complete_text1=Image injected</action>
 					<action function="set">tw_slider_text=Swipe to Confirm</action>

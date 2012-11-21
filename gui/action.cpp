@@ -712,7 +712,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		if (function == "multirom_inject")
 		{
 			operation_start("Injecting");
-			int op_status = !MultiROM::injectBoot(DataManager::GetStrValue("tw_filename"));
+			int op_status = 0;
+			std::string path = DataManager::GetStrValue("tw_filename");
+			if(DataManager::GetIntValue("tw_multirom_add_bootimg"))
+				op_status = MultiROM::copyBoot(path, DataManager::GetStrValue("tw_multirom_rom_name"));
+
+			if(!op_status)
+				op_status = !MultiROM::injectBoot(path);
 			operation_end(op_status, simulate);
 		}
 

@@ -66,6 +66,7 @@ public:
 
 	static bool flashZip(std::string rom, std::string file);
 	static bool injectBoot(std::string img_path);
+	static int copyBoot(std::string& orig, std::string rom);
 
 	static config loadConfig();
 	static void saveConfig(const config& cfg);
@@ -531,6 +532,18 @@ bool MultiROM::injectBoot(std::string img_path)
 		system(cmd);
 	}
 	return true;
+}
+
+int MultiROM::copyBoot(std::string& orig, std::string rom)
+{
+	std::string img_path = getRomsPath() + "/" + rom + "/boot.img";
+	char cmd[256];
+	sprintf(cmd, "cp \"%s\" \"%s\"", orig.c_str(), img_path.c_str());
+	if(system(cmd) != 0)
+		return 1;
+
+	orig.swap(img_path);
+	return 0;
 }
 
 #endif
