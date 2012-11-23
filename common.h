@@ -26,6 +26,7 @@ extern "C" {
 static long tmplog_offset = 0;
 
 #define ui_print(...) gui_print(__VA_ARGS__)
+#define ui_printf(...) ui_print(__VA_ARGS__) // ui_print is just pure evil
 #define ui_print_overwrite(...) gui_print_overwrite(__VA_ARGS__)
 
 #include "gui/gui.h"

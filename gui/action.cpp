@@ -703,8 +703,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		if (function == "multirom_flash_zip")
 		{
 			operation_start("Flashing");
-			int op_status = !MultiROM::flashZip(DataManager::GetStrValue("tw_multirom_rom_name"),
-												DataManager::GetStrValue("tw_filename"));
+			int op_status = 0;
+
+			if(!MultiROM::flashZip(DataManager::GetStrValue("tw_multirom_rom_name"),
+									DataManager::GetStrValue("tw_filename")))
+			{
+				op_status = 1;
+			}
+
 			PartitionManager.Update_System_Details();
 			operation_end(op_status, simulate);
 		}
@@ -719,6 +725,16 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 			if(!op_status)
 				op_status = !MultiROM::injectBoot(path);
+			operation_end(op_status, simulate);
+		}
+
+		if (function == "multirom_add_android")
+		{
+			operation_start("Installing");
+
+			int op_status = !MultiROM::addROM(DataManager::GetStrValue("tw_filename"),
+											  DataManager::GetIntValue("tw_multirom_type"));
+			PartitionManager.Update_System_Details();
 			operation_end(op_status, simulate);
 		}
 

@@ -3637,7 +3637,11 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Add ROM</text>
 				<image resource="main_button" />
-				<action function="page">multirom_add</action>
+				<actions>
+					<action function="set">tw_multirom_type=1</action>
+					<action function="set">tw_multirom_share_kernel=1</action>
+					<action function="page">multirom_add</action>
+				</actions>
 			</object>
 			
 			<object type="button">
@@ -4031,8 +4035,8 @@
 					<action function="set">tw_action_text1=Flashing ZIP...</action>
 					<action function="set">tw_complete_text1=ZIP flashed</action>
 					<action function="set">tw_show_reboot=1</action>
+					<action function="set">tw_action=multirom_flash_zip</action>
 					<action function="page">action_page</action>
-					<action function="multirom_flash_zip"></action>
 				</actions>
 			</object>
 
@@ -4201,7 +4205,193 @@
 
 			<object type="template" name="footer" />
 		</page>
-		
+
+		<page name="multirom_add">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - Add ROM</text>
+			</object>
+
+			<object type="text" color="%text_success_color%">
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<text>Choose ROM type:</text>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_type" var2="1" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Android</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_type=1</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_type" var2="2" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Android</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_type=1</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_type" var2="1" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Ubuntu</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_type=2</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_type" var2="2" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Ubuntu</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_type=2</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_success_color%">
+				<condition var1="tw_multirom_type" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row3_text_y%" />
+				<text>Share kernel with Internal ROM?</text>
+			</object>
+
+			<object type="button">
+				<conditions>
+					<condition var1="tw_multirom_type" var2="1" />
+					<condition var1="tw_multirom_share_kernel" var2="1" />
+				</conditions>
+				<placement x="%col1_x%" y="%row4_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Share (recommended)</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_share_kernel=1</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<conditions>
+					<condition var1="tw_multirom_type" var2="1" />
+					<condition var1="tw_multirom_share_kernel" var2="0" />
+				</conditions>
+				<placement x="%col1_x%" y="%row4_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Share (recommended)</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_share_kernel=1</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<conditions>
+					<condition var1="tw_multirom_type" var2="1" />
+					<condition var1="tw_multirom_share_kernel" var2="1" />
+				</conditions>
+				<placement x="%col2_x%" y="%row4_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Don't share</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_share_kernel=0</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<conditions>
+					<condition var1="tw_multirom_type" var2="1" />
+					<condition var1="tw_multirom_share_kernel" var2="0" />
+				</conditions>
+				<placement x="%col2_x%" y="%row4_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Don't share</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_share_kernel=0</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="text" color="#B3B2B2">
+				<condition var1="tw_multirom_type" var2="1" />
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
+				<text>Use "Don't share" only if sharing does not work.</text>
+			</object>
+
+			<object type="fileselector">
+				<condition var1="tw_multirom_type" var2="1" />
+				<placement x="%fileselector_x%" y="%row7_text_y%" w="%fileselector_width%" h="580" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>Select ROM's ZIP file:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<filter extn=".zip" folders="1" files="1" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="tw_filename" />
+				<selection name="tw_file" />
+			</object>
+
+			<object type="template" name="sort_options" />
+
+			<object type="action">
+				<conditions>
+					<condition var1="tw_multirom_type" var2="1" />
+					<condition var1="tw_filename" op="modified" />
+				</conditions>
+				<actions>
+					<action function="set">tw_back=multirom_add</action>
+					<action function="set">tw_action=multirom_add_android</action>
+					<action function="set">tw_text1=Install ROM</action>
+					<action function="set">tw_text2=%tw_filename%</action>
+					<action function="set">tw_text3=?</action>
+					<action function="set">tw_action_text1=Installing ROM...</action>
+					<action function="set">tw_complete_text1=ROM installed</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">multirom_main</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
 
 	</pages>
 </recovery>

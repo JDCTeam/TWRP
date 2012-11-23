@@ -13,6 +13,7 @@
 #include "minzip/Zip.h"
 #include "roots.h"
 #include "boot_img_hdr.h"
+#include "data.hpp"
 
 enum { INSTALL_SUCCESS, INSTALL_ERROR, INSTALL_CORRUPT };
 
@@ -29,6 +30,7 @@ enum
 
 #define INTERNAL_NAME "Internal"
 #define REALDATA "/realdata"
+#define MAX_ROM_NAME 26
 
 // Not defined in android includes?
 #define MS_RELATIME (1<<21)
@@ -71,12 +73,18 @@ public:
 	static config loadConfig();
 	static void saveConfig(const config& cfg);
 
+	static bool addROM(std::string zip, int type);
+
 private:
 	static void findPath();
 	static bool changeMounts(std::string base);
 	static void restoreMounts();
 	static bool prepareZIP(std::string& file);
 	static bool skipLine(const char *line);
+	static std::string getNewRomName(std::string zip);
+	static bool createDirs(std::string name, int type);
+	static bool androidExportBoot(std::string name, std::string zip, int type);
+	static bool extractBootForROM(std::string base);
 	
 	static std::string m_path;
 	static std::vector<file_backup> m_mount_bak;
@@ -354,9 +362,7 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		return false;
 
 	int wipe_cache = 0;
-	ui_print("1");
 	int status = TWinstall_zip(file.c_str(), &wipe_cache);
-	ui_print("2");
 
 	system("rm -r "MR_UPDATE_SCRIPT_PATH);
 	system("rm /tmp/mr_update.zip");
@@ -367,15 +373,18 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		ui_print("ZIP successfully installed\n");
 
 	restoreMounts();
-	return status == INSTALL_SUCCESS;
+	return (status == INSTALL_SUCCESS);
 }
 
 bool MultiROM::skipLine(const char *line)
 {
-	if(strstr(line, "mount"))
+	if(strstr(line, "mount") && !strstr(line, "bin/mount"))
 		return true;
 
 	if(strstr(line, "format"))
+		return true;
+
+	if(strstr(line, "/dev/block/platform/sdhci-tegra.3/"))
 		return true;
 
 	if (strstr(line, "boot.img") || strstr(line, "/dev/block/mmcblk0p2") ||
@@ -544,6 +553,249 @@ int MultiROM::copyBoot(std::string& orig, std::string rom)
 
 	orig.swap(img_path);
 	return 0;
+}
+
+std::string MultiROM::getNewRomName(std::string zip)
+{
+	std::string name = "ROM";
+	size_t idx = zip.find_last_of("/");
+	size_t idx_dot = zip.find_last_of(".");
+	if(idx != std::string::npos && idx_dot != std::string::npos && idx_dot > idx)
+		name = zip.substr(idx, idx_dot-idx);
+
+	if(name.size() > MAX_ROM_NAME)
+		name.resize(MAX_ROM_NAME);
+
+	DIR *d = opendir(getRomsPath().c_str());
+	if(!d)
+		return "";
+
+	std::vector<std::string> roms;
+	struct dirent *dr;
+	while((dr = readdir(d)))
+	{
+		if(dr->d_name[0] == '.')
+			continue;
+
+		if(dr->d_type != DT_DIR && dr->d_type != DT_LNK)
+			continue;
+
+		roms.push_back(dr->d_name);
+	}
+
+	closedir(d);
+
+	std::string res = name;
+	char num[8] = { 0 };
+	int c = 1;
+	for(size_t i = 0; i < roms.size();)
+	{
+		if(roms[i] == res)
+		{
+			res = name;
+			sprintf(num, "%d", c++);
+			if(res.size() + strlen(num) > MAX_ROM_NAME)
+				res.replace(res.size()-strlen(num), strlen(num), num);
+			else
+				res += num;
+			i = 0;
+		}
+		else
+			++i;
+	}
+
+	return res;
+}
+
+bool MultiROM::createDirs(std::string name, int type)
+{
+	std::string base = getRomsPath() + "/" + name;
+	if(mkdir(base.c_str(), 0777) < 0)
+	{
+		ui_print("Failed to create ROM folder!\n");
+		return false;
+	}
+
+	switch(type)
+	{
+		case ROM_ANDROID_INTERNAL:
+			if (mkdir((base + "/boot").c_str(), 0777) < 0 ||
+				mkdir((base + "/system").c_str(), 0755) < 0 ||
+				mkdir((base + "/data").c_str(), 0771) < 0 ||
+				mkdir((base + "/cache").c_str(), 0770) < 0)
+			{
+				ui_print("Failed to create android folders!\n");
+				return false;
+			}
+			break;
+		case ROM_UBUNTU_INTERNAL:
+			if (mkdir((base + "/boot").c_str(), 0777) < 0 ||
+				mkdir((base + "/root").c_str(), 0777) < 0)
+			{
+				ui_print("Failed to create ubuntu folders!\n");
+				return false;
+			}
+			break;
+	}
+	return true;
+}
+
+bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int type)
+{
+	ui_print("Processing boot.img of ROM %s...\n", name.c_str());
+
+	std::string base = getRomsPath() + "/" + name;
+	char cmd[256];
+
+	FILE *img = fopen((base + "/boot.img").c_str(), "w");
+	if(!img)
+	{
+		ui_print("Failed to create boot.img!\n");
+		return false;
+	}
+
+	ui_print("Extracting boot.img from ZIP file...\n");
+
+	const ZipEntry *script_entry;
+	int img_len;
+	char* img_data = NULL;
+	ZipArchive zip;
+	int share;
+
+	if (mzOpenZipArchive(zip_path.c_str(), &zip) != 0)
+	{
+		ui_print("Failed to open zip file %s!\n", name.c_str());
+		goto fail;
+	}
+
+	script_entry = mzFindZipEntry(&zip, "boot.img");
+	if(!script_entry)
+	{
+		ui_printf("boot.img not found in the root of ZIP file!\n");
+		goto fail;
+	}
+
+	if (read_data(&zip, script_entry, &img_data, &img_len) < 0)
+	{
+		ui_printf("Failed to read boot.img from ZIP!\n");
+		goto fail;
+	}
+
+	fwrite(img_data, 1, img_len, img);
+	fclose(img);
+	mzCloseZipArchive(&zip);
+	free(img_data);
+
+	if(!extractBootForROM(base))
+		return false;
+
+	share = DataManager::GetIntValue("tw_multirom_share_kernel");
+	if (type == ROM_UBUNTU_INTERNAL ||
+		(type == ROM_ANDROID_INTERNAL && share == 0))
+	{
+		ui_printf("Injecting boot.img..\n");
+		if(!injectBoot(base + "/boot.img") != 0)
+			return false;
+	}
+
+	if(type == ROM_ANDROID_INTERNAL && share == 1)
+	{
+		sprintf(cmd, "rm \"%s/boot.img\"", base.c_str());
+		system(cmd);
+	}
+
+	return true;
+
+fail:
+	mzCloseZipArchive(&zip);
+	free(img_data);
+	fclose(img);
+	return false;
+}
+
+bool MultiROM::extractBootForROM(std::string base)
+{
+	char cmd[256];
+	struct stat info;
+
+	ui_printf("Extracting contents of boot.img...\n");
+	sprintf(cmd, "unpackbootimg -i \"%s/boot.img\" -o \"%s/boot/\"", base.c_str(), base.c_str());
+	system(cmd);
+
+	sprintf(cmd, "%s/boot/boot.img-zImage", base.c_str());
+	if(stat(cmd, &info) < 0)
+	{
+		ui_print("Failed to unpack boot.img!\n");
+		return false;
+	}
+
+	static const char *keep[] = { "zImage", "ramdisk.gz", "cmdline", NULL };
+	for(int i = 0; keep[i]; ++i)
+	{
+		sprintf(cmd, "mv \"%s/boot/boot.img-%s\" \"%s/boot/%s\"", base.c_str(), keep[i], base.c_str(), keep[i]);
+		system(cmd);
+	}
+
+	sprintf(cmd, "rm \"%s/boot/boot.img-\"*", base.c_str());
+	system(cmd);
+
+	system("rm -r /tmp/boot");
+	system("mkdir /tmp/boot");
+
+	sprintf(cmd, "cd /tmp/boot && gzip -d -c \"%s/boot/ramdisk.gz\" | cpio -i", base.c_str());
+	system(cmd);
+	if(stat("/tmp/boot/init", &info) < 0)
+	{
+		ui_printf("Failed to extract ramdisk!\n");
+		return false;
+	}
+
+	// copy rc files
+	static const char *cp_f[] = { "*.rc", "default.prop", "init", "main_init", NULL };
+	for(int i = 0; cp_f[i]; ++i)
+	{
+		sprintf(cmd, "cp -a /tmp/boot/%s \"%s/boot/\"", cp_f[i], base.c_str());
+		system(cmd);
+	}
+
+	// check if main_init exists
+	sprintf(cmd, "%s/boot/main_init", base.c_str());
+	if(stat(cmd, &info) < 0)
+	{
+		sprintf(cmd, "mv \"%s/boot/init\" \"%s/boot/main_init\"", base.c_str(), base.c_str());
+		system(cmd);
+	}
+
+	system("rm -r /tmp/boot");
+	return true;
+}
+
+bool MultiROM::addROM(std::string zip, int type)
+{
+	std::string name = getNewRomName(zip);
+	if(name.empty())
+	{
+		ui_print("Failed to fixup ROMs name!\n");
+		return false;
+	}
+	ui_print("Installing ROM %s...\n", name.c_str());
+
+	if(!createDirs(name, type))
+		return false;
+	
+	switch(type)
+	{
+		case ROM_ANDROID_INTERNAL:
+			if(!androidExportBoot(name, zip, type))
+				return false;
+
+			if(!flashZip(name, zip))
+				return false;
+			break;
+		case ROM_UBUNTU_INTERNAL:
+			break;
+	}
+	return true;
 }
 
 #endif
