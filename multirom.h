@@ -134,6 +134,9 @@ bool MultiROM::move(std::string from, std::string to)
 	std::string roms = getRomsPath();
 	std::string cmd = "mv \"" + roms + "/" + from + "\" ";
 	cmd += "\"" + roms + "/" + to + "\"";
+
+	ui_print("Moving ROM \"%s\" to \"%s\"...\n", from.c_str(), to.c_str());
+
 	return system(cmd.c_str()) == 0;
 }
 
@@ -149,6 +152,7 @@ bool MultiROM::erase(std::string name)
 		return false;
 	}
 
+	ui_print("Erasing ROM \"%s\"...\n", name.c_str());
 	std::string cmd = "rm -rf \"" + path + "\"";
 	return system(cmd.c_str()) == 0;
 }

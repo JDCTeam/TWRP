@@ -727,6 +727,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 		}
 
+		if (function == "multirom_inject_curr_boot")
+		{
+			operation_start("Injecting");
+			int op_status = !MultiROM::injectBoot("/dev/block/mmcblk0p2");
+			operation_end(op_status, simulate);
+		}
+
 		if (function == "multirom_add_rom")
 		{
 			operation_start("Installing");

@@ -3655,7 +3655,7 @@
 			<object type="button">
 				<placement x="%col1_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
-				<text>Inject boot.img</text>
+				<text>Inject boot.img file</text>
 				<image resource="main_button" />
 				<actions>
 					<action function="set">tw_multirom_add_bootimg=0</action>
@@ -3669,6 +3669,23 @@
 
 			<object type="button">
 				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Inject curr. boot sector</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_main</action>
+					<action function="set">tw_action=multirom_inject_curr_boot</action>
+					<action function="set">tw_text1=Inject current boot partition?</action>
+					<action function="set">tw_action_text1=Injecting...</action>
+					<action function="set">tw_complete_text1=Boot partition injected.</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Settings</text>
 				<image resource="main_button" />
