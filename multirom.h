@@ -582,7 +582,7 @@ std::string MultiROM::getNewRomName(std::string zip)
 	size_t idx = zip.find_last_of("/");
 	size_t idx_dot = zip.find_last_of(".");
 
-	if(zip.substr(idx) == "/rootfs.tar.gz")
+	if(zip.substr(idx) == "/rootfs.img")
 		name = "Ubuntu";
 	else if(idx != std::string::npos && idx_dot != std::string::npos && idx_dot > idx)
 		name = zip.substr(idx+1, idx_dot-idx-1);
