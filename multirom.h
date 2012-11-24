@@ -31,6 +31,8 @@ enum
 #define INTERNAL_NAME "Internal"
 #define REALDATA "/realdata"
 #define MAX_ROM_NAME 26
+#define IN_ROOT "is_in_root"
+#define BOOTIMG_UBUNTU "boot.img-ubuntu"
 
 // Not defined in android includes?
 #define MS_RELATIME (1<<21)
@@ -85,6 +87,9 @@ private:
 	static bool createDirs(std::string name, int type);
 	static bool androidExportBoot(std::string name, std::string zip, int type);
 	static bool extractBootForROM(std::string base);
+
+	static bool ubuntuAddBoot(std::string name);
+	static bool ubuntuExtractImage(std::string name, std::string img_path);
 	
 	static std::string m_path;
 	static std::vector<file_backup> m_mount_bak;
@@ -134,8 +139,17 @@ bool MultiROM::move(std::string from, std::string to)
 
 bool MultiROM::erase(std::string name)
 {
-	std::string roms = getRomsPath();
-	std::string cmd = "rm -rf \"" + roms + "/" + name + "\"";
+	std::string path = getRomsPath() + "/" + name;
+
+	struct stat info;
+	if(stat((path + "/"IN_ROOT).c_str(), &info) >= 0)
+	{
+		ui_print("ROM %s could not be delete because it is in root.\n", name.c_str());
+		ui_print("Move ROM out of root (eg. boot Internal ROM) and try again.");
+		return false;
+	}
+
+	std::string cmd = "rm -rf \"" + path + "\"";
 	return system(cmd.c_str()) == 0;
 }
 
@@ -160,7 +174,7 @@ static bool rom_sort(std::string a, std::string b)
 		return true;
 	if(b == INTERNAL_NAME)
 		return false;
-	return a.compare(b) > 0;
+	return a.compare(b) < 0;
 }
 
 std::string MultiROM::listRoms()
@@ -560,7 +574,10 @@ std::string MultiROM::getNewRomName(std::string zip)
 	std::string name = "ROM";
 	size_t idx = zip.find_last_of("/");
 	size_t idx_dot = zip.find_last_of(".");
-	if(idx != std::string::npos && idx_dot != std::string::npos && idx_dot > idx)
+
+	if(zip.substr(idx) == "rootfs.tar.gz")
+		name = "Ubuntu";
+	else if(idx != std::string::npos && idx_dot != std::string::npos && idx_dot > idx)
 		name = zip.substr(idx, idx_dot-idx);
 
 	if(name.size() > MAX_ROM_NAME)
@@ -770,6 +787,53 @@ bool MultiROM::extractBootForROM(std::string base)
 	return true;
 }
 
+bool MultiROM::ubuntuAddBoot(std::string name)
+{
+	char cmd[256];
+	sprintf(cmd, "cp %s/%s \"%s/%s/boot.img\"", m_path.c_str(), BOOTIMG_UBUNTU, getRomsPath().c_str(), name.c_str());
+	system(cmd);
+
+	return injectBoot(getRomsPath() + "/" + name + "/boot.img");
+}
+
+bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path)
+{
+	char cmd[256];
+
+	ui_printf("Converting the image (may take a while)...\n");
+	sprintf(cmd, "simg2img \"%s\" /tmp/rootfs.img", img_path.c_str());
+	system(cmd);
+
+	system("mkdir /mnt");
+	system("umount /mnt");
+	system("mount /tmp/rootfs.img /mnt");
+
+	struct stat info;
+	if(stat("/mnt/rootfs.tar.gz", &info) < 0)
+	{
+		system("umount /mnt");
+		system("rm /tmp/rootfs.img");
+		ui_printf("Invalid Ubuntu image (rootfs.tar.gz not found)!\n");
+		return false;
+	}
+
+	sprintf(cmd, "cp -a /mnt/rootfs.tar.gz \"%s/%s/root/\"", getRomsPath().c_str(), name.c_str());
+	system(cmd);
+
+	sync();
+
+	system("umount /mnt");
+	system("rm /tmp/rootfs.img");
+	
+	sprintf(cmd, "%s/%s/root/rootfs.tar.gz", getRomsPath().c_str(), name.c_str());
+	if(stat(cmd, &info) < 0)
+	{
+		ui_print("Failed to copy rootfs archive!\n");
+		return false;
+	}
+	return true;
+}
+
 bool MultiROM::addROM(std::string zip, int type)
 {
 	std::string name = getNewRomName(zip);
@@ -782,20 +846,38 @@ bool MultiROM::addROM(std::string zip, int type)
 
 	if(!createDirs(name, type))
 		return false;
-	
+
+	bool res = false;
 	switch(type)
 	{
 		case ROM_ANDROID_INTERNAL:
 			if(!androidExportBoot(name, zip, type))
-				return false;
+				break;
 
 			if(!flashZip(name, zip))
-				return false;
+				break;
+
+			res = true;
 			break;
 		case ROM_UBUNTU_INTERNAL:
+			if(!ubuntuAddBoot(name))
+				break;
+
+			if(!ubuntuExtractImage(name, zip))
+				break;
+
+			res = true;
 			break;
 	}
-	return true;
+
+	if(!res)
+	{
+		ui_print("Erasing incomplete ROM...\n");
+		std::string cmd = "rm -rf \"" + getRomsPath() + "/" + name + "\"";
+		system(cmd.c_str());
+	}
+
+	return res;
 }
 
 #endif

@@ -4343,6 +4343,54 @@
 				<text>Use "Don't share" only if sharing does not work.</text>
 			</object>
 
+			<object type="button">
+				<placement x="%col1_x%" y="%row6_text_y%" />
+				<font resource="mediumfont" color="%text_color%" />
+				<conditions>
+					<condition var1="tw_has_dual_storage" var2="1" />
+					<condition var1="tw_use_external_storage" var2="1" />
+				</conditions>
+				<text>Use external SD</text>
+				<image resource="radio_true" />
+				<action function="togglestorage">external</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col1_x%" y="%row6_text_y%" />
+				<font resource="mediumfont" color="%text_color%" />
+				<conditions>
+					<condition var1="tw_has_dual_storage" var2="1" />
+					<condition var1="tw_use_external_storage" var2="0" />
+				</conditions>
+				<text>Use external SD</text>
+				<image resource="radio_false" />
+				<action function="togglestorage">external</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col2_x%" y="%row6_text_y%" />
+				<font resource="mediumfont" color="%text_color%" />
+				<conditions>
+					<condition var1="tw_has_dual_storage" var2="1" />
+					<condition var1="tw_use_external_storage" var2="1" />
+				</conditions>
+				<text>Use internal storage</text>
+				<image resource="radio_false" />
+				<action function="togglestorage">internal</action>
+			</object>
+
+			<object type="button">
+				<placement x="%col2_x%" y="%row6_text_y%" />
+				<font resource="mediumfont" color="%text_color%" />
+				<conditions>
+					<condition var1="tw_has_dual_storage" var2="1" />
+					<condition var1="tw_use_external_storage" var2="0" />
+				</conditions>
+				<text>Use internal storage</text>
+				<image resource="radio_true" />
+				<action function="togglestorage">internal</action>
+			</object>
+
 			<object type="fileselector">
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%fileselector_x%" y="%row7_text_y%" w="%fileselector_width%" h="580" />
@@ -4359,6 +4407,22 @@
 				<selection name="tw_file" />
 			</object>
 
+			<object type="fileselector">
+				<condition var1="tw_multirom_type" var2="2" />
+				<placement x="%fileselector_x%" y="%row7_text_y%" w="%fileselector_width%" h="580" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>Select Ubuntu image file:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<filter extn=".img" folders="1" files="1" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="tw_filename" />
+				<selection name="tw_file" />
+			</object>
+
 			<object type="template" name="sort_options" />
 
 			<object type="action">
@@ -4368,12 +4432,31 @@
 				</conditions>
 				<actions>
 					<action function="set">tw_back=multirom_add</action>
-					<action function="set">tw_action=multirom_add_android</action>
+					<action function="set">tw_action=multirom_add_rom</action>
 					<action function="set">tw_text1=Install ROM</action>
 					<action function="set">tw_text2=%tw_filename%</action>
 					<action function="set">tw_text3=?</action>
 					<action function="set">tw_action_text1=Installing ROM...</action>
 					<action function="set">tw_complete_text1=ROM installed</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<conditions>
+					<condition var1="tw_multirom_type" var2="2" />
+					<condition var1="tw_filename" op="modified" />
+				</conditions>
+				<actions>
+					<action function="set">tw_back=multirom_add</action>
+					<action function="set">tw_action=multirom_add_rom</action>
+					<action function="set">tw_text1=Install Ubuntu image</action>
+					<action function="set">tw_text2=%tw_filename%</action>
+					<action function="set">tw_text3=?</action>
+					<action function="set">tw_action_text1=Installing Ubuntu...</action>
+					<action function="set">tw_complete_text1=Ubuntu installed</action>
 					<action function="set">tw_slider_text=Swipe to Confirm</action>
 					<action function="set">tw_show_reboot=0</action>
 					<action function="page">confirm_action</action>

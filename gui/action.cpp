@@ -667,9 +667,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		DataManager::SetValue("tw_multirom_second_boot", cfg.is_second_boot);
 		DataManager::SetValue("tw_multirom_current", cfg.current_rom);
 		DataManager::SetValue("tw_multirom_auto_boot_rom", cfg.auto_boot_rom);
-		std::string s = MultiROM::listRoms();
-		ui_print("roms %s\n", s.c_str());
-		DataManager::SetValue("tw_multirom_roms", s);
+
+		DataManager::SetValue("tw_multirom_roms", MultiROM::listRoms());
 		return gui_changePage("multirom_settings");
 	}
 
@@ -728,7 +727,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 		}
 
-		if (function == "multirom_add_android")
+		if (function == "multirom_add_rom")
 		{
 			operation_start("Installing");
 

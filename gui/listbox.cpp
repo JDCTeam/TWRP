@@ -32,7 +32,7 @@ extern "C" {
 #include "objects.hpp"
 #include "../data.hpp"
 
-GUIListBox::GUIListBox(xml_node<>* node)
+GUIListBox::GUIListBox(xml_node<>* node) : Conditional(node)
 {
     xml_attribute<>* attr;
     xml_node<>* child;
@@ -171,7 +171,9 @@ GUIListBox::~GUIListBox()
 }
 
 int GUIListBox::Render(void)
-{	
+{
+	if (!isConditionTrue())     return 0;
+
 	// First step, fill background
     gr_color(mBackgroundColor.red, mBackgroundColor.green, mBackgroundColor.blue, 255);
     gr_fill(mRenderX, mRenderY, mRenderW, mRenderH);
@@ -230,6 +232,8 @@ int GUIListBox::Render(void)
 
 int GUIListBox::Update(void)
 {
+	if (!isConditionTrue())     return 0;
+
     if (mUpdate)
     {
         mUpdate = 0;
@@ -247,6 +251,8 @@ int GUIListBox::GetSelection(int x, int y)
 
 int GUIListBox::NotifyTouch(TOUCH_STATE state, int x, int y)
 {
+	if (!isConditionTrue())     return -1;
+
     static int startSelection = -1;
     static int startY = 0;
     int selection = 0;

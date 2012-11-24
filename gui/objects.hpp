@@ -391,7 +391,7 @@ protected:
     std::string mVarName;
 };
 
-class GUIFileSelector : public RenderObject, public ActionObject
+class GUIFileSelector : public RenderObject, public ActionObject, public Conditional
 {
 public:
     GUIFileSelector(xml_node<>* node);
@@ -481,7 +481,7 @@ protected:
 	COLOR mHeaderSeparatorColor;
 };
 
-class GUIListBox : public RenderObject, public ActionObject
+class GUIListBox : public RenderObject, public ActionObject, public Conditional
 {
 public:
     GUIListBox(xml_node<>* node);
