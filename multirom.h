@@ -331,12 +331,15 @@ bool MultiROM::changeMounts(std::string base)
 	system("mount /data");
 	system("mount /cache");
 
+	system("mv /sbin/umount /sbin/umount.bak");
+
 	load_volume_table();
 	return true;
 }
 
 void MultiROM::restoreMounts()
 {
+	system("mv /sbin/umount.bak /sbin/umount");
 	system("umount /system /data /cache");
 
 	for(size_t i = 0; i < m_mount_bak.size(); ++i)
@@ -365,7 +368,7 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	ui_print("Flashing ZIP file %s\n", file.c_str());
 	ui_print("ROM: %s\n", rom.c_str());
 
-	if(!changeMounts(getRomsPath() + "/" + rom))
+	if(!changeMounts(getRomsPath() + rom))
 	{
 		ui_print("Failed to change mountpoints!\n");
 		return false;
@@ -575,10 +578,10 @@ std::string MultiROM::getNewRomName(std::string zip)
 	size_t idx = zip.find_last_of("/");
 	size_t idx_dot = zip.find_last_of(".");
 
-	if(zip.substr(idx) == "rootfs.tar.gz")
+	if(zip.substr(idx) == "/rootfs.tar.gz")
 		name = "Ubuntu";
 	else if(idx != std::string::npos && idx_dot != std::string::npos && idx_dot > idx)
-		name = zip.substr(idx, idx_dot-idx);
+		name = zip.substr(idx+1, idx_dot-idx-1);
 
 	if(name.size() > MAX_ROM_NAME)
 		name.resize(MAX_ROM_NAME);
