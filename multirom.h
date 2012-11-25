@@ -33,6 +33,7 @@ enum
 #define MAX_ROM_NAME 26
 #define IN_ROOT "is_in_root"
 #define BOOTIMG_UBUNTU "boot.img-ubuntu"
+#define BOOTIMG_UBUNTU_3G "boot.img-ubuntu-3g"
 
 // Not defined in android includes?
 #define MS_RELATIME (1<<21)
@@ -797,7 +798,28 @@ bool MultiROM::extractBootForROM(std::string base)
 bool MultiROM::ubuntuAddBoot(std::string name)
 {
 	char cmd[256];
-	sprintf(cmd, "cp %s/%s \"%s/%s/boot.img\"", m_path.c_str(), BOOTIMG_UBUNTU, getRomsPath().c_str(), name.c_str());
+	std::string img_path = m_path + "/";
+	struct stat info;
+
+	// Support for 3g nexus 7
+	if(stat("/dev/block/mmcblk0p10", &info) < 0)
+	{
+		ui_printf("Using Nexus 7 Wi-Fi Ubuntu boot.img...\n");
+		img_path += BOOTIMG_UBUNTU;
+	}
+	else
+	{
+		ui_printf("Using Nexus 7 3g Ubuntu boot.img...\n");
+		img_path += BOOTIMG_UBUNTU_3G;
+	}
+
+	if(stat(img_path.c_str(), &info) < 0)
+	{
+		ui_printf("Could not find ubuntu boot image!\n");
+		return false;
+	}
+
+	sprintf(cmd, "cp %s \"%s/%s/boot.img\"", img_path.c_str(), getRomsPath().c_str(), name.c_str());
 	system(cmd);
 
 	return injectBoot(getRomsPath() + "/" + name + "/boot.img");
