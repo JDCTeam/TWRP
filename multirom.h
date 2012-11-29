@@ -94,9 +94,11 @@ private:
 	
 	static std::string m_path;
 	static std::vector<file_backup> m_mount_bak;
+	static std::string m_mount_rom_paths[2];
 };
 
 std::string MultiROM::m_path = "";
+std::string MultiROM::m_mount_rom_paths[2] = { "", "" };
 std::vector<MultiROM::file_backup> MultiROM::m_mount_bak;
 
 bool MultiROM::folderExists()
@@ -315,8 +317,32 @@ bool MultiROM::changeMounts(std::string base)
 		return false;
 	}
 
+	// remove spaces from path
+	size_t idx = base.find(' ');
+	if(idx != std::string::npos)
+		m_mount_rom_paths[0] = base;
+	else
+		m_mount_rom_paths[0].clear();
+
+	while(idx != std::string::npos)
+	{
+		base.replace(idx, 1, "-");
+		idx = base.find(' ', idx);
+	}
+
+	struct stat info;
+	while(stat(base.c_str(), &info) >= 0)
+		base += "a";
+
+	if(!m_mount_rom_paths[0].empty())
+	{
+		m_mount_rom_paths[1] = base;
+		std::string cmd = "mv \"" + m_mount_rom_paths[0] + "\" \"" + base + "\"";
+		system(cmd.c_str());
+	}
+
 	fprintf(f_rec, "# mount point\tfstype\t\tdevice\n");
-	fprintf(f_rec, "/system\t\text4\t\t%s/system\n", base.c_str()); 
+	fprintf(f_rec, "/system\t\text4\t\t%s/system\n", base.c_str());
 	fprintf(f_rec, "/cache\t\text4\t\t%s/cache\n", base.c_str());
 	fprintf(f_rec, "/data\t\text4\t\t%s/data\n", base.c_str());
 	fprintf(f_rec, "/misc\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/MSC\n");
@@ -359,6 +385,13 @@ void MultiROM::restoreMounts()
 		delete[] b.content;
 	}
 	m_mount_bak.clear();
+
+	if(!m_mount_rom_paths[0].empty())
+	{
+		std::string cmd = "mv \"" + m_mount_rom_paths[1] + "\" \"" + m_mount_rom_paths[0] + "\"";
+		system(cmd.c_str());
+		m_mount_rom_paths[0].clear();
+	}
 
 	system("umount "REALDATA);
 	load_volume_table();
