@@ -331,7 +331,7 @@ bool MultiROM::changeMounts(std::string base)
 	}
 
 	struct stat info;
-	while(stat(base.c_str(), &info) >= 0)
+	while(!m_mount_rom_paths[0].empty() && stat(base.c_str(), &info) >= 0)
 		base += "a";
 
 	if(!m_mount_rom_paths[0].empty())
