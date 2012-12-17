@@ -190,7 +190,22 @@ GUIFileSelector::GUIFileSelector(xml_node<>* node) : Conditional(node)
 	{
 		attr = child->first_attribute("extn");
 		if (attr)
-			mExtn = attr->value();
+		{
+			std::string str = attr->value();
+			const char delimiter = ';';
+			size_t idx = 0, idx_next = 0, len;
+			do
+			{
+				idx_next = str.find(delimiter, idx+1);
+				if(idx != 0 && idx != std::string::npos)
+					++idx;
+
+				len = std::min(idx_next, str.size()) - idx;
+
+				mExtn.push_back(str.substr(idx, len));
+				idx = idx_next;
+			} while(idx != std::string::npos);
+		}
 		attr = child->first_attribute("folders");
 		if (attr)
 			mShowFolders = atoi(attr->value());
@@ -827,9 +842,19 @@ int GUIFileSelector::GetFileList(const std::string folder)
 		}
 		else if (data.fileType == DT_REG || data.fileType == DT_LNK || data.fileType == DT_BLK)
 		{
-			if (mExtn.empty() || (data.fileName.length() > mExtn.length() && data.fileName.substr(data.fileName.length() - mExtn.length()) == mExtn))
-			{
+			if(mExtn.empty())
 				mFileList.push_back(data);
+			else
+			{
+				for(size_t i = 0; i < mExtn.size(); ++i)
+				{
+					const std::string& ext = mExtn[i];
+					if (ext.empty() || (data.fileName.length() > ext.length() && data.fileName.substr(data.fileName.length() - ext.length()) == ext))
+					{
+						mFileList.push_back(data);
+						break;
+					}
+				}
 			}
 		}
 	}

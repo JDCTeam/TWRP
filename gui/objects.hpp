@@ -444,7 +444,7 @@ protected:
     std::vector<FileData> mFileList;
 	std::vector<std::string> mExcludeFiles;
     std::string mPathVar;
-    std::string mExtn;
+    std::vector<std::string> mExtn;
     std::string mVariable;
 	std::string mSortVariable;
 	std::string mSelection;

@@ -22,18 +22,26 @@ enum
     ROM_DEFAULT           = 0,
     ROM_ANDROID_INTERNAL  = 1,
     ROM_UBUNTU_INTERNAL   = 2,
-    ROM_ANDROID_USB       = 3,
-    ROM_UBUNTU_USB        = 4,
+    ROM_ANDROID_USB_IMG   = 3,
+    ROM_UBUNTU_USB_IMG    = 4,
+    ROM_ANDROID_USB_DIR   = 5,
+    ROM_UBUNTU_USB_DIR    = 6,
 
-    ROM_UNKNOWN           = 5
+    ROM_UNSUPPORTED_INT   = 7,
+    ROM_UNSUPPORTED_USB   = 8,
+    ROM_UNKNOWN           = 9
 };
+
+#define M(x) (1 << x)
+#define MASK_UBUNTU (M(ROM_UBUNTU_INTERNAL) | M(ROM_UBUNTU_USB_IMG)| M(ROM_UBUNTU_USB_DIR))
+#define MASK_ANDROID (M(ROM_ANDROID_USB_DIR) | M(ROM_ANDROID_USB_IMG) | M(ROM_ANDROID_INTERNAL))
+#define MASK_IMAGES (M(ROM_ANDROID_USB_IMG) | M(ROM_UBUNTU_USB_IMG))
+#define MASK_INTERNAL (M(ROM_DEFAULT) | M(ROM_ANDROID_INTERNAL) | M(ROM_UBUNTU_INTERNAL) | M(ROM_UNSUPPORTED_INT))
 
 #define INTERNAL_NAME "Internal"
 #define REALDATA "/realdata"
 #define MAX_ROM_NAME 26
-#define IN_ROOT "is_in_root"
-#define BOOTIMG_UBUNTU "boot.img-ubuntu"
-#define BOOTIMG_UBUNTU_3G "boot.img-ubuntu-3g"
+#define INTERNAL_MEM_LOC_TXT "Internal memory"
 
 // Not defined in android includes?
 #define MS_RELATIME (1<<21)
@@ -43,13 +51,11 @@ class MultiROM
 public:
 	struct config {
 		config() {
-			is_second_boot = 0;
 			current_rom = INTERNAL_NAME;
 			auto_boot_seconds = 5;
 			auto_boot_rom = INTERNAL_NAME;
 		}
 
-		int is_second_boot;
 		std::string current_rom;
 		int auto_boot_seconds;
 		std::string auto_boot_rom;
@@ -76,7 +82,11 @@ public:
 	static config loadConfig();
 	static void saveConfig(const config& cfg);
 
-	static bool addROM(std::string zip, int type);
+	static bool addROM(std::string zip, int os, std::string loc);
+
+	static std::string listInstallLocations();
+	static void setRomsPath(std::string loc);
+	static bool patchInit(std::string name);
 
 private:
 	static void findPath();
@@ -89,17 +99,22 @@ private:
 	static bool androidExportBoot(std::string name, std::string zip, int type);
 	static bool extractBootForROM(std::string base);
 
-	static bool ubuntuAddBoot(std::string name);
-	static bool ubuntuExtractImage(std::string name, std::string img_path);
+	static bool ubuntuExtractImage(std::string name, std::string img_path, std::string dest);
+	static bool patchUbuntuInit(std::string rootDir);
+	static bool ubuntuUpdateInitramfs(std::string rootDir);
+
+	static bool createImage(std::string base, const char *img);
 	
 	static std::string m_path;
 	static std::vector<file_backup> m_mount_bak;
 	static std::string m_mount_rom_paths[2];
+	static std::string m_curr_roms_path;
 };
 
 std::string MultiROM::m_path = "";
 std::string MultiROM::m_mount_rom_paths[2] = { "", "" };
 std::vector<MultiROM::file_backup> MultiROM::m_mount_bak;
+std::string MultiROM::m_curr_roms_path = "";
 
 bool MultiROM::folderExists()
 {
@@ -109,7 +124,7 @@ bool MultiROM::folderExists()
 
 std::string MultiROM::getRomsPath()
 {
-	return m_path + "/roms/";
+	return m_curr_roms_path;
 }
 
 void MultiROM::findPath()
@@ -126,10 +141,78 @@ void MultiROM::findPath()
 		if(stat(paths[i], &info) >= 0)
 		{
 			m_path = paths[i];
+			m_curr_roms_path = m_path + "/roms/";
 			return;
 		}
 	}
 	m_path.clear();
+}
+
+void MultiROM::setRomsPath(std::string loc)
+{
+	umount("/mnt"); // umount last thing mounted there
+
+	if(loc.compare(INTERNAL_MEM_LOC_TXT) == 0)
+	{
+		m_curr_roms_path = m_path + "/roms/";
+		return;
+	}
+
+	size_t idx = loc.find(' ');
+	if(idx == std::string::npos)
+	{
+		m_curr_roms_path.clear();
+		return;
+	}
+
+	std::string dev = loc.substr(0, idx);
+	mkdir("/mnt", 0777); // in case it does not exist
+
+	char cmd[256];
+	sprintf(cmd, "mount %s /mnt", dev.c_str());
+	system(cmd);
+	m_curr_roms_path = "/mnt/multirom/";
+}
+
+std::string MultiROM::listInstallLocations()
+{
+	std::string res = INTERNAL_MEM_LOC_TXT"\n";
+
+	system("blkid > /tmp/blkid.txt");
+	FILE *f = fopen("/tmp/blkid.txt", "r");
+	if(!f)
+		return res;
+
+	char line[1024];
+	std::string blk;
+	size_t idx1, idx2;
+	while((fgets(line, sizeof(line), f)))
+	{
+		if(!strstr(line, "/dev/block/sd"))
+			continue;
+
+		blk = line;
+		idx1 = blk.find(':');
+		if(idx1 == std::string::npos)
+			continue;
+
+		res += blk.substr(0, idx1);
+
+		blk = line;
+		idx1 = blk.find("TYPE=");
+		if(idx1 == std::string::npos)
+			continue;
+
+		idx1 += strlen("TYPE=\"");
+		idx2 = blk.find('"', idx1);
+		if(idx2 == std::string::npos)
+			continue;
+
+		res += " (" + blk.substr(idx1, idx2-idx1) + ")\n";
+	}
+
+	fclose(f);
+	return res;
 }
 
 bool MultiROM::move(std::string from, std::string to)
@@ -147,14 +230,6 @@ bool MultiROM::erase(std::string name)
 {
 	std::string path = getRomsPath() + "/" + name;
 
-	struct stat info;
-	if(stat((path + "/"IN_ROOT).c_str(), &info) >= 0)
-	{
-		ui_print("ROM %s could not be delete because it is in root.\n", name.c_str());
-		ui_print("Move ROM out of root (eg. boot Internal ROM) and try again.");
-		return false;
-	}
-
 	ui_print("Erasing ROM \"%s\"...\n", name.c_str());
 	std::string cmd = "rm -rf \"" + path + "\"";
 	return system(cmd.c_str()) == 0;
@@ -164,14 +239,36 @@ int MultiROM::getType(std::string name)
 {
 	std::string path = getRomsPath() + "/" + name + "/";
 	struct stat info;
-	
-	if (stat((path + "system").c_str(), &info) >= 0 &&
-		stat((path + "data").c_str(), &info) >= 0 &&
-		stat((path + "cache").c_str(), &info) >= 0)
-		return ROM_ANDROID_INTERNAL;
 
-	if(stat((path + "root").c_str(), &info) >= 0)
-		return ROM_UBUNTU_INTERNAL;
+	if(getRomsPath().find("/mnt") != 0) // Internal memory
+	{
+		if (stat((path + "system").c_str(), &info) >= 0 &&
+			stat((path + "data").c_str(), &info) >= 0 &&
+			stat((path + "cache").c_str(), &info) >= 0)
+			return ROM_ANDROID_INTERNAL;
+		
+
+		if(stat((path + "root").c_str(), &info) >= 0)
+			return ROM_UBUNTU_INTERNAL;
+	}
+	else // USB roms
+	{
+		if (stat((path + "system").c_str(), &info) >= 0 &&
+			stat((path + "data").c_str(), &info) >= 0 &&
+			stat((path + "cache").c_str(), &info) >= 0)
+			return ROM_ANDROID_USB_DIR;
+
+		if (stat((path + "system.img").c_str(), &info) >= 0 &&
+			stat((path + "data.img").c_str(), &info) >= 0 &&
+			stat((path + "cache.img").c_str(), &info) >= 0)
+			return ROM_ANDROID_USB_IMG;
+
+		if(stat((path + "root").c_str(), &info) >= 0)
+			return ROM_UBUNTU_USB_DIR;
+
+		if(stat((path + "root.img").c_str(), &info) >= 0)
+			return ROM_UBUNTU_USB_IMG;
+	}
 	return ROM_UNKNOWN;
 }
 
@@ -234,9 +331,7 @@ MultiROM::config MultiROM::loadConfig()
 				continue;
 			val = p;
 
-			if(name == "is_second_boot")
-				cfg.is_second_boot = atoi(val.c_str());
-			else if(name == "current_rom")
+			if(name == "current_rom")
 				cfg.current_rom = val;
 			else if(name == "auto_boot_seconds")
 				cfg.auto_boot_seconds = atoi(val.c_str());
@@ -254,7 +349,6 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	if(!f)
 		return;
 
-	fprintf(f, "is_second_boot=%d\n", cfg.is_second_boot);
 	fprintf(f, "current_rom=%s\n", cfg.current_rom.c_str());
 	fprintf(f, "auto_boot_seconds=%d\n", cfg.auto_boot_seconds);
 	fprintf(f, "auto_boot_rom=%s\n", cfg.auto_boot_rom.c_str());
@@ -262,18 +356,23 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fclose(f);
 }
 
-bool MultiROM::changeMounts(std::string base)
+bool MultiROM::changeMounts(std::string name)
 {
-	mkdir(REALDATA, 0777);
-	if(mount("/dev/block/platform/sdhci-tegra.3/by-name/UDA",
+	int type = getType(name);
+	std::string base = getRomsPath() + name;
+
+	if(M(type) & MASK_INTERNAL)
+	{
+		mkdir(REALDATA, 0777);
+		if(mount("/dev/block/platform/sdhci-tegra.3/by-name/UDA",
 		    REALDATA, "ext4", MS_RELATIME | MS_NOATIME,
             "user_xattr,acl,barrier=1,data=ordered") < 0)
-	{
-		ui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
-		return false;
+		{
+			ui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
+			return false;
+		}
+		base.replace(0, 5, REALDATA);
 	}
-
-	base.replace(0, 5, REALDATA);
 
 	static const char *files[] = {
 		"/etc/fstab",
@@ -342,9 +441,18 @@ bool MultiROM::changeMounts(std::string base)
 	}
 
 	fprintf(f_rec, "# mount point\tfstype\t\tdevice\n");
-	fprintf(f_rec, "/system\t\text4\t\t%s/system\n", base.c_str());
-	fprintf(f_rec, "/cache\t\text4\t\t%s/cache\n", base.c_str());
-	fprintf(f_rec, "/data\t\text4\t\t%s/data\n", base.c_str());
+	if(!(M(type) & MASK_IMAGES))
+	{
+		fprintf(f_rec, "/system\t\text4\t\t%s/system\n", base.c_str());
+		fprintf(f_rec, "/cache\t\text4\t\t%s/cache\n", base.c_str());
+		fprintf(f_rec, "/data\t\text4\t\t%s/data\n", base.c_str());
+	}
+	else
+	{
+		fprintf(f_rec, "/system\t\text4\t\t%s/system.img\n", base.c_str());
+		fprintf(f_rec, "/cache\t\text4\t\t%s/cache.img\n", base.c_str());
+		fprintf(f_rec, "/data\t\text4\t\t%s/data.img\n", base.c_str());
+	}
 	fprintf(f_rec, "/misc\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/MSC\n");
 	fprintf(f_rec, "/boot\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/LNX\n");
 	fprintf(f_rec, "/recovery\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/SOS\n");
@@ -352,9 +460,18 @@ bool MultiROM::changeMounts(std::string base)
 	fprintf(f_rec, "/usb-otg\t\tvfat\t\t/dev/block/sda1\n");
 	fclose(f_rec);
 
-	fprintf(f_fstab, "%s/system /system ext4 rw,bind\n", base.c_str());
-	fprintf(f_fstab, "%s/cache /cache ext4 rw,bind\n", base.c_str());
-	fprintf(f_fstab, "%s/data /data ext4 rw,bind\n", base.c_str());
+	if(!(M(type) & MASK_IMAGES))
+	{
+		fprintf(f_fstab, "%s/system /system ext4 rw,bind\n", base.c_str());
+		fprintf(f_fstab, "%s/cache /cache ext4 rw,bind\n", base.c_str());
+		fprintf(f_fstab, "%s/data /data ext4 rw,bind\n", base.c_str());
+	}
+	else
+	{
+		fprintf(f_fstab, "%s/system.img /system ext4 loop 0 0\n", base.c_str());
+		fprintf(f_fstab, "%s/cache.img /cache ext4 loop 0 0\n", base.c_str());
+		fprintf(f_fstab, "%s/data.img /data ext4 loop 0 0\n", base.c_str());
+	}
 	fprintf(f_fstab, "/usb-otg vfat rw\n");
 	fclose(f_fstab);
 
@@ -406,15 +523,16 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	ui_print("Flashing ZIP file %s\n", file.c_str());
 	ui_print("ROM: %s\n", rom.c_str());
 
-	if(!changeMounts(getRomsPath() + rom))
+	ui_print("Preparing ZIP file...\n");
+	if(!prepareZIP(file))
+		return false;
+
+	ui_print("Changing mountpoints\n");
+	if(!changeMounts(rom))
 	{
 		ui_print("Failed to change mountpoints!\n");
 		return false;
 	}
-
-	ui_print("Preparing ZIP file...\n");
-	if(!prepareZIP(file))
-		return false;
 
 	int wipe_cache = 0;
 	int status = TWinstall_zip(file.c_str(), &wipe_cache);
@@ -665,6 +783,36 @@ std::string MultiROM::getNewRomName(std::string zip)
 	return res;
 }
 
+bool MultiROM::createImage(std::string base, const char *img)
+{
+	ui_print("Creating %s.img...\n", img);
+	
+	char cmd[256];
+	sprintf(cmd, "tw_multirom_%s_size", img);
+	
+	int size = DataManager::GetIntValue(cmd);
+	if(size <= 0)
+	{
+		ui_printf("Failed to create %s image: invalid size (%d)\n", img, size);
+		return false;
+	}
+
+	sprintf(cmd, "dd if=/dev/zero of=\"%s/%s.img\" bs=1M count=%d", base.c_str(), img, size);
+	system(cmd);
+
+	struct stat info;
+	sprintf(cmd, "%s/%s.img", base.c_str(), img);
+	if(stat(cmd, &info) < 0)
+	{
+		ui_print("Failed to create %s image, probably not enough space.\n", img);
+		return false;
+	}
+
+	sprintf(cmd, "make_ext4fs -l %dM \"%s/%s.img\"", size, base.c_str(), img);
+	system(cmd);
+	return true;
+}
+
 bool MultiROM::createDirs(std::string name, int type)
 {
 	std::string base = getRomsPath() + "/" + name;
@@ -674,8 +822,10 @@ bool MultiROM::createDirs(std::string name, int type)
 		return false;
 	}
 
+	ui_print("Creating folders and images for type %d\n", type);
 	switch(type)
 	{
+		case ROM_ANDROID_USB_DIR:
 		case ROM_ANDROID_INTERNAL:
 			if (mkdir((base + "/boot").c_str(), 0777) < 0 ||
 				mkdir((base + "/system").c_str(), 0755) < 0 ||
@@ -686,14 +836,34 @@ bool MultiROM::createDirs(std::string name, int type)
 				return false;
 			}
 			break;
+		case ROM_ANDROID_USB_IMG:
+			if (mkdir((base + "/boot").c_str(), 0777) < 0)
+			{
+				ui_print("Failed to create android folders!\n");
+				return false;
+			}
+
+			static const char *imgs[] = { "system", "data", "cache" };
+			for(size_t i = 0; i < sizeof(imgs)/sizeof(imgs[0]); ++i)
+				if(!createImage(base, imgs[i]))
+					return false;
+			break;
+		case ROM_UBUNTU_USB_DIR:
 		case ROM_UBUNTU_INTERNAL:
-			if (mkdir((base + "/boot").c_str(), 0777) < 0 ||
-				mkdir((base + "/root").c_str(), 0777) < 0)
+			if (mkdir((base + "/root").c_str(), 0777) < 0)
 			{
 				ui_print("Failed to create ubuntu folders!\n");
 				return false;
 			}
 			break;
+		case ROM_UBUNTU_USB_IMG:
+			if(!createImage(base, "root"))
+				return false;
+			break;
+		default:
+			ui_print("Unknown ROM type %d!\n", type);
+			return false;
+		
 	}
 	return true;
 }
@@ -828,76 +998,114 @@ bool MultiROM::extractBootForROM(std::string base)
 	return true;
 }
 
-bool MultiROM::ubuntuAddBoot(std::string name)
+bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::string dest)
 {
 	char cmd[256];
-	std::string img_path = m_path + "/";
 	struct stat info;
 
-	// Support for 3g nexus 7
-	if(stat("/dev/block/mmcblk0p10", &info) < 0)
+	if(img_path.find("img.gz") != std::string::npos)
 	{
-		ui_printf("Using Nexus 7 Wi-Fi Ubuntu boot.img...\n");
-		img_path += BOOTIMG_UBUNTU;
+		ui_printf("Decompressing the image (may take a while)...\n");
+		sprintf(cmd, "gzip -d \"%s\"", img_path.c_str());
+		system(cmd);
+
+		img_path.erase(img_path.size()-3);
+		if(stat(img_path.c_str(), &info) < 0)
+		{
+			ui_print("Failed to decompress the image, more space needed?");
+			return false;
+		}
 	}
-	else
-	{
-		ui_printf("Using Nexus 7 3g Ubuntu boot.img...\n");
-		img_path += BOOTIMG_UBUNTU_3G;
-	}
-
-	if(stat(img_path.c_str(), &info) < 0)
-	{
-		ui_printf("Could not find ubuntu boot image!\n");
-		return false;
-	}
-
-	sprintf(cmd, "cp %s \"%s/%s/boot.img\"", img_path.c_str(), getRomsPath().c_str(), name.c_str());
-	system(cmd);
-
-	return injectBoot(getRomsPath() + "/" + name + "/boot.img");
-}
-
-bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path)
-{
-	char cmd[256];
 
 	ui_printf("Converting the image (may take a while)...\n");
 	sprintf(cmd, "simg2img \"%s\" /tmp/rootfs.img", img_path.c_str());
 	system(cmd);
 
-	system("mkdir /mnt");
-	system("umount /mnt");
-	system("mount /tmp/rootfs.img /mnt");
+	system("mkdir /mnt_ub_img");
+	system("umount /mnt_ub_img");
+	system("mount /tmp/rootfs.img /mnt_ub_img");
 
-	struct stat info;
-	if(stat("/mnt/rootfs.tar.gz", &info) < 0)
+	if(stat("/mnt_ub_img/rootfs.tar.gz", &info) < 0)
 	{
-		system("umount /mnt");
+		system("umount /mnt_ub_img");
 		system("rm /tmp/rootfs.img");
 		ui_printf("Invalid Ubuntu image (rootfs.tar.gz not found)!\n");
 		return false;
 	}
 
-	sprintf(cmd, "cp -a /mnt/rootfs.tar.gz \"%s/%s/root/\"", getRomsPath().c_str(), name.c_str());
+	ui_print("Extracting rootfs.tar.gz (will take a while)...\n");
+	sprintf(cmd, "zcat /mnt_ub_img/rootfs.tar.gz | gnutar xm --numeric-owner -C \"%s\"",  dest.c_str());
 	system(cmd);
 
 	sync();
 
-	system("umount /mnt");
+	system("umount /mnt_ub_img");
 	system("rm /tmp/rootfs.img");
 	
-	sprintf(cmd, "%s/%s/root/rootfs.tar.gz", getRomsPath().c_str(), name.c_str());
+	sprintf(cmd, "%s/boot/vmlinuz", dest.c_str());
 	if(stat(cmd, &info) < 0)
 	{
-		ui_print("Failed to copy rootfs archive!\n");
+		ui_print("Failed to extract rootfs!\n");
 		return false;
 	}
 	return true;
 }
 
-bool MultiROM::addROM(std::string zip, int type)
+bool MultiROM::patchUbuntuInit(std::string rootDir)
 {
+	ui_print("Patching ubuntu init...\n");
+
+	std::string initPath = rootDir + "/usr/share/initramfs-tools/";
+	std::string locPath = rootDir + "/usr/share/initramfs-tools/scripts/";
+
+	struct stat info;
+	if(stat(initPath.c_str(), &info) < 0 || stat(locPath.c_str(), &info) < 0)
+	{
+		ui_printf("init paths do not exits\n");
+		return false;
+	}
+
+	char cmd[256];
+	sprintf(cmd, "cp -a \"%s/ubuntu-init/init\" \"%s\"", m_path.c_str(), initPath.c_str());
+	system(cmd);
+	sprintf(cmd, "cp -a \"%s/ubuntu-init/local\" \"%s\"", m_path.c_str(), locPath.c_str());
+	system(cmd);
+
+	sprintf(cmd, "echo \"none	 /proc 	proc 	nodev,noexec,nosuid 	0 	0\" > \"%s/etc/fstab\"", rootDir.c_str());
+	system(cmd);
+	return true;
+}
+
+bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
+{
+	ui_print("Updating initramfs\n");
+	
+	char cmd[256];
+	static const char *dirs[] = { "dev", "sys", "proc" };
+	for(size_t i = 0; i < sizeof(dirs)/sizeof(dirs[0]); ++i)
+	{
+		sprintf(cmd, "mount -o bind /%s \"%s/%s\"", dirs[i], rootDir.c_str(), dirs[i]);
+		system(cmd);
+	}
+
+	sprintf(cmd, "chroot \"%s\" apt-get -y purge ac100-tarball-installer flash-kernel", rootDir.c_str());
+	system(cmd);
+
+	sprintf(cmd, "chroot \"%s\" update-initramfs -u", rootDir.c_str());
+	system(cmd);
+
+	for(size_t i = 0; i < sizeof(dirs)/sizeof(dirs[0]); ++i)
+	{
+		sprintf(cmd, "umount \"%s/%s\"", rootDir.c_str(), dirs[i]);
+		system(cmd);
+	}
+	return true;
+}
+
+bool MultiROM::addROM(std::string zip, int os, std::string loc)
+{
+	MultiROM::setRomsPath(loc);
+
 	std::string name = getNewRomName(zip);
 	if(name.empty())
 	{
@@ -905,6 +1113,26 @@ bool MultiROM::addROM(std::string zip, int type)
 		return false;
 	}
 	ui_print("Installing ROM %s...\n", name.c_str());
+	
+	int type = ROM_UNKNOWN;
+	if(os == 1) // android
+	{
+		if(loc == INTERNAL_MEM_LOC_TXT)
+			type = ROM_ANDROID_INTERNAL;
+		else if(loc.find("(ext") != std::string::npos)
+			type = ROM_ANDROID_USB_DIR;
+		else
+			type = ROM_ANDROID_USB_IMG;
+	}
+	else if(os == 2) // ubuntu
+	{
+		if(loc == INTERNAL_MEM_LOC_TXT)
+			type = ROM_UBUNTU_INTERNAL;
+		else if(loc.find("(ext") != std::string::npos)
+			type = ROM_UBUNTU_USB_DIR;
+		else
+			type = ROM_UBUNTU_USB_IMG;
+	}
 
 	if(!createDirs(name, type))
 		return false;
@@ -913,6 +1141,9 @@ bool MultiROM::addROM(std::string zip, int type)
 	switch(type)
 	{
 		case ROM_ANDROID_INTERNAL:
+		case ROM_ANDROID_USB_DIR:
+		case ROM_ANDROID_USB_IMG:
+		{
 			if(!androidExportBoot(name, zip, type))
 				break;
 
@@ -921,15 +1152,39 @@ bool MultiROM::addROM(std::string zip, int type)
 
 			res = true;
 			break;
+		}
 		case ROM_UBUNTU_INTERNAL:
-			if(!ubuntuAddBoot(name))
-				break;
+		case ROM_UBUNTU_USB_DIR:
+		case ROM_UBUNTU_USB_IMG:
+		{
+			std::string dest = getRomsPath() + "/" + name + "/root";
+			if(type == ROM_UBUNTU_USB_IMG)
+			{
+				mkdir("/mnt_ubuntu", 0777);
 
-			if(!ubuntuExtractImage(name, zip))
-				break;
+				char cmd[256];
+				sprintf(cmd, "mount -o loop %s/%s/root.img /mnt_ubuntu", getRomsPath().c_str(), name.c_str());
+				
+				if(system(cmd) != 0)
+				{
+					ui_print("Failed to mount ubuntu image!\n");
+					break;
+				}
+				dest = "/mnt_ubuntu";
+			}
+				
+			if (ubuntuExtractImage(name, zip, dest) &&
+				patchUbuntuInit(dest) && ubuntuUpdateInitramfs(dest))
+				res = true;
 
-			res = true;
+			char cmd[256];
+			sprintf(cmd, "touch %s/var/lib/oem-config/run", dest.c_str());
+			system(cmd);
+
+			if(type == ROM_UBUNTU_USB_IMG)
+				umount("/mnt_ubuntu");
 			break;
+		}
 	}
 
 	if(!res)
@@ -939,6 +1194,51 @@ bool MultiROM::addROM(std::string zip, int type)
 		system(cmd.c_str());
 	}
 
+	MultiROM::setRomsPath(INTERNAL_MEM_LOC_TXT);
+	return res;
+}
+
+bool MultiROM::patchInit(std::string name)
+{
+	ui_print("Patching init for rom %s...\n", name.c_str());
+	int type = getType(name);
+	if(!(M(type) & MASK_UBUNTU))
+	{
+		ui_printf("This is not ubuntu ROM. (%d)\n", type);
+		return false;
+	}
+	std::string dest;
+	switch(type)
+	{
+		case ROM_UBUNTU_INTERNAL:
+		case ROM_UBUNTU_USB_DIR:
+			dest = getRomsPath() + name + "/root/";
+			break;
+		case ROM_UBUNTU_USB_IMG:
+		{
+			mkdir("/mnt_ubuntu", 0777);
+
+			char cmd[256];
+			sprintf(cmd, "mount -o loop %s/%s/root.img /mnt_ubuntu", getRomsPath().c_str(), name.c_str());
+
+			if(system(cmd) != 0)
+			{
+				ui_print("Failed to mount ubuntu image!\n");
+				return false;
+			}
+			dest = "/mnt_ubuntu/";
+			break;
+		}
+	}
+
+	bool res = false;
+	if(patchUbuntuInit(dest) && ubuntuUpdateInitramfs(dest))
+		res = true;
+	
+	sync();
+
+	if(type == ROM_UBUNTU_USB_IMG)
+		umount("/mnt_ubuntu");
 	return res;
 }
 

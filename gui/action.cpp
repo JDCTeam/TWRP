@@ -639,7 +639,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 	if (function == "multirom_list")
 	{
+		MultiROM::setRomsPath(INTERNAL_MEM_LOC_TXT);
 		DataManager::SetValue("tw_multirom_folder", MultiROM::getRomsPath());
+		DataManager::SetValue("tw_multirom_install_loc", INTERNAL_MEM_LOC_TXT);
 		return gui_changePage("multirom_list");
 	}
 
@@ -652,7 +654,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	if (function == "multirom_manage")
 	{
 		int type = MultiROM::getType(DataManager::GetStrValue("tw_multirom_rom_name"));
-		DataManager::SetValue("tw_multirom_is_android", (type == ROM_ANDROID_INTERNAL));
+		DataManager::SetValue("tw_multirom_is_android", (M(type) & MASK_ANDROID) != 0);
 		return gui_changePage("multirom_manage");
 	}
 
@@ -664,7 +666,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			DataManager::SetValue("tw_multirom_delay", 5);
 		else
 			DataManager::SetValue("tw_multirom_delay", cfg.auto_boot_seconds);
-		DataManager::SetValue("tw_multirom_second_boot", cfg.is_second_boot);
 		DataManager::SetValue("tw_multirom_current", cfg.current_rom);
 		DataManager::SetValue("tw_multirom_auto_boot_rom", cfg.auto_boot_rom);
 
@@ -675,7 +676,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	if (function == "multirom_settings_save")
 	{
 		MultiROM::config cfg;
-		cfg.is_second_boot = DataManager::GetIntValue("tw_multirom_second_boot");
 		cfg.current_rom = DataManager::GetStrValue("tw_multirom_current");
 		if(DataManager::GetIntValue("tw_multirom_enable_auto_boot"))
 			cfg.auto_boot_seconds = DataManager::GetIntValue("tw_multirom_delay");
@@ -684,6 +684,103 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		cfg.auto_boot_rom = DataManager::GetStrValue("tw_multirom_auto_boot_rom");
 		MultiROM::saveConfig(cfg);
 		return gui_changePage("multirom_main");
+	}
+
+	if (function == "multirom_add")
+	{
+		DataManager::SetValue("tw_multirom_install_loc_list", MultiROM::listInstallLocations());
+		DataManager::SetValue("tw_multirom_install_loc", INTERNAL_MEM_LOC_TXT);
+		return gui_changePage("multirom_add");
+	}
+
+	if (function == "multirom_add_second")
+	{
+		std::string loc = DataManager::GetStrValue("tw_multirom_install_loc");
+		if(loc.compare(INTERNAL_MEM_LOC_TXT) == 0 || loc.find("(ext") != std::string::npos)
+			return gui_changePage("multirom_add_select");
+		else
+		{
+			DataManager::SetValue("tw_multirom_system_size", 640);
+			DataManager::SetValue("tw_multirom_data_size", 1024);
+			DataManager::SetValue("tw_multirom_cache_size", 436);
+			DataManager::SetValue("tw_multirom_root_size", 4095);
+			return gui_changePage("multirom_add_image_size");
+		}
+	}
+
+	if (function == "multirom_change_img_size")
+	{
+		DataManager::SetValue("tw_multirom_image_too_small", 0);
+		DataManager::SetValue("tw_multirom_image_too_big", 0);
+		DataManager::SetValue("tw_multirom_image_name", arg);
+
+		static const char *imgs[] = { "cache.img", "data.img", "system.img", "root.img", NULL };
+		static const char *sizes[] =
+		{
+			"tw_multirom_cache_size", "tw_multirom_data_size",
+			"tw_multirom_system_size", "tw_multirom_root_size",
+			NULL
+		};
+
+		for(int i = 0; imgs[i]; ++i)
+		{
+			if(arg != imgs[i])
+				continue;
+
+			DataManager::SetValue("tw_multirom_image_size", DataManager::GetIntValue(sizes[i]));
+			DataManager::SetValue("tw_multirom_image_idx", i);
+			break;
+		}
+
+		return gui_changePage("multirom_change_img_size");
+	}
+
+	if (function == "multirom_change_img_size_act")
+	{
+		static const int minSizes[] = { 150, 150, 450, 2000 };
+		int value = DataManager::GetIntValue("tw_multirom_image_size");
+		int idx = DataManager::GetIntValue("tw_multirom_image_idx");
+
+		DataManager::SetValue("tw_multirom_image_too_small", 0);
+		DataManager::SetValue("tw_multirom_image_too_big", 0);
+
+		if(value < minSizes[idx])
+		{
+			DataManager::SetValue("tw_multirom_image_too_small", 1);
+			DataManager::SetValue("tw_multirom_min_size", minSizes[idx]);
+			return gui_changePage("multirom_change_img_size");
+		}
+
+		if(value > 4095 &&
+			DataManager::GetStrValue("tw_multirom_install_loc").find("(vfat") != std::string::npos)
+		{
+			DataManager::SetValue("tw_multirom_image_too_big", 1);
+			return gui_changePage("multirom_change_img_size");
+		}
+
+		static const char *sizes[] =
+		{
+			"tw_multirom_cache_size", "tw_multirom_data_size",
+			"tw_multirom_system_size", "tw_multirom_root_size",
+			NULL
+		};
+
+		DataManager::SetValue(sizes[idx], value);
+		return gui_changePage("multirom_add_image_size");
+	}
+
+	if (function == "multirom_set_list_loc")
+	{
+		DataManager::SetValue("tw_multirom_install_loc_list", MultiROM::listInstallLocations());
+		return gui_changePage("multirom_set_list_loc");
+	}
+
+	if (function == "multirom_list_loc_selected")
+	{
+		std::string loc = DataManager::GetStrValue("tw_multirom_install_loc");
+		MultiROM::setRomsPath(loc);
+		DataManager::SetValue("tw_multirom_folder", MultiROM::getRomsPath());
+		return gui_changePage("multirom_list");
 	}
 
     if (isThreaded)
@@ -739,8 +836,16 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_start("Installing");
 
 			int op_status = !MultiROM::addROM(DataManager::GetStrValue("tw_filename"),
-											  DataManager::GetIntValue("tw_multirom_type"));
+											  DataManager::GetIntValue("tw_multirom_type"),
+											  DataManager::GetStrValue("tw_multirom_install_loc"));
 			PartitionManager.Update_System_Details();
+			operation_end(op_status, simulate);
+		}
+
+		if (function == "multirom_ubuntu_patch_init")
+		{
+			operation_start("Patching");
+			int op_status = !MultiROM::patchInit(DataManager::GetStrValue("tw_multirom_rom_name"));
 			operation_end(op_status, simulate);
 		}
 
