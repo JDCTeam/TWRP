@@ -54,11 +54,13 @@ public:
 			current_rom = INTERNAL_NAME;
 			auto_boot_seconds = 5;
 			auto_boot_rom = INTERNAL_NAME;
+			set_quiet_ubuntu = 1;
 		}
 
 		std::string current_rom;
 		int auto_boot_seconds;
 		std::string auto_boot_rom;
+		int set_quiet_ubuntu;
 	};
 
 	struct file_backup {
@@ -169,9 +171,14 @@ void MultiROM::setRomsPath(std::string loc)
 	mkdir("/mnt", 0777); // in case it does not exist
 
 	char cmd[256];
-	sprintf(cmd, "mount %s /mnt", dev.c_str());
+	if(loc.find("(ntfs") == std::string::npos)
+		sprintf(cmd, "mount %s /mnt", dev.c_str());
+	else
+		sprintf(cmd, "%s/ntfs-3g %s /mnt", m_path.c_str(), dev.c_str());
 	system(cmd);
+
 	m_curr_roms_path = "/mnt/multirom/";
+	mkdir("/mnt/multirom/", 0777);
 }
 
 std::string MultiROM::listInstallLocations()
@@ -337,6 +344,8 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.auto_boot_seconds = atoi(val.c_str());
 			else if(name == "auto_boot_rom")
 				cfg.auto_boot_rom = val;
+			else if(name == "set_quiet_ubuntu")
+				cfg.set_quiet_ubuntu = atoi(val.c_str());
 		}
 		fclose(f);
 	}
@@ -352,6 +361,7 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "current_rom=%s\n", cfg.current_rom.c_str());
 	fprintf(f, "auto_boot_seconds=%d\n", cfg.auto_boot_seconds);
 	fprintf(f, "auto_boot_rom=%s\n", cfg.auto_boot_rom.c_str());
+	fprintf(f, "set_quiet_ubuntu=%d\n", cfg.set_quiet_ubuntu);
 
 	fclose(f);
 }
@@ -918,15 +928,13 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 		return false;
 
 	share = DataManager::GetIntValue("tw_multirom_share_kernel");
-	if (type == ROM_UBUNTU_INTERNAL ||
-		(type == ROM_ANDROID_INTERNAL && share == 0))
+	if (share == 0)
 	{
 		ui_printf("Injecting boot.img..\n");
 		if(!injectBoot(base + "/boot.img") != 0)
 			return false;
 	}
-
-	if(type == ROM_ANDROID_INTERNAL && share == 1)
+	else
 	{
 		sprintf(cmd, "rm \"%s/boot.img\"", base.c_str());
 		system(cmd);
