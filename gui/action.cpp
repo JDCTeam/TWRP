@@ -700,7 +700,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	{
 		std::string loc = DataManager::GetStrValue("tw_multirom_install_loc");
 		if(loc.compare(INTERNAL_MEM_LOC_TXT) == 0 || loc.find("(ext") != std::string::npos)
-			return gui_changePage("multirom_add_select");
+		{
+			if(DataManager::GetIntValue("tw_multirom_type") == 1)
+				return gui_changePage("multirom_add_source");
+			else
+				return gui_changePage("multirom_add_select");
+		}
 		else
 		{
 			DataManager::SetValue("tw_multirom_system_size", 640);

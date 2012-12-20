@@ -100,6 +100,8 @@ private:
 	static bool createDirs(std::string name, int type);
 	static bool androidExportBoot(std::string name, std::string zip, int type);
 	static bool extractBootForROM(std::string base);
+	static bool installFromBackup(std::string name, std::string path, int type);
+	static bool extractBackupFile(std::string path, std::string part);
 
 	static bool ubuntuExtractImage(std::string name, std::string img_path, std::string dest);
 	static bool patchUbuntuInit(std::string rootDir);
@@ -898,7 +900,6 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 	int img_len;
 	char* img_data = NULL;
 	ZipArchive zip;
-	int share;
 
 	if (mzOpenZipArchive(zip_path.c_str(), &zip) != 0)
 	{
@@ -926,19 +927,6 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 
 	if(!extractBootForROM(base))
 		return false;
-
-	share = DataManager::GetIntValue("tw_multirom_share_kernel");
-	if (share == 0)
-	{
-		ui_printf("Injecting boot.img..\n");
-		if(!injectBoot(base + "/boot.img") != 0)
-			return false;
-	}
-	else
-	{
-		sprintf(cmd, "rm \"%s/boot.img\"", base.c_str());
-		system(cmd);
-	}
 
 	return true;
 
@@ -1003,6 +991,18 @@ bool MultiROM::extractBootForROM(std::string base)
 	}
 
 	system("rm -r /tmp/boot");
+
+	if (DataManager::GetIntValue("tw_multirom_share_kernel") == 0)
+	{
+		ui_printf("Injecting boot.img..\n");
+		if(!injectBoot(base + "/boot.img") != 0)
+			return false;
+	}
+	else
+	{
+		sprintf(cmd, "rm \"%s/boot.img\"", base.c_str());
+		system(cmd);
+	}
 	return true;
 }
 
@@ -1152,12 +1152,24 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 		case ROM_ANDROID_USB_DIR:
 		case ROM_ANDROID_USB_IMG:
 		{
-			if(!androidExportBoot(name, zip, type))
+			std::string src = DataManager::GetStrValue("tw_multirom_add_source");
+			if(src == "zip")
+			{
+				if(!androidExportBoot(name, zip, type))
+					break;
+				if(!flashZip(name, zip))
+					break;
+			}
+			else if(src == "backup")
+			{
+				if(!installFromBackup(name, zip, type))
+					break;
+			}
+			else
+			{
+				ui_printf("Wrong source: %s\n", src.c_str());
 				break;
-
-			if(!flashZip(name, zip))
-				break;
-
+			}
 			res = true;
 			break;
 		}
@@ -1201,6 +1213,8 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 		std::string cmd = "rm -rf \"" + getRomsPath() + "/" + name + "\"";
 		system(cmd.c_str());
 	}
+
+	sync();
 
 	MultiROM::setRomsPath(INTERNAL_MEM_LOC_TXT);
 	return res;
@@ -1246,8 +1260,103 @@ bool MultiROM::patchInit(std::string name)
 	sync();
 
 	if(type == ROM_UBUNTU_USB_IMG)
-		umount("/mnt_ubuntu");
+		umount("/mnt_ubuntu");;
 	return res;
 }
+
+bool MultiROM::installFromBackup(std::string name, std::string path, int type)
+{
+	struct stat info;
+	char cmd[256];
+	std::string base = getRomsPath() + "/" + name;
+	int has_system = 0, has_data = 0;
+
+	if(stat((path + "/boot.emmc.win").c_str(), &info) < 0)
+	{
+		ui_print("Backup must contain boot image!\n");
+		return false;
+	}
+
+	DIR *d = opendir(path.c_str());
+	if(!d)
+	{
+		ui_printf("Failed to list backup folder\n");
+		return false;
+	}
+
+	struct dirent *dr;
+	while((!has_system || !has_data) && (dr = readdir(d)))
+	{
+		if(strstr(dr->d_name, "system.ext4"))
+			has_system = 1;
+		else if(strstr(dr->d_name, "data.ext4"))
+			has_data = 1;
+	}
+	closedir(d);
+	
+	if(!has_system)
+	{
+		ui_print("Backup must contain system image!\n");
+		return false;
+	}
+
+	sprintf(cmd, "cp \"%s/boot.emmc.win\" \"%s/boot.img\"", path.c_str(), base.c_str());
+	system(cmd);
+
+	if(!extractBootForROM(base))
+		return false;
+	
+	ui_print("Changing mountpoints\n");
+	if(!changeMounts(name))
+	{
+		ui_print("Failed to change mountpoints!\n");
+		return false;
+	}
+
+	bool res = (extractBackupFile(path, "system") && (!has_data || extractBackupFile(path, "data")));
+	restoreMounts();
+	return res;
+}
+
+bool MultiROM::extractBackupFile(std::string path, std::string part)
+{
+	ui_printf("Extracting backup of %s partition...\n", part.c_str());
+
+	struct stat info;
+	std::string filename = part + ".ext4.win";
+	std::string full_path =  path + "/" + filename;
+	int index = 0;
+	char split_index[5];
+	char cmd[256];
+
+	if (stat(full_path.c_str(), &info) < 0) // multiple archives
+	{
+		sprintf(split_index, "%03i", index);
+		full_path = path + "/" + filename + split_index;
+		while (stat(full_path.c_str(), &info) >= 0)
+		{
+			ui_print("Restoring archive %i...\n", ++index);
+
+			sprintf(cmd, "cd /%s && tar -xf \"%s\"", part.c_str(), full_path.c_str());
+			system(cmd);
+
+			sprintf(split_index, "%03i", index);
+			full_path = path + "/" + filename + split_index;
+		}
+
+		if (index == 0)
+		{
+			ui_printf("Failed to locate backup file %s\n", full_path.c_str());
+			return false;
+		}
+	}
+	else
+	{
+		sprintf(cmd, "cd /%s && tar -xf \"%s\"", part.c_str(), full_path.c_str());
+		system(cmd);
+	}
+	return true;
+}
+
 
 #endif

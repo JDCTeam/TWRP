@@ -3655,7 +3655,7 @@
 					<action function="multirom_add"/>
 				</actions>
 			</object>
-			
+
 			<object type="button">
 				<placement x="%col2_x%" y="%row1_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4508,7 +4508,10 @@
 			</object>
 
 			<object type="fileselector">
-				<condition var1="tw_multirom_type" var2="1" />
+				<conditions>
+					<condition var1="tw_multirom_type" var2="1" />
+					<condition var1="tw_multirom_add_source" var2="zip" />
+				</conditions>
 				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<text>Select ROM's ZIP file:</text>
@@ -4521,6 +4524,25 @@
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
 				<selection name="tw_file" />
+			</object>
+
+			<object type="fileselector">
+				<conditions>
+					<condition var1="tw_multirom_type" var2="1" />
+					<condition var1="tw_multirom_add_source" var2="backup" />
+				</conditions>
+				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>Select ROM's backup:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<filter folders="1" files="0" nav="0" />
+				<path name="tw_backups_folder" />
+				<data name="tw_filename" default="" />
+				<selection name="tw_restore_name" />
 			</object>
 
 			<object type="fileselector">
@@ -4698,6 +4720,16 @@
 			</object>
 
 			<object type="button">
+				<condition var1="tw_multirom_type" var2="1" />
+				<placement x="%col_center_x%" y="%tz_set_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Next</text>
+				<image resource="main_button" />
+				<action function="page">multirom_add_source</action>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_type" var2="2" />
 				<placement x="%col_center_x%" y="%tz_set_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Next</text>
@@ -4831,6 +4863,56 @@
 			<object type="action">
 				<touch key="back" />
 				<action function="page">multirom_list</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="multirom_add_source">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - Add ROM - source</text>
+			</object>
+
+			<object type="text" color="%text_success_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row3_text_y%" placement="5" />
+				<text>Select ROM source:</text>
+			</object>
+
+			<object type="button">
+				<placement x="%col_center_x%" y="%row5_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>ZIP file</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_multirom_add_source=zip</action>
+					<action function="page">multirom_add_select</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<placement x="%col_center_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Backup</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_multirom_add_source=backup</action>
+					<action function="page">multirom_add_select</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">multirom_add</action>
 			</object>
 
 			<object type="template" name="footer" />
