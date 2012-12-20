@@ -373,18 +373,17 @@ bool MultiROM::changeMounts(std::string name)
 	int type = getType(name);
 	std::string base = getRomsPath() + name;
 
-	if(M(type) & MASK_INTERNAL)
+	mkdir(REALDATA, 0777);
+	if(mount("/dev/block/platform/sdhci-tegra.3/by-name/UDA",
+	    REALDATA, "ext4", MS_RELATIME | MS_NOATIME,
+		"user_xattr,acl,barrier=1,data=ordered") < 0)
 	{
-		mkdir(REALDATA, 0777);
-		if(mount("/dev/block/platform/sdhci-tegra.3/by-name/UDA",
-		    REALDATA, "ext4", MS_RELATIME | MS_NOATIME,
-            "user_xattr,acl,barrier=1,data=ordered") < 0)
-		{
-			ui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
-			return false;
-		}
-		base.replace(0, 5, REALDATA);
+		ui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
+		return false;
 	}
+
+	if(M(type) & MASK_INTERNAL)
+		base.replace(0, 5, REALDATA);
 
 	static const char *files[] = {
 		"/etc/fstab",
@@ -1312,6 +1311,10 @@ bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 		ui_print("Failed to change mountpoints!\n");
 		return false;
 	}
+
+	// real /data is mounted to /realdata
+	if(path.find("/data/media") == 0) 
+		path.replace(0, 5, REALDATA);
 
 	bool res = (extractBackupFile(path, "system") && (!has_data || extractBackupFile(path, "data")));
 	restoreMounts();
