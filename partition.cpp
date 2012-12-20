@@ -82,6 +82,7 @@ TWPartition::TWPartition(void) {
 	Current_File_System = "";
 	Fstab_File_System = "";
 	Format_Block_Size = 0;
+	Ignore_Blkid = false;
 }
 
 TWPartition::~TWPartition(void) {
@@ -152,6 +153,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				// Custom flags, save for later so that new values aren't overwritten by defaults
 				ptr += 6;
 				Flags = ptr;
+				Process_Flags(Flags, Display_Error);
 			} else if (strlen(ptr) == 4 && (strncmp(ptr, "NULL", 4) == 0 || strncmp(ptr, "null", 4) == 0 || strncmp(ptr, "null", 4) == 0)) {
 				// Do nothing
 			} else {
@@ -333,6 +335,8 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 			ptr += 13;
 			Is_SubPartition = true;
 			SubPartition_Of = ptr;
+		} else if (strcmp(ptr, "ignoreblkid") == 0) {
+			Ignore_Blkid = true;
 		} else if (strlen(ptr) > 8 && strncmp(ptr, "symlink=", 8) == 0) {
 			ptr += 8;
 			Symlink_Path = ptr;
@@ -652,7 +656,25 @@ bool TWPartition::Mount(bool Display_Error) {
 	// Check the current file system before mounting
 	Check_FS_Type();
 
-	if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
+	if (Fstab_File_System == "yaffs2") {
+		// mount an MTD partition as a YAFFS2 filesystem.
+		mtd_scan_partitions();
+		const MtdPartition* partition;
+		partition = mtd_find_partition_by_name(MTD_Name.c_str());
+		if (partition == NULL) {
+			LOGE("Failed to find '%s' partition to mount at '%s'\n",
+			MTD_Name.c_str(), Mount_Point.c_str());
+			return false;
+		}
+		if (mtd_mount_partition(partition, Mount_Point.c_str(), Fstab_File_System.c_str(), 0)) {
+			if (Display_Error)
+				LOGE("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+			else
+				LOGI("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+			return false;
+		} else
+			return true;
+	} else if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
 		if (Display_Error)
 			LOGE("Unable to mount '%s'\n", Mount_Point.c_str());
 		else
@@ -698,7 +720,7 @@ bool TWPartition::UnMount(bool Display_Error) {
 	}
 }
 
-bool TWPartition::Wipe() {
+bool TWPartition::Wipe(string New_File_System) {
 	if (!Can_Be_Wiped) {
 		LOGE("Partition '%s' cannot be wiped.\n", Mount_Point.c_str());
 		return false;
@@ -715,20 +737,24 @@ bool TWPartition::Wipe() {
 	if (check)
 		return Wipe_RMRF();
 
-	if (Current_File_System == "ext4")
+	if (New_File_System == "ext4")
 		return Wipe_EXT4();
 
-	if (Current_File_System == "ext2" || Current_File_System == "ext3")
-		return Wipe_EXT23();
+	if (New_File_System == "ext2" || New_File_System == "ext3")
+		return Wipe_EXT23(New_File_System);
 
-	if (Current_File_System == "vfat")
+	if (New_File_System == "vfat")
 		return Wipe_FAT();
 
-	if (Current_File_System == "yaffs2")
+	if (New_File_System == "yaffs2")
 		return Wipe_MTD();
 
-	LOGE("Unable to wipe '%s' -- unknown file system '%s'\n", Mount_Point.c_str(), Current_File_System.c_str());
+	LOGE("Unable to wipe '%s' -- unknown file system '%s'\n", Mount_Point.c_str(), New_File_System.c_str());
 	return false;
+}
+
+bool TWPartition::Wipe() {
+	return Wipe(Current_File_System);
 }
 
 bool TWPartition::Wipe_AndSec(void) {
@@ -789,12 +815,36 @@ bool TWPartition::Check_MD5(string restore_folder) {
 }
 
 bool TWPartition::Restore(string restore_folder) {
-	if (Backup_Method == FILES)
-		return Restore_Tar(restore_folder);
-	else if (Backup_Method == DD)
-		return Restore_DD(restore_folder);
-	else if (Backup_Method == FLASH_UTILS)
-		return Restore_Flash_Image(restore_folder);
+	size_t first_period, second_period;
+	string Restore_File_System;
+
+	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Display_Name, "Restoring");
+	LOGI("Restore filename is: %s\n", Backup_FileName.c_str());
+
+	// Parse backup filename to extract the file system before wiping
+	first_period = Backup_FileName.find(".");
+	if (first_period == string::npos) {
+		LOGE("Unable to find file system (first period).\n");
+		return false;
+	}
+	Restore_File_System = Backup_FileName.substr(first_period + 1, Backup_FileName.size() - first_period - 1);
+	second_period = Restore_File_System.find(".");
+	if (second_period == string::npos) {
+		LOGE("Unable to find file system (second period).\n");
+		return false;
+	}
+	Restore_File_System.resize(second_period);
+	LOGI("Restore file system is: '%s'.\n", Restore_File_System.c_str());
+
+	if (Is_File_System(Restore_File_System))
+		return Restore_Tar(restore_folder, Restore_File_System);
+	else if (Is_Image(Restore_File_System)) {
+		if (Restore_File_System == "emmc")
+			return Restore_DD(restore_folder);
+		else if (Restore_File_System == "mtd" || Restore_File_System == "bml")
+			return Restore_Flash_Image(restore_folder);
+	}
+
 	LOGE("Unknown restore method for '%s'\n", Mount_Point.c_str());
 	return false;
 }
@@ -853,8 +903,8 @@ void TWPartition::Check_FS_Type() {
 	char* arg;
 	char* ptr;
 
-	if (Fstab_File_System == "yaffs2" || Fstab_File_System == "mtd" || Fstab_File_System == "bml")
-		return; // Running blkid on some mtd devices causes a massive crash
+	if (Fstab_File_System == "yaffs2" || Fstab_File_System == "mtd" || Fstab_File_System == "bml" || Ignore_Blkid)
+		return; // Running blkid on some mtd devices causes a massive crash or needs to be skipped
 
 	Find_Actual_Block_Device();
 	if (!Is_Present)
@@ -920,7 +970,7 @@ void TWPartition::Check_FS_Type() {
 	return;
 }
 
-bool TWPartition::Wipe_EXT23() {
+bool TWPartition::Wipe_EXT23(string File_System) {
 	if (!UnMount(true))
 		return false;
 
@@ -929,7 +979,7 @@ bool TWPartition::Wipe_EXT23() {
 
 		ui_print("Formatting %s using mke2fs...\n", Display_Name.c_str());
 		Find_Actual_Block_Device();
-		sprintf(command, "mke2fs -t %s -m 0 %s", Current_File_System.c_str(), Actual_Block_Device.c_str());
+		sprintf(command, "mke2fs -t %s -m 0 %s", File_System.c_str(), Actual_Block_Device.c_str());
 		LOGI("mke2fs command: %s\n", command);
 		if (system(command) == 0) {
 			Recreate_AndSec_Folder();
@@ -973,7 +1023,7 @@ bool TWPartition::Wipe_EXT4() {
 			return false;
 		}
 	} else
-		return Wipe_EXT23();
+		return Wipe_EXT23("ext4");
 
 	return false;
 }
@@ -1198,42 +1248,26 @@ bool TWPartition::Backup_Dump_Image(string backup_folder) {
 	return true;
 }
 
-bool TWPartition::Restore_Tar(string restore_folder) {
-	size_t first_period, second_period;
-	string Restore_File_System, Full_FileName, Command;
+bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System) {
+	string Full_FileName, Command;
 	int index = 0;
 	char split_index[5];
 
-	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Display_Name, "Restoring");
-	LOGI("Restore filename is: %s\n", Backup_FileName.c_str());
-
-	// Parse backup filename to extract the file system before wiping
-	first_period = Backup_FileName.find(".");
-	if (first_period == string::npos) {
-		LOGE("Unable to find file system (first period).\n");
-		return false;
-	}
-	Restore_File_System = Backup_FileName.substr(first_period + 1, Backup_FileName.size() - first_period - 1);
-	second_period = Restore_File_System.find(".");
-	if (second_period == string::npos) {
-		LOGE("Unable to find file system (second period).\n");
-		return false;
-	}
-	Restore_File_System.resize(second_period);
-	LOGI("Restore file system is: '%s'.\n", Restore_File_System.c_str());
 	Current_File_System = Restore_File_System;
 	if (Has_Android_Secure) {
 		ui_print("Wiping android secure...\n");
 		if (!Wipe_AndSec())
 			return false;
-	} else if (!Wipe()) {
+	} else {
 		ui_print("Wiping %s...\n", Display_Name.c_str());
-		return false;
+		if (!Wipe(Restore_File_System))
+		    return false;
 	}
 
 	if (!Mount(true))
 		return false;
 
+	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Display_Name, "Restoring");
 	ui_print("Restoring %s...\n", Display_Name.c_str());
 	Full_FileName = restore_folder + "/" + Backup_FileName;
 	if (!TWFunc::Path_Exists(Full_FileName)) {
@@ -1266,8 +1300,21 @@ bool TWPartition::Restore_DD(string restore_folder) {
 	string Full_FileName, Command;
 
 	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Display_Name, "Restoring");
-	ui_print("Restoring %s...\n", Display_Name.c_str());
 	Full_FileName = restore_folder + "/" + Backup_FileName;
+
+	if (!Find_Partition_Size()) {
+		LOGE("Unable to find partition size for '%s'\n", Mount_Point.c_str());
+		return false;
+	}
+	unsigned long long backup_size = TWFunc::Get_File_Size(Full_FileName);
+	if (backup_size > Size) {
+		LOGE("Size (%iMB) of backup '%s' is larger than target device '%s' (%iMB)\n",
+			(int)(backup_size / 1048576LLU), Full_FileName.c_str(),
+			Actual_Block_Device.c_str(), (int)(Size / 1048576LLU));
+		return false;
+	}
+
+	ui_print("Restoring %s...\n", Display_Name.c_str());
 	Command = "dd bs=4096 if='" + Full_FileName + "' of=" + Actual_Block_Device;
 	LOGI("Restore command: '%s'\n", Command.c_str());
 	system(Command.c_str());
@@ -1277,7 +1324,6 @@ bool TWPartition::Restore_DD(string restore_folder) {
 bool TWPartition::Restore_Flash_Image(string restore_folder) {
 	string Full_FileName, Command;
 
-	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Display_Name, "Restoring");
 	ui_print("Restoring %s...\n", Display_Name.c_str());
 	Full_FileName = restore_folder + "/" + Backup_FileName;
 	// Sometimes flash image doesn't like to flash due to the first 2KB matching, so we erase first to ensure that it flashes
