@@ -17,7 +17,6 @@ LOCAL_PATH := $(call my-dir)
 TARGET_RECOVERY_GUI := true
 
 include $(CLEAR_VARS)
-
 LOCAL_SRC_FILES := \
     recovery.cpp \
     twbootloader.cpp \
@@ -27,11 +26,11 @@ LOCAL_SRC_FILES := \
     screen_ui.cpp \
     verifier.cpp \
     fixPermissions.cpp \
+    twrpTar.cpp \
     adb_install.cpp
 
 LOCAL_SRC_FILES += \
     data.cpp \
-    makelist.cpp \
     partition.cpp \
     partitionmanager.cpp \
     mtdutils/mtdutils.c \
@@ -63,10 +62,14 @@ LOCAL_C_INCLUDES += bionic external/stlport/stlport
 LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
-LOCAL_STATIC_LIBRARIES += libmtdutils
+LOCAL_STATIC_LIBRARIES += libmtdutils libcrecovery
 LOCAL_STATIC_LIBRARIES += libminadbd libminzip libunz
 LOCAL_STATIC_LIBRARIES += libminuitwrp libpixelflinger_static libpng libjpegtwrp libgui
-LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libmincrypt libext4_utils
+LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libmincrypt libext4_utils libtar
+
+ifneq ($(wildcard system/core/libsparse/Android.mk),)
+LOCAL_SHARED_LIBRARIES += libsparse
+endif
 
 ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
     LOCAL_CFLAGS += -DUSE_EXT4
@@ -77,7 +80,7 @@ endif
 ifeq ($(HAVE_SELINUX), true)
   LOCAL_C_INCLUDES += external/libselinux/include
   LOCAL_STATIC_LIBRARIES += libselinux
-  LOCAL_CFLAGS += -DHAVE_SELINUX
+  LOCAL_CFLAGS += -DHAVE_SELINUX -g
 endif # HAVE_SELINUX
 
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
@@ -193,6 +196,16 @@ ifeq ($(TW_INCLUDE_CRYPTO), true)
     LOCAL_CFLAGS += -DCRYPTO_FS_OPTIONS=\"$(TW_CRYPTO_FS_OPTIONS)\"
     LOCAL_CFLAGS += -DCRYPTO_FS_FLAGS=\"$(TW_CRYPTO_FS_FLAGS)\"
     LOCAL_CFLAGS += -DCRYPTO_KEY_LOC=\"$(TW_CRYPTO_KEY_LOC)\"
+ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
+    LOCAL_CFLAGS += -DTW_INCLUDE_CRYPTO_SAMSUNG=\"$(TW_INCLUDE_CRYPTO_SAMSUNG)\"
+    ifdef TW_CRYPTO_SD_REAL_BLKDEV
+        LOCAL_CFLAGS += -DCRYPTO_SD_REAL_BLKDEV=\"$(TW_CRYPTO_SD_REAL_BLKDEV)\"
+        LOCAL_CFLAGS += -DCRYPTO_SD_FS_TYPE=\"$(TW_CRYPTO_SD_FS_TYPE)\"
+    endif
+    #LOCAL_LDFLAGS += -L$(TARGET_OUT_SHARED_LIBRARIES) -lsec_km
+    LOCAL_LDFLAGS += -ldl
+    LOCAL_STATIC_LIBRARIES += libcrypt_samsung
+endif
     LOCAL_SHARED_LIBRARIES += libcrypto
     LOCAL_SRC_FILES += crypto/ics/cryptfs.c
     LOCAL_C_INCLUDES += system/extras/ext4_utils external/openssl/include
@@ -204,6 +217,10 @@ ifeq ($(TW_INCLUDE_JB_CRYPTO), true)
     LOCAL_STATIC_LIBRARIES += libfs_mgrtwrp
     LOCAL_SRC_FILES += crypto/jb/cryptfs.c
     LOCAL_C_INCLUDES += system/extras/ext4_utils external/openssl/include
+endif
+
+ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
+LOCAL_CFLAGS += -DRK3066
 endif
 
 include $(BUILD_EXECUTABLE)
@@ -256,18 +273,30 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
     $(commands_recovery_local_path)/gui/Android.mk \
     $(commands_recovery_local_path)/mmcutils/Android.mk \
     $(commands_recovery_local_path)/bmlutils/Android.mk \
-    $(commands_recovery_local_path)/flashutils/Android.mk \
     $(commands_recovery_local_path)/prebuilt/Android.mk \
     $(commands_recovery_local_path)/mtdutils/Android.mk \
+    $(commands_recovery_local_path)/flashutils/Android.mk \
     $(commands_recovery_local_path)/pigz/Android.mk \
+    $(commands_recovery_local_path)/dosfstools/Android.mk \
+    $(commands_recovery_local_path)/libtar/Android.mk \
     $(commands_recovery_local_path)/crypto/cryptsettings/Android.mk \
+    $(commands_recovery_local_path)/crypto/cryptfs/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
     $(commands_recovery_local_path)/twmincrypt/Android.mk
 
+ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
+    include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk
+endif
 
 ifeq ($(TW_INCLUDE_JB_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/fs_mgr/Android.mk
 endif
 
-commands_recovery_local_path :=
+ifneq ($(TW_NO_EXFAT), true)
+    include $(commands_recovery_local_path)/exfat/exfat-fuse/Android.mk \
+            $(commands_recovery_local_path)/exfat/mkfs/Android.mk \
+            $(commands_recovery_local_path)/fuse/Android.mk \
+            $(commands_recovery_local_path)/exfat/libexfat/Android.mk
+endif
 
+commands_recovery_local_path :=

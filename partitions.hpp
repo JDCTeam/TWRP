@@ -107,6 +107,10 @@ protected:
 	string Fstab_File_System;                                                 // File system from the recovery.fstab
 	int Format_Block_Size;                                                    // Block size for formatting
 	bool Ignore_Blkid;                                                        // Ignore blkid results due to superblocks lying to us on certain devices / partitions
+	bool Retain_Layout_Version;                                               // Retains the .layout_version file during a wipe (needed on devices like Sony Xperia T where /data and /data/media are separate partitions)
+#ifdef TW_INCLUDE_CRYPTO_SAMSUNG
+	string EcryptFS_Password;                                                 // Have to store the encryption password to remount
+#endif
 
 private:
 	bool Process_Flags(string Flags, bool Display_Error);                     // Process custom fstab flags
@@ -120,7 +124,8 @@ private:
 	unsigned long long Get_Size_Via_du(string Path, bool Display_Error);      // Uses du to get sizes
 	bool Wipe_EXT23(string File_System);                                      // Formats as ext3 or ext2
 	bool Wipe_EXT4();                                                         // Formats using ext4, uses make_ext4fs when present
-	bool Wipe_FAT();                                                          // Formats as FAT except that mkdosfs from busybox usually fails so oftentimes this is actually a rm -rf wipe
+	bool Wipe_FAT();                                                          // Formats as FAT if mkdosfs exits otherwise rm -rf wipe
+	bool Wipe_EXFAT();                                                        // Formats as EXFAT 
 	bool Wipe_MTD();                                                          // Formats as yaffs2 for MTD memory types
 	bool Wipe_RMRF();                                                         // Uses rm -rf to wipe
 	bool Wipe_Data_Without_Wiping_Media();                                    // Uses rm -rf to wipe but does not wipe /data/media

@@ -31,6 +31,7 @@ extern "C" {
 #include "rapidxml.hpp"
 #include "objects.hpp"
 #include "../data.hpp"
+#include "../twrp-functions.hpp"
 
 #define TW_FILESELECTOR_UP_A_LEVEL "(Up A Level)"
 
@@ -329,10 +330,7 @@ GUIFileSelector::GUIFileSelector(xml_node<>* node) : Conditional(node)
 	// Fetch the file/folder list
 	std::string value;
 	DataManager::GetValue(mPathVar, value);
-	if (GetFileList(value) != 0 && (mShowNavFolders != 0 || mShowFiles != 0)) {
-		GetFileList(DataManager::GetCurrentStoragePath());
-		DataManager::SetValue(mPathVar, DataManager::GetCurrentStoragePath());
-	}
+	GetFileList(value);
 }
 
 GUIFileSelector::~GUIFileSelector()
@@ -673,12 +671,7 @@ int GUIFileSelector::NotifyTouch(TOUCH_STATE state, int x, int y)
 					else
 					{
 						DataManager::SetValue(mPathVar, cwd);
-						if (GetFileList(cwd) != 0)
-						{
-							LOGE("Unable to change folders.\n");
-							DataManager::SetValue(mPathVar, oldcwd);
-							GetFileList(oldcwd);
-						}
+						GetFileList(cwd);
 						mStart = 0;
 						scrollingY = 0;
 						mUpdate = 1;
@@ -805,6 +798,17 @@ int GUIFileSelector::GetFileList(const std::string folder)
 	if (d == NULL)
 	{
 		LOGI("Unable to open '%s'\n", folder.c_str());
+		if (folder != "/" && (mShowNavFolders != 0 || mShowFiles != 0)) {
+			size_t found;
+			found = folder.find_last_of('/');
+			if (found != string::npos) {
+				string new_folder = folder.substr(0, found);
+
+				if (new_folder.length() < 2)
+					new_folder = "/";
+				DataManager::SetValue(mPathVar, new_folder);
+			}
+		}
 		return -1;
 	}
 
@@ -817,9 +821,12 @@ int GUIFileSelector::GetFileList(const std::string folder)
 			continue;
 		if (data.fileName == ".." && folder == "/")
 			continue;
-		if (data.fileName == "..")
+		if (data.fileName == "..") {
 			data.fileName = TW_FILESELECTOR_UP_A_LEVEL;
-		data.fileType = de->d_type;
+			data.fileType = DT_DIR;
+		} else {
+			data.fileType = de->d_type;
+		}
 
 		std::string path = folder + "/" + data.fileName;
 		stat(path.c_str(), &st);
@@ -834,6 +841,10 @@ int GUIFileSelector::GetFileList(const std::string folder)
 		// skip excludes
 		if(std::find(mExcludeFiles.begin(), mExcludeFiles.end(), data.fileName) != mExcludeFiles.end())
 			continue;
+
+		if (data.fileType == DT_UNKNOWN) {
+			data.fileType = TWFunc::Get_D_Type_From_Stat(path);
+		}
 
 		if (data.fileType == DT_DIR)
 		{
@@ -871,10 +882,7 @@ void GUIFileSelector::SetPageFocus(int inFocus)
 	{
 		std::string value;
 		DataManager::GetValue(mPathVar, value);
-		if (GetFileList(value) != 0 && (mShowNavFolders != 0 || mShowFiles != 0)) {
-			GetFileList(DataManager::GetCurrentStoragePath());
-			DataManager::SetValue(mPathVar, DataManager::GetCurrentStoragePath());
-		}
+		GetFileList(value);
 	}
 }
 

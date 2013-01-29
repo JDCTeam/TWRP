@@ -1,21 +1,50 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/vfs.h>
 #include <unistd.h>
 #include <vector>
 #include <dirent.h>
 #include <time.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/mount.h>
 #include <sys/reboot.h>
-
+#include <sys/sendfile.h>
+#include <sys/stat.h>
+#include <sys/vfs.h>
+#include <iostream>
+#include <fstream>
 #include "twrp-functions.hpp"
 #include "partitions.hpp"
 #include "common.h"
 #include "data.hpp"
 #include "bootloader.h"
 #include "variables.h"
+
+extern "C" {
+	#include "libcrecovery/common.h"
+}
+
+
+/* Execute a command */
+
+int TWFunc::Exec_Cmd(string cmd, string &result) {
+	FILE* exec;
+	char buffer[130];
+	int ret = 0;
+	exec = __popen(cmd.c_str(), "r");
+	if (!exec) return -1;
+	while(!feof(exec)) {
+		memset(&buffer, 0, sizeof(buffer));
+		if (fgets(buffer, 128, exec) != NULL) {
+			buffer[128] = '\n';
+			buffer[129] = NULL;
+			result += buffer;
+		}
+	}
+	ret = __pclose(exec);
+	return ret;
+}
 
 /*  Checks md5 for a path
     Return values:
@@ -27,28 +56,20 @@ int TWFunc::Check_MD5(string File) {
 	string Command, DirPath, MD5_File, Sline, Filename, MD5_File_Filename, OK;
 	char line[255];
 	size_t pos;
+	string result;
 
 	MD5_File = File + ".md5";
 	if (Path_Exists(MD5_File)) {
 		DirPath = Get_Path(File);
 		MD5_File = Get_Filename(MD5_File);
-		Command = "cd '" + DirPath + "' && /sbin/busybox md5sum -c '" + MD5_File + "' > /tmp/md5output";
-		system(Command.c_str());
-		FILE * cs = fopen("/tmp/md5output", "r");
-		if (cs == NULL) {
-			LOGE("Unable to open md5 output file.\n");
-			return 0;
-		}
-
-		fgets(line, sizeof(line), cs);
-		fclose(cs);
-
-		Sline = line;
-		pos = Sline.find(":");
+		chdir(DirPath.c_str());
+		Command = "/sbin/busybox md5sum -c " + MD5_File;
+		Exec_Cmd(Command, result);
+		pos = result.find(":");
 		if (pos != string::npos) {
 			Filename = Get_Filename(File);
-			MD5_File_Filename = Sline.substr(0, pos);
-			OK = Sline.substr(pos + 2, Sline.size() - pos - 2);
+			MD5_File_Filename = result.substr(0, pos);
+			OK = result.substr(pos + 2, result.size() - pos - 2);
 			if (Filename == MD5_File_Filename && (OK == "OK" || OK == "OK\n")) {
 				//MD5 is good, return 1
 				ret = 1;
@@ -116,49 +137,50 @@ void TWFunc::install_htc_dumlock(void) {
 		return;
 
 	ui_print("Installing HTC Dumlock to system...\n");
-	system("cp /res/htcd/htcdumlocksys /system/bin/htcdumlock && chmod 755 /system/bin/htcdumlock");
+	copy_file("/res/htcd/htcdumlocksys", "/system/bin/htcdumlock", 0755);
 	if (!Path_Exists("/system/bin/flash_image")) {
 		ui_print("Installing flash_image...\n");
-		system("cp /res/htcd/flash_imagesys /system/bin/flash_image && chmod 755 /system/bin/flash_image");
+		copy_file("/res/htcd/flash_imagesys", "/system/bin/flash_image", 0755);
 		need_libs = 1;
 	} else
 		ui_print("flash_image is already installed, skipping...\n");
 	if (!Path_Exists("/system/bin/dump_image")) {
 		ui_print("Installing dump_image...\n");
-		system("cp /res/htcd/dump_imagesys /system/bin/dump_image && chmod 755 /system/bin/dump_image");
+		copy_file("/res/htcd/dump_imagesys", "/system/bin/dump_image", 0755);
 		need_libs = 1;
 	} else
 		ui_print("dump_image is already installed, skipping...\n");
 	if (need_libs) {
 		ui_print("Installing libs needed for flash_image and dump_image...\n");
-		system("cp /res/htcd/libbmlutils.so /system/lib && chmod 755 /system/lib/libbmlutils.so");
-		system("cp /res/htcd/libflashutils.so /system/lib && chmod 755 /system/lib/libflashutils.so");
-		system("cp /res/htcd/libmmcutils.so /system/lib && chmod 755 /system/lib/libmmcutils.so");
-		system("cp /res/htcd/libmtdutils.so /system/lib && chmod 755 /system/lib/libmtdutils.so");
+		copy_file("/res/htcd/libbmlutils.so", "/system/lib/libbmlutils.so", 0755);
+		copy_file("/res/htcd/libflashutils.so", "/system/lib/libflashutils.so", 0755);
+		copy_file("/res/htcd/libmmcutils.so", "/system/lib/libmmcutils.so", 0755);
+		copy_file("/res/htcd/libmtdutils.so", "/system/lib/libmtdutils.so", 0755);
 	}
 	ui_print("Installing HTC Dumlock app...\n");
 	mkdir("/data/app", 0777);
-	system("rm /data/app/com.teamwin.htcdumlock*");
-	system("cp /res/htcd/HTCDumlock.apk /data/app/com.teamwin.htcdumlock.apk");
+	unlink("/data/app/com.teamwin.htcdumlock*");
+	copy_file("/res/htcd/HTCDumlock.apk", "/data/app/com.teamwin.htcdumlock.apk", 0777);
 	sync();
 	ui_print("HTC Dumlock is installed.\n");
 }
 
 void TWFunc::htc_dumlock_restore_original_boot(void) {
+	string status;
 	if (!PartitionManager.Mount_By_Path("/sdcard", true))
 		return;
 
 	ui_print("Restoring original boot...\n");
-	system("htcdumlock restore");
+	Exec_Cmd("htcdumlock restore", status);
 	ui_print("Original boot restored.\n");
 }
 
 void TWFunc::htc_dumlock_reflash_recovery_to_boot(void) {
+	string status;
 	if (!PartitionManager.Mount_By_Path("/sdcard", true))
 		return;
-
 	ui_print("Reflashing recovery to boot...\n");
-	system("htcdumlock recovery noreboot");
+	Exec_Cmd("htcdumlock recovery noreboot", status);
 	ui_print("Recovery is flashed to boot.\n");
 }
 
@@ -186,9 +208,9 @@ unsigned long long TWFunc::Get_Folder_Size(string Path, bool Display_Error) {
 	DIR* d;
 	struct dirent* de;
 	struct stat st;
-	char path2[1024], filename[1024];
+	char path2[4096], filename[4096];
 	unsigned long long dusize = 0;
-
+	unsigned long long dutemp = 0;
 	// Make a copy of path in case the data in the pointer gets overwritten later
 	strcpy(path2, Path.c_str());
 
@@ -196,6 +218,7 @@ unsigned long long TWFunc::Get_Folder_Size(string Path, bool Display_Error) {
 	if (d == NULL)
 	{
 		LOGE("error opening '%s'\n", path2);
+		LOGE("error: %s\n", strerror(errno));
 		return 0;
 	}
 
@@ -206,7 +229,9 @@ unsigned long long TWFunc::Get_Folder_Size(string Path, bool Display_Error) {
 			strcpy(filename, path2);
 			strcat(filename, "/");
 			strcat(filename, de->d_name);
-			dusize += Get_Folder_Size(filename, Display_Error);
+			dutemp = Get_Folder_Size(filename, Display_Error);
+			dusize += dutemp;
+			dutemp = 0;
 		}
 		else if (de->d_type == DT_REG)
 		{
@@ -218,14 +243,12 @@ unsigned long long TWFunc::Get_Folder_Size(string Path, bool Display_Error) {
 		}
 	}
 	closedir(d);
-
 	return dusize;
 }
 
 bool TWFunc::Path_Exists(string Path) {
 	// Check to see if the Path exists
 	struct stat st;
-
 	if (stat(Path.c_str(), &st) != 0)
 		return false;
 	else
@@ -305,39 +328,38 @@ void TWFunc::copy_log_file(const char* source, const char* destination, int appe
 // record any intent we were asked to communicate back to the system.
 // this function is idempotent: call it as many times as you like.
 void TWFunc::twfinish_recovery(const char *send_intent) {
-    // By this point, we're ready to return to the main system...
-    if (send_intent != NULL) {
-        FILE *fp = fopen_path(INTENT_FILE, "w");
-        if (fp == NULL) {
-            LOGE("Can't open %s\n", INTENT_FILE);
-        } else {
-            fputs(send_intent, fp);
-            check_and_fclose(fp, INTENT_FILE);
-        }
-    }
+	// By this point, we're ready to return to the main system...
+	if (send_intent != NULL) {
+	FILE *fp = fopen_path(INTENT_FILE, "w");
+	if (fp == NULL) {
+	    LOGE("Can't open %s\n", INTENT_FILE);
+	} else {
+	    fputs(send_intent, fp);
+	    check_and_fclose(fp, INTENT_FILE);
+	}
+	}
 
-    // Copy logs to cache so the system can find out what happened.
-    copy_log_file(TEMPORARY_LOG_FILE, LOG_FILE, true);
-    copy_log_file(TEMPORARY_LOG_FILE, LAST_LOG_FILE, false);
-    copy_log_file(TEMPORARY_INSTALL_FILE, LAST_INSTALL_FILE, false);
-    chmod(LOG_FILE, 0600);
-    chown(LOG_FILE, 1000, 1000);   // system user
-    chmod(LAST_LOG_FILE, 0640);
-    chmod(LAST_INSTALL_FILE, 0644);
+	// Copy logs to cache so the system can find out what happened.
+	copy_log_file(TEMPORARY_LOG_FILE, LOG_FILE, true);
+	copy_log_file(TEMPORARY_LOG_FILE, LAST_LOG_FILE, false);
+	copy_log_file(TEMPORARY_INSTALL_FILE, LAST_INSTALL_FILE, false);
+	chmod(LOG_FILE, 0600);
+	chown(LOG_FILE, 1000, 1000);   // system user
+	chmod(LAST_LOG_FILE, 0640);
+	chmod(LAST_INSTALL_FILE, 0644);
 
-    // Reset to normal system boot so recovery won't cycle indefinitely.
-    struct bootloader_message boot;
-    memset(&boot, 0, sizeof(boot));
-    set_bootloader_message(&boot);
+	// Reset to normal system boot so recovery won't cycle indefinitely.
+	struct bootloader_message boot;
+	memset(&boot, 0, sizeof(boot));
+	set_bootloader_message(&boot);
 
-    // Remove the command file, so recovery won't repeat indefinitely.
-    if (system("mount /cache") != 0 ||
-        (unlink(COMMAND_FILE) && errno != ENOENT)) {
-        LOGW("Can't unlink %s\n", COMMAND_FILE);
-    }
+	// Remove the command file, so recovery won't repeat indefinitely.
+	if (!PartitionManager.Mount_By_Path("/system", true) || (unlink(COMMAND_FILE) && errno != ENOENT)) {
+        	LOGW("Can't unlink %s\n", COMMAND_FILE);
+	}
 
-    system("umount /cache");
-    sync();  // For good measure.
+	PartitionManager.UnMount_By_Path("/cache", true);
+	sync();  // For good measure.
 }
 
 // reboot: Reboot the system. Return -1 on error, no return on success
@@ -377,13 +399,86 @@ void TWFunc::check_and_run_script(const char* script_file, const char* display_n
 {
 	// Check for and run startup script if script exists
 	struct stat st;
+	string result;
 	if (stat(script_file, &st) == 0) {
 		ui_print("Running %s script...\n", display_name);
-		char command[255];
-		strcpy(command, "chmod 755 ");
-		strcat(command, script_file);
-		system(command);
-		system(script_file);
+		chmod(script_file, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+		TWFunc::Exec_Cmd(script_file, result);
 		ui_print("\nFinished running %s script.\n", display_name);
 	}
+}
+
+int TWFunc::removeDir(const string path, bool skipParent) {
+	DIR *d = opendir(path.c_str());
+	int r = 0;
+	string new_path;
+
+	if (d == NULL) {
+		LOGE("Error opening '%s'\n", path.c_str());
+		return -1;
+	}
+
+	if (d) {
+		struct dirent *p;
+		while (!r && (p = readdir(d))) {
+			LOGI("checking :%s\n", p->d_name);
+			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+				continue;
+			new_path = path + "/";
+			new_path.append(p->d_name);
+			if (p->d_type == DT_DIR) {
+				r = removeDir(new_path, true);
+				if (!r) {
+					if (p->d_type == DT_DIR) 
+						r = rmdir(new_path.c_str());
+					else
+						LOGI("Unable to removeDir '%s': %s\n", new_path.c_str(), strerror(errno));
+				}
+			} else if (p->d_type == DT_REG || p->d_type == DT_LNK || p->d_type == DT_FIFO || p->d_type == DT_SOCK) {
+				r = unlink(new_path.c_str());
+				if (!r)
+					LOGI("Unable to unlink '%s'\n", new_path.c_str());
+			}
+		}
+		closedir(d);
+
+		if (!r) { 
+			if (skipParent)
+				return 0;
+			else
+				r = rmdir(path.c_str());
+		}
+	}
+	return r;
+}
+
+int TWFunc::copy_file(string src, string dst, int mode) {
+	LOGI("Copying file %s to %s\n", src.c_str(), dst.c_str());
+	ifstream srcfile(src.c_str(), ios::binary);
+	ofstream dstfile(dst.c_str(), ios::binary);
+	dstfile << srcfile.rdbuf();
+	srcfile.close();
+	dstfile.close();
+	return 0;
+}
+
+unsigned int TWFunc::Get_D_Type_From_Stat(string Path) {
+	struct stat st;
+
+	stat(Path.c_str(), &st);
+	if (st.st_mode & S_IFDIR)
+		return DT_DIR;
+	else if (st.st_mode & S_IFBLK)
+		return DT_BLK;
+	else if (st.st_mode & S_IFCHR)
+		return DT_CHR;
+	else if (st.st_mode & S_IFIFO)
+		return DT_FIFO;
+	else if (st.st_mode & S_IFLNK)
+		return DT_LNK;
+	else if (st.st_mode & S_IFREG)
+		return DT_REG;
+	else if (st.st_mode & S_IFSOCK)
+		return DT_SOCK;
+	return DT_UNKNOWN;
 }
