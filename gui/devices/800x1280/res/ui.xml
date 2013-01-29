@@ -3908,6 +3908,66 @@
 				</actions>
 			</object>
 
+			<object type="button">
+				<condition var1="tw_multirom_is_android" var2="1" />
+				<placement x="100" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Wipe /data</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="set">tw_multirom_wipe=data</action>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_wipe</action>
+					<action function="set">tw_text1=Wipe data for ROM:</action>
+					<action function="set">tw_text2=%tw_multirom_rom_name%</action>
+					<action function="set">tw_action_text1=Wiping..</action>
+					<action function="set">tw_complete_text1=/data wiped!</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_is_android" var2="1" />
+				<placement x="306" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Wipe dalvik</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="set">tw_multirom_wipe=dalvik</action>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_wipe</action>
+					<action function="set">tw_text1=Wipe dalvik-cache for ROM:</action>
+					<action function="set">tw_text2=%tw_multirom_rom_name%</action>
+					<action function="set">tw_action_text1=Wiping..</action>
+					<action function="set">tw_complete_text1=dalvik-cache wiped!</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_is_android" var2="1" />
+				<placement x="512" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Wipe /cache</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="set">tw_multirom_wipe=cache</action>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_wipe</action>
+					<action function="set">tw_text1=Wipe cache for ROM:</action>
+					<action function="set">tw_text2=%tw_multirom_rom_name%</action>
+					<action function="set">tw_action_text1=Wiping..</action>
+					<action function="set">tw_complete_text1=/cache wiped!</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>

@@ -889,6 +889,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 		}
 
+		if (function == "multirom_wipe")
+		{
+			operation_start("Wiping");
+			int op_status = !MultiROM::wipe(DataManager::GetStrValue("tw_multirom_rom_name"),
+											DataManager::GetStrValue("tw_multirom_wipe"));
+			operation_end(op_status, simulate);
+		}
+
         if (function == "fileexists")
 		{
 			struct stat st;

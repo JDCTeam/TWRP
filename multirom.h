@@ -80,6 +80,7 @@ public:
 	static bool flashZip(std::string rom, std::string file);
 	static bool injectBoot(std::string img_path);
 	static int copyBoot(std::string& orig, std::string rom);
+	static bool wipe(std::string name, std::string what);
 
 	static config loadConfig();
 	static void saveConfig(const config& cfg);
@@ -242,6 +243,49 @@ bool MultiROM::erase(std::string name)
 	ui_print("Erasing ROM \"%s\"...\n", name.c_str());
 	std::string cmd = "rm -rf \"" + path + "\"";
 	return system(cmd.c_str()) == 0;
+}
+
+bool MultiROM::wipe(std::string name, std::string what)
+{
+	ui_print("Changing mountpoints...\n");
+	if(!changeMounts(name))
+	{
+		ui_print("Failed to change mountpoints!\n");
+		return false;
+	}
+
+	char cmd[256];
+	bool res = true;
+	if(what == "dalvik")
+	{
+		static const char *dirs[] = {
+			"data/dalvik-cache",
+			"cache/dalvik-cache",
+			"cache/dc",
+		};
+
+		for(uint8_t i = 0; res && i < sizeof(dirs)/sizeof(dirs[0]); ++i)
+		{
+			sprintf(cmd, "rm -rf \"/%s\"", dirs[i]);
+			ui_print("Wiping dalvik: %s...\n", dirs[i]);
+			res = (system(cmd) == 0);
+		}
+	}
+	else
+	{
+		sprintf(cmd, "rm -rf \"/%s/\"*", what.c_str());
+		ui_print("Wiping ROM's /%s...\n", what.c_str());
+		res = (system(cmd) == 0);
+	}
+
+	sync();
+
+	if(!res)
+		ui_print("ERROR: Failed to erase %s!\n", what.c_str());
+
+	ui_print("Restoring mountpoints...\n");
+	restoreMounts();
+	return res;
 }
 
 int MultiROM::getType(std::string name)
