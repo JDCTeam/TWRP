@@ -1393,7 +1393,7 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 		{
 			ui_print("Restoring archive %i...\n", ++index);
 
-			sprintf(cmd, "cd /%s && tar -xf \"%s\"", part.c_str(), full_path.c_str());
+			sprintf(cmd, "cd /%s && gnutar -xf \"%s\"", part.c_str(), full_path.c_str());
 			system(cmd);
 
 			sprintf(split_index, "%03i", index);
@@ -1408,7 +1408,7 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 	}
 	else
 	{
-		sprintf(cmd, "cd /%s && tar -xf \"%s\"", part.c_str(), full_path.c_str());
+		sprintf(cmd, "cd /%s && gnutar -xf \"%s\"", part.c_str(), full_path.c_str());
 		system(cmd);
 	}
 	return true;
