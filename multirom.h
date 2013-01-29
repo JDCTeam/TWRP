@@ -1098,6 +1098,11 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 	sprintf(cmd, "chroot \"%s\" apt-get -y purge ac100-tarball-installer flash-kernel", rootDir.c_str());
 	system(cmd);
 
+	// We don't want flash-kernel to be active, ever.
+	sprintf(cmd, "chroot \"%s\" bash -c \"echo 'flash-kernel hold' | dpkg --set-selections\"", rootDir.c_str());
+	system(cmd);
+
+	// This will also create proper /boot/initrd.img link
 	sprintf(cmd, "chroot \"%s\" update-initramfs -u", rootDir.c_str());
 	system(cmd);
 
@@ -1198,6 +1203,10 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 
 			char cmd[256];
 			sprintf(cmd, "touch %s/var/lib/oem-config/run", dest.c_str());
+			system(cmd);
+
+			sprintf(cmd, "cp \"%s/infos/ubuntu.txt\" \"%s/%s/rom_info.txt\"",
+					m_path.c_str(), getRomsPath().c_str(), name.c_str());
 			system(cmd);
 
 			if(type == ROM_UBUNTU_USB_IMG)
