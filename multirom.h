@@ -956,20 +956,39 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 	}
 
 	script_entry = mzFindZipEntry(&zip, "boot.img");
-	if(!script_entry)
+	if(script_entry)
+	{
+		if (read_data(&zip, script_entry, &img_data, &img_len) < 0)
+		{
+			ui_printf("Failed to read boot.img from ZIP!\n");
+			goto fail;
+		}
+
+		fwrite(img_data, 1, img_len, img);
+	}
+	else
 	{
 		ui_printf("boot.img not found in the root of ZIP file!\n");
-		goto fail;
+		ui_printf("WARNING: Using current boot sector as boot.img!!\n");
+
+		FILE *b = fopen("/dev/block/platform/sdhci-tegra.3/by-name/LNX", "r");
+		if(!b)
+		{
+			ui_printf("Failed to open boot sector!\n");
+			goto fail;
+		}
+
+		img_data = (char*)malloc(16*1024);
+		while(!feof(b))
+		{
+			img_len = fread(img_data, 1, 16*1024, b);
+			fwrite(img_data, 1, img_len, img);
+		}
+		fclose(b);
 	}
 
-	if (read_data(&zip, script_entry, &img_data, &img_len) < 0)
-	{
-		ui_printf("Failed to read boot.img from ZIP!\n");
-		goto fail;
-	}
-
-	fwrite(img_data, 1, img_len, img);
 	fclose(img);
+
 	mzCloseZipArchive(&zip);
 	free(img_data);
 
