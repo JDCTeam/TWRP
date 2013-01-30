@@ -3889,7 +3889,24 @@
 					<action function="set">tw_show_reboot=0</action>
 					<action function="page">confirm_action</action>
 				</actions>
-				<action function="page"></action>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_is_android" var2="0" />
+				<placement x="%col2_x%" y="%row3_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Disable flash-kernel</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_disable_flash_kernel</action>
+					<action function="set">tw_text1=Disable flash-kernel?</action>
+					<action function="set">tw_action_text1=Working...</action>
+					<action function="set">tw_complete_text1=Flash-kernel patched</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
 			</object>
 
 			<object type="button">

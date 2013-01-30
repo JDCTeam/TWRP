@@ -897,6 +897,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 		}
 
+		if (function == "multirom_disable_flash_kernel")
+		{
+			operation_start("working");
+			int op_status = !MultiROM::disableFlashKernelAct(DataManager::GetStrValue("tw_multirom_rom_name"),
+															 DataManager::GetStrValue("tw_multirom_install_loc"));
+			operation_end(op_status, simulate);
+		}
+
         if (function == "fileexists")
 		{
 			struct stat st;
