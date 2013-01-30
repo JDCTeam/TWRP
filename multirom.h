@@ -1085,7 +1085,7 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 	}
 
 	ui_print("Extracting rootfs.tar.gz (will take a while)...\n");
-	sprintf(cmd, "zcat /mnt_ub_img/rootfs.tar.gz | gnutar xm --numeric-owner -C \"%s\"",  dest.c_str());
+	sprintf(cmd, "zcat /mnt_ub_img/rootfs.tar.gz | gnutar x --numeric-owner -C \"%s\"",  dest.c_str());
 	system(cmd);
 
 	sync();
@@ -1139,15 +1139,21 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 		system(cmd);
 	}
 
-	sprintf(cmd, "chroot \"%s\" apt-get -y purge ac100-tarball-installer flash-kernel", rootDir.c_str());
+	sprintf(cmd, "chroot \"%s\" apt-get -y --force-yes purge ac100-tarball-installer flash-kernel", rootDir.c_str());
 	system(cmd);
 
 	// We don't want flash-kernel to be active, ever.
-	sprintf(cmd, "chroot \"%s\" bash -c \"echo 'flash-kernel hold' | dpkg --set-selections\"", rootDir.c_str());
+	sprintf(cmd, "chroot \"%s\" bash -c \"echo flash-kernel hold | dpkg --set-selections\"", rootDir.c_str());
 	system(cmd);
 
-	// This will also create proper /boot/initrd.img link
+	sprintf(cmd, "chroot \"%s\" bash -c \"echo FLASH_KERNEL_SKIP=1 > /etc/environment\"", rootDir.c_str());
+	system(cmd);
+
 	sprintf(cmd, "chroot \"%s\" update-initramfs -u", rootDir.c_str());
+	system(cmd);
+
+	// make proper link to initrd.img
+	sprintf(cmd, "chroot \"%s\" bash -c 'cd /boot; ln -sf $(ls initrd.img-* | head -n1) initrd.img'", rootDir.c_str());
 	system(cmd);
 
 	for(size_t i = 0; i < sizeof(dirs)/sizeof(dirs[0]); ++i)
