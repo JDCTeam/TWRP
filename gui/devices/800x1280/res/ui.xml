@@ -3992,7 +3992,7 @@
 
 			<object type="action">
 				<touch key="back" />
-				<action function="multirom_list"></action>
+				<action function="page">multirom_list</action>
 			</object>
 
 			<object type="template" name="footer" />
