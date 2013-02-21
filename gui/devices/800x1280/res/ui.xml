@@ -4405,7 +4405,7 @@
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Android</text>
+				<text>Android/Ubuntu touch</text>
 				<image resource="radio_true" />
 				<actions>
 					<action function="set">tw_multirom_type=1</action>
@@ -4417,7 +4417,7 @@
 				<condition var1="tw_multirom_type" var2="2" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Android</text>
+				<text>Android/Ubuntu touch</text>
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_multirom_type=1</action>
@@ -4429,7 +4429,7 @@
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col2_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Ubuntu</text>
+				<text>Ubuntu desktop</text>
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_multirom_type=2</action>
@@ -4441,7 +4441,7 @@
 				<condition var1="tw_multirom_type" var2="2" />
 				<placement x="%col2_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Ubuntu</text>
+				<text>Ubuntu desktop</text>
 				<image resource="radio_true" />
 				<actions>
 					<action function="set">tw_multirom_type=2</action>
