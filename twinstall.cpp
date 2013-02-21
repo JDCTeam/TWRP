@@ -264,7 +264,7 @@ extern "C" int TWinstall_zip(const char* path, int* wipe_cache) {
 
 	ui_print("Installing '%s'...\n", path);
 
-	if (!PartitionManager.Mount_By_Path(path, 0)) {
+	if (strstr(path, "/realdata/") != path && !PartitionManager.Mount_By_Path(path, 0)) {
 		LOGE("Failed to mount '%s'\n", path);
 		return -1;
 	}

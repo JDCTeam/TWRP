@@ -594,11 +594,29 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		return false;
 	}
 
+
+	if(file.find("/sdcard/") != std::string::npos)
+	{
+		struct stat info;
+		if(stat(REALDATA"/0", &info) >= 0)
+			file.replace(0, strlen("/sdcard/"), REALDATA"/media/0/");
+		else
+			file.replace(0, strlen("/sdcard/"), REALDATA"/media/");
+	}
+	else if(file.find("/data/media/") != std::string::npos)
+		file.replace(0, strlen("/data/"), REALDATA"/");
+
 	int wipe_cache = 0;
 	int status = TWinstall_zip(file.c_str(), &wipe_cache);
 
 	system("rm -r "MR_UPDATE_SCRIPT_PATH);
-	system("rm /tmp/mr_update.zip");
+	if(file == "/tmp/mr_update.zip")
+		system("rm /tmp/mr_update.zip");
+	else
+	{
+		system("umount "REALDATA);
+		system("rmdir "REALDATA);
+	}
 
 	if(status != INSTALL_SUCCESS)
 		ui_print("Failed to install ZIP!\n");
@@ -638,7 +656,7 @@ bool MultiROM::prepareZIP(std::string& file)
 	char *token;
 	bool changed = false;
 
-	char cmd[256];
+	char cmd[512];
 	system("rm /tmp/mr_update.zip");
 
 	struct stat info;
@@ -705,6 +723,7 @@ bool MultiROM::prepareZIP(std::string& file)
 	}
 	else
 		ui_print("No need to change ZIP.");
+
 	return true;
 
 exit:
