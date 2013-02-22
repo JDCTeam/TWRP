@@ -594,11 +594,10 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		return false;
 	}
 
-
 	if(file.find("/sdcard/") != std::string::npos)
 	{
 		struct stat info;
-		if(stat(REALDATA"/0", &info) >= 0)
+		if(stat(REALDATA"/media/0", &info) >= 0)
 			file.replace(0, strlen("/sdcard/"), REALDATA"/media/0/");
 		else
 			file.replace(0, strlen("/sdcard/"), REALDATA"/media/");
@@ -612,11 +611,6 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	system("rm -r "MR_UPDATE_SCRIPT_PATH);
 	if(file == "/tmp/mr_update.zip")
 		system("rm /tmp/mr_update.zip");
-	else
-	{
-		system("umount "REALDATA);
-		system("rmdir "REALDATA);
-	}
 
 	if(status != INSTALL_SUCCESS)
 		ui_print("Failed to install ZIP!\n");
