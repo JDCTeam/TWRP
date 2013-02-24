@@ -355,8 +355,6 @@ protected:
     int mTextX, mTextY, mTextW, mTextH;
     int mIconX, mIconY, mIconW, mIconH;
     bool mRendered;
-    int highlightRenderCount;
-    COLOR mHighlightColor;
 };
 
 class GUICheckbox: public RenderObject, public ActionObject, public Conditional
