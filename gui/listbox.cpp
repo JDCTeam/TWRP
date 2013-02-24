@@ -293,7 +293,6 @@ GUIListBox::GUIListBox(xml_node<>* node) : Conditional(node)
 	if (child)
 		mItemsVar = child->value();
 
-
 	// Call this to get the selected item to be shown in the list on first render
 	NotifyVarChange(mVariable, currentValue);
 	if(!mItemsVar.empty())
@@ -661,7 +660,8 @@ int GUIListBox::NotifyVarChange(std::string varName, std::string value)
 			mUpdate = 1;
 		}
     }
-    else if(mItemsVar == varName)
+
+    if(!varName.empty() && mItemsVar == varName)
 	{
 		std::string n;
 		char *cstr = new char[value.size()+1];
