@@ -4132,6 +4132,7 @@
 			</object>
 
 			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
 				<placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<text>Tap ROM to manage it:</text>
@@ -4139,7 +4140,7 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="tw_multirom_folder" />
 				<data name="tw_multirom_rom" default="" />
@@ -4505,6 +4506,7 @@
 			</object>
 
 			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
 				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<text>%tw_zip_location%</text>
@@ -4512,7 +4514,7 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn=".zip" folders="1" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
@@ -4679,19 +4681,16 @@
 				</actions>
 			</object>
 
-			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
-				<font resource="font"/>
-				<text>Select ROM to auto-boot:</text>
-			</object>
-
 			<object type="listbox">
+				<highlight color="%fileselector_highlight_color%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>Select ROM to auto-boot:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<placement x="20" y="%row2_y%" w="760" h="440" />
+				<placement x="20" y="%row5_text_y%" w="760" h="480" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
-				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" />
+				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<data name="tw_multirom_auto_boot_rom" />
 				<items>tw_multirom_roms</items>
 			</object>
@@ -4728,6 +4727,7 @@
 			</object>
 
 			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
 				<placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<text>%tw_zip_location%</text>
@@ -4735,7 +4735,7 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn=".img" folders="1" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
@@ -4914,17 +4914,15 @@
 				<text>Use "Don't share" only if sharing does not work.</text>
 			</object>
 
-			<object type="text" color="%text_success_color%">
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
-				<text>Install to:</text>
-			</object>
-
 			<object type="listbox">
-				<placement x="20" y="%row7_text_y%" w="760" h="440" />
+				<highlight color="%fileselector_highlight_color%" />
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>Install to:</text>
+				<placement x="20" y="%row6_text_y%" w="760" h="460" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
-				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" />
+				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<data name="tw_multirom_install_loc" />
 				<items>tw_multirom_install_loc_list</items>
 			</object>
@@ -5022,6 +5020,7 @@
 			</object>
 
 			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
 				<conditions>
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_add_source" var2="zip" />
@@ -5033,7 +5032,7 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn=".zip" folders="1" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
@@ -5041,6 +5040,7 @@
 			</object>
 
 			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
 				<conditions>
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_add_source" var2="backup" />
@@ -5052,7 +5052,7 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter folders="1" files="0" nav="0" />
 				<path name="tw_backups_folder" />
 				<data name="tw_filename" default="" />
@@ -5060,6 +5060,7 @@
 			</object>
 
 			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
 				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
@@ -5068,7 +5069,7 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn="img.gz;img" folders="1" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
@@ -5346,17 +5347,15 @@
 				<text>MultiROM - List ROMs - Location</text>
 			</object>
 
-			<object type="text" color="%text_success_color%">
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
-				<text>Set location to list:</text>
-			</object>
-
 			<object type="listbox">
-				<placement x="20" y="%row2_text_y%" w="760" h="640" />
+				<highlight color="%fileselector_highlight_color%" />
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<text>Select location to list:</text>
+				<placement x="20" y="%row1_text_y%" w="760" h="660" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
-				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" />
+				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<data name="tw_multirom_install_loc" />
 				<items>tw_multirom_install_loc_list</items>
 			</object>
