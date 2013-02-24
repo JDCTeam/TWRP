@@ -660,6 +660,8 @@ int GUIFileSelector::GetSelection(int x, int y)
 
 int GUIFileSelector::NotifyTouch(TOUCH_STATE state, int x, int y)
 {
+	if (!isConditionTrue())     return -1;
+
 	static int lastY = 0, last2Y = 0;
 	int selection = 0;
 
