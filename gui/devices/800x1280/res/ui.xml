@@ -4005,6 +4005,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Back</text>
@@ -4035,6 +4036,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row1_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Add ROM</text>
@@ -4047,6 +4049,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row1_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>List ROMs</text>
@@ -4055,6 +4058,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Inject boot.img file</text>
@@ -4070,6 +4074,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Inject curr. boot sector</text>
@@ -4087,6 +4092,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Settings</text>
@@ -4143,6 +4149,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col4_medium_x%" y="%row17_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
@@ -4186,6 +4193,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Rename</text>
@@ -4198,6 +4206,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Delete</text>
@@ -4215,6 +4224,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
 				<placement x="%col1_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4224,6 +4234,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="0" />
 				<placement x="%col1_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4242,6 +4253,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="0" />
 				<placement x="%col2_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4260,6 +4272,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
 				<placement x="%col2_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4276,6 +4289,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
 				<placement x="100" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4296,6 +4310,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
 				<placement x="306" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4316,6 +4331,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
 				<placement x="512" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4387,6 +4403,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Cancel</text>
@@ -4427,6 +4444,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row1_text_y%" />
 				<font resource="mediumfont" color="%text_color%" />
 				<conditions>
@@ -4439,6 +4457,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row1_text_y%" />
 				<font resource="mediumfont" color="%text_color%" />
 				<conditions>
@@ -4451,6 +4470,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row1_text_y%" />
 				<font resource="mediumfont" color="%text_color%" />
 				<conditions>
@@ -4463,6 +4483,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row1_text_y%" />
 				<font resource="mediumfont" color="%text_color%" />
 				<conditions>
@@ -4616,6 +4637,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
 				<condition var1="tw_multirom_delay" op=">" var2="1" />
 				<placement x="%col2_medium_x%" y="%row2_medium_y%" />
@@ -4636,6 +4658,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
 				<placement x="470" y="%row2_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -4665,6 +4688,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%tz_set_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Save</text>
@@ -4752,6 +4776,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -4764,6 +4789,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -4776,6 +4802,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col2_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -4788,6 +4815,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
 				<placement x="%col2_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -4807,6 +4835,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<conditions>
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="1" />
@@ -4822,6 +4851,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<conditions>
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="0" />
@@ -4837,6 +4867,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<conditions>
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="1" />
@@ -4852,6 +4883,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<conditions>
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="0" />
@@ -4889,6 +4921,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%tz_set_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Next</text>
@@ -4897,6 +4930,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_medium_x%" y="%row16_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Refresh</text>
@@ -4927,6 +4961,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row1_text_y%" />
 				<font resource="mediumfont" color="%text_color%" />
 				<conditions>
@@ -4939,6 +4974,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row1_text_y%" />
 				<font resource="mediumfont" color="%text_color%" />
 				<conditions>
@@ -4951,6 +4987,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row1_text_y%" />
 				<font resource="mediumfont" color="%text_color%" />
 				<conditions>
@@ -4963,6 +5000,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row1_text_y%" />
 				<font resource="mediumfont" color="%text_color%" />
 				<conditions>
@@ -5122,6 +5160,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col3_medium_x%" y="%row5_text_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -5133,6 +5172,7 @@
 			</object>
 
 			<object type="text" color="%text_color%">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" />
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row9_text_y%" />
@@ -5140,6 +5180,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col3_medium_x%" y="%row8_text_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -5158,6 +5199,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col3_medium_x%" y="%row11_text_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -5176,6 +5218,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
 				<placement x="%col3_medium_x%" y="%row5_text_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -5187,6 +5230,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col_center_x%" y="%tz_set_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -5196,6 +5240,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
 				<placement x="%col_center_x%" y="%tz_set_y%" />
 				<font resource="font" color="%button_text_color%" />
@@ -5258,6 +5303,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Cancel</text>
@@ -5307,6 +5353,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%tz_set_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Select</text>
@@ -5315,6 +5362,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_medium_x%" y="%row16_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Refresh</text>
@@ -5351,6 +5399,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%row5_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>ZIP file</text>
@@ -5362,6 +5411,7 @@
 			</object>
 
 			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%row10_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Backup</text>
