@@ -462,6 +462,12 @@ protected:
     int mUpdate;
     int mBackgroundX, mBackgroundY, mBackgroundW, mBackgroundH;
 	int mHeaderH;
+	int mFastScrollW;
+	int mFastScrollLineW;
+	int mFastScrollRectW;
+	int mFastScrollRectH;
+	int mFastScrollRectX;
+	int mFastScrollRectY;
 	static int mSortOrder;
 	int startY;
 	int scrollingSpeed;
@@ -482,6 +488,8 @@ protected:
 	COLOR mHeaderFontColor;
 	COLOR mSeparatorColor;
 	COLOR mHeaderSeparatorColor;
+	COLOR mFastScrollLineColor;
+	COLOR mFastScrollRectColor;
 	bool hasHighlightColor;
 	bool hasFontHighlightColor;
 	bool isHighlighted;
