@@ -20,7 +20,6 @@
 #define TW_VERSION_STR              "2.4.1.0"
 
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
-#define TW_IGNORE_IMAGE_SIZE        "tw_ignore_image_size"
 #define TW_FILENAME                 "tw_filename"
 #define TW_ZIP_INDEX                "tw_zip_index"
 #define TW_ZIP_QUEUE_COUNT       "tw_zip_queue_count"
@@ -151,6 +150,7 @@
 #define TW_CRYPTO_PASSWORD          "tw_crypto_password"
 #define TW_DATA_BLK_DEVICE          "tw_data_blk_device"  // Original block device - not decrypted
 #define TW_SDEXT_DISABLE_EXT4       "tw_sdext_disable_ext4"
+#define TW_MILITARY_TIME            "tw_military_time"
 
 // Also used:
 //   tw_boot_is_mountable
@@ -169,6 +169,10 @@
 
 #ifndef CUSTOM_LUN_FILE
 #define CUSTOM_LUN_FILE "/sys/devices/platform/usb_mass_storage/lun%d/file"
+#endif
+
+#ifndef TW_BRIGHTNESS_PATH
+#define TW_BRIGHTNESS_PATH /nobrightness
 #endif
 
 // For OpenRecoveryScript

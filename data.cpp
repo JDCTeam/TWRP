@@ -40,6 +40,11 @@
 #include "data.hpp"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
+#include "gui/blanktimer.hpp"
+
+#ifdef TW_USE_MODEL_HARDWARE_ID_FOR_DEVICE_ID
+    #include "cutils/properties.h"
+#endif
 
 extern "C"
 {
@@ -58,6 +63,7 @@ map<string, DataManager::TStrIntPair>   DataManager::mValues;
 map<string, string>                     DataManager::mConstValues;
 string                                  DataManager::mBackingFile;
 int                                     DataManager::mInitialized = 0;
+extern blanktimer blankTimer;
 
 // Device ID functions
 void DataManager::sanitize_device_id(char* device_id) {
@@ -90,6 +96,30 @@ void DataManager::get_device_id(void) {
 
     // Assign a blank device_id to start with
     device_id[0] = 0;
+
+#ifdef TW_USE_MODEL_HARDWARE_ID_FOR_DEVICE_ID
+	// Now we'll use product_model_hardwareid as device id
+	char model_id[PROPERTY_VALUE_MAX];
+	property_get("ro.product.model", model_id, "error");
+	if (strcmp(model_id,"error") != 0) {
+		LOGI("=> product model: '%s'\n", model_id);
+		// Replace spaces with underscores
+		for(int i = 0; i < strlen(model_id); i++) {
+			if(model_id[i] == ' ')
+			model_id[i] = '_';
+		}
+		strcpy(device_id, model_id);
+		if (hardware_id[0] != 0) {
+			strcat(device_id, "_");
+			strcat(device_id, hardware_id);
+		}
+		sanitize_device_id((char *)device_id);
+		mConstValues.insert(make_pair("device_id", device_id));
+		LOGI("=> using device id: '%s'\n", device_id);
+		return;
+	}
+#endif
+
 #ifndef TW_FORCE_CPUINFO_FOR_DEVICE_ID
     // First, try the cmdline to see if the serial number was supplied
 	fp = fopen("/proc/cmdline", "rt");
@@ -330,6 +360,17 @@ int DataManager::GetValue(const string varName, int& value)
     return 0;
 }
 
+unsigned long long DataManager::GetValue(const string varName, unsigned long long& value)
+{
+    string data;
+
+    if (GetValue(varName,data) != 0)
+        return -1;
+
+    value = strtoull(data.c_str(), NULL, 10);
+    return 0;
+}
+
 // This is a dangerous function. It will create the value if it doesn't exist so it has a valid c_str
 string& DataManager::GetValueRef(const string varName)
 {
@@ -390,7 +431,10 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 
     if (pos->second.second != 0)
         SaveValues();
-    gui_notifyVarChange(varName.c_str(), value.c_str());
+	if (varName == "tw_screen_timeout_secs")
+		blankTimer.setTime(atoi(value.c_str()));
+	else
+		gui_notifyVarChange(varName.c_str(), value.c_str());
     return 0;
 }
 
@@ -424,6 +468,13 @@ int DataManager::SetValue(const string varName, int value, int persist /* = 0 */
 }
 
 int DataManager::SetValue(const string varName, float value, int persist /* = 0 */)
+{
+	ostringstream valStr;
+    valStr << value;
+    return SetValue(varName, valStr.str(), persist);;
+}
+
+int DataManager::SetValue(const string varName, unsigned long long value, int persist /* = 0 */)
 {
 	ostringstream valStr;
     valStr << value;
@@ -653,14 +704,14 @@ void DataManager::SetDefaultValues()
 
     mConstValues.insert(make_pair(TW_REBOOT_SYSTEM, "1"));
 #ifdef TW_NO_REBOOT_RECOVERY
-	printf("RECOVERY_SDCARD_ON_DATA := true\n");
+	printf("TW_NO_REBOOT_RECOVERY := true\n");
 	mConstValues.insert(make_pair(TW_REBOOT_RECOVERY, "0"));
 #else
 	mConstValues.insert(make_pair(TW_REBOOT_RECOVERY, "1"));
 #endif
     mConstValues.insert(make_pair(TW_REBOOT_POWEROFF, "1"));
 #ifdef TW_NO_REBOOT_BOOTLOADER
-	printf("RECOVERY_SDCARD_ON_DATA := true\n");
+	printf("TW_NO_REBOOT_BOOTLOADER := true\n");
 	mConstValues.insert(make_pair(TW_REBOOT_BOOTLOADER, "0"));
 #else
 	mConstValues.insert(make_pair(TW_REBOOT_BOOTLOADER, "1"));
@@ -764,7 +815,6 @@ void DataManager::SetDefaultValues()
     mValues.insert(make_pair(TW_FORCE_MD5_CHECK_VAR, make_pair("0", 1)));
     mValues.insert(make_pair(TW_COLOR_THEME_VAR, make_pair("0", 1)));
     mValues.insert(make_pair(TW_USE_COMPRESSION_VAR, make_pair("0", 1)));
-	mValues.insert(make_pair(TW_IGNORE_IMAGE_SIZE, make_pair("0", 1)));
     mValues.insert(make_pair(TW_SHOW_SPAM_VAR, make_pair("0", 1)));
     mValues.insert(make_pair(TW_TIME_ZONE_VAR, make_pair("CST6CDT", 1)));
     mValues.insert(make_pair(TW_SORT_FILES_BY_DATE_VAR, make_pair("0", 1)));
@@ -803,6 +853,33 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_terminal_state", make_pair("0", 0)));
 	mValues.insert(make_pair("tw_background_thread_running", make_pair("0", 0)));
 	mValues.insert(make_pair(TW_RESTORE_FILE_DATE, make_pair("0", 0)));
+	mValues.insert(make_pair("tw_screen_timeout_secs", make_pair("60", 1)));
+	mValues.insert(make_pair("tw_gui_done", make_pair("0", 0)));
+#ifdef TW_MAX_BRIGHTNESS
+	if (strcmp(EXPAND(TW_BRIGHTNESS_PATH), "/nobrightness") != 0) {
+		LOGI("TW_BRIGHTNESS_PATH := %s\n", EXPAND(TW_BRIGHTNESS_PATH));
+		mConstValues.insert(make_pair("tw_has_brightnesss_file", "1"));
+		mConstValues.insert(make_pair("tw_brightness_file", EXPAND(TW_BRIGHTNESS_PATH)));
+		ostringstream val100, val25, val50, val75;
+		int value = TW_MAX_BRIGHTNESS;
+		val100 << value;
+		mConstValues.insert(make_pair("tw_brightness_100", val100.str()));
+		value = TW_MAX_BRIGHTNESS * 0.25;
+		val25 << value;
+		mConstValues.insert(make_pair("tw_brightness_25", val25.str()));
+		value = TW_MAX_BRIGHTNESS * 0.5;
+		val50 << value;
+		mConstValues.insert(make_pair("tw_brightness_50", val50.str()));
+		value = TW_MAX_BRIGHTNESS * 0.75;
+		val75 << value;
+		mConstValues.insert(make_pair("tw_brightness_75", val75.str()));
+		mValues.insert(make_pair("tw_brightness", make_pair(val100.str(), 1)));
+		mValues.insert(make_pair("tw_brightness_display", make_pair("100", 1)));
+	} else {
+		mConstValues.insert(make_pair("tw_has_brightnesss_file", "0"));
+	}
+#endif
+	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("0", 0)));
 }
 
 // Magic Values
@@ -815,14 +892,22 @@ int DataManager::GetMagicValue(const string varName, string& value)
 
         struct tm *current;
         time_t now;
+	int tw_military_time;
         now = time(0);
         current = localtime(&now);
-
-        if (current->tm_hour >= 12)
-            sprintf(tmp, "%d:%02d PM", current->tm_hour == 12 ? 12 : current->tm_hour - 12, current->tm_min);
-        else
-            sprintf(tmp, "%d:%02d AM", current->tm_hour == 0 ? 12 : current->tm_hour, current->tm_min);
-
+	GetValue(TW_MILITARY_TIME, tw_military_time); 
+        if (current->tm_hour >= 12) {
+		if (tw_military_time == 1)
+            		sprintf(tmp, "%d:%02d", current->tm_hour, current->tm_min);
+		else
+            		sprintf(tmp, "%d:%02d PM", current->tm_hour == 12 ? 12 : current->tm_hour - 12, current->tm_min);
+		}
+        else {
+		if (tw_military_time == 1) 
+		    sprintf(tmp, "%d:%02d", current->tm_hour, current->tm_min);
+		else
+		    sprintf(tmp, "%d:%02d AM", current->tm_hour == 0 ? 12 : current->tm_hour, current->tm_min);
+	}
         value = tmp;
         return 0;
     }
@@ -952,6 +1037,13 @@ void DataManager::ReadSettingsFile(void)
 		PartitionManager.Mount_By_Path(ext_path, 0);
 	}
 	update_tz_environment_variables();
+#ifdef TW_MAX_BRIGHTNESS
+	if (strcmp(EXPAND(TW_BRIGHTNESS_PATH), "/nobrightness") != 0) {
+		string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
+		string brightness_value = GetStrValue("tw_brightness");
+		TWFunc::write_file(brightness_path, brightness_value);
+	}
+#endif
 }
 
 string DataManager::GetCurrentStoragePath(void)

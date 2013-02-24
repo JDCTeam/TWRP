@@ -620,6 +620,29 @@ bool TWPartition::Find_Partition_Size(void) {
 	char line[512];
 	string tmpdevice;
 
+	fp = fopen("/proc/dumchar_info", "rt");
+	if (fp != NULL) {
+		while (fgets(line, sizeof(line), fp) != NULL)
+		{
+			char label[32], device[32];
+			unsigned long size = 0;
+
+			sscanf(line, "%s %lx %*lx %*lu %s", label, &size, device);
+
+			// Skip header, annotation  and blank lines
+			if ((strncmp(device, "/dev/", 5) != 0) || (strlen(line) < 8))
+				continue;
+
+			tmpdevice = "/dev/";
+			tmpdevice += label;
+			if (tmpdevice == Primary_Block_Device || tmpdevice == Alternate_Block_Device) {
+				Size = size;
+				fclose(fp);
+				return true;
+			}
+		}
+	}
+
 	// In this case, we'll first get the partitions we care about (with labels)
 	fp = fopen("/proc/partitions", "rt");
 	if (fp == NULL)
@@ -682,7 +705,7 @@ bool TWPartition::Mount(bool Display_Error) {
 	// Check the current file system before mounting
 	Check_FS_Type();
 	if (Current_File_System == "exfat" && TWFunc::Path_Exists("/sbin/exfat-fuse")) {
-		string cmd = "/sbin/exfat-fuse " + Actual_Block_Device + " " + Mount_Point;
+		string cmd = "/sbin/exfat-fuse -o big_writes,max_read=131072,max_write=131072 " + Actual_Block_Device + " " + Mount_Point;
 		LOGI("cmd: %s\n", cmd.c_str());
 		string result;
 		if (TWFunc::Exec_Cmd(cmd, result) != 0) {
@@ -1313,7 +1336,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		sprintf(back_name, "%s", Backup_Path.c_str());
 		tar.setdir(back_name);
 		tar.setfn(Full_FileName);
-		backup_count = tar.splitArchiveThread();
+		backup_count = tar.splitArchiveFork();
 		if (backup_count == -1) {
 			LOGE("Error tarring split files!\n");
 			return false;
@@ -1324,7 +1347,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		if (use_compression) {
 			tar.setdir(Backup_Path);
 			tar.setfn(Full_FileName);
-			if (tar.createTarGZThread() != 0)
+			if (tar.createTarGZFork() != 0)
 				return -1;
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
@@ -1332,7 +1355,7 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		else {
 			tar.setdir(Backup_Path);
 			tar.setfn(Full_FileName);
-			if (tar.createTarThread() != 0)
+			if (tar.createTarFork() != 0)
 				return -1;
 		}
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
@@ -1344,9 +1367,12 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 }
 
 bool TWPartition::Backup_DD(string backup_folder) {
-	char back_name[255];
-	string Full_FileName, Command, result;
+	char back_name[255], backup_size[32];
+	string Full_FileName, Command, result, DD_BS;
 	int use_compression;
+
+	sprintf(backup_size, "%llu", Backup_Size);
+	DD_BS = backup_size;
 
 	TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Display_Name, "Backing Up");
 	ui_print("Backing up %s...\n", Display_Name.c_str());
@@ -1356,7 +1382,7 @@ bool TWPartition::Backup_DD(string backup_folder) {
 
 	Full_FileName = backup_folder + "/" + Backup_FileName;
 
-	Command = "dd if=" + Actual_Block_Device + " of='" + Full_FileName + "'";
+	Command = "dd if=" + Actual_Block_Device + " of='" + Full_FileName + "'" + " bs=" + DD_BS + "c count=1";
 	LOGI("Backup command: '%s'\n", Command.c_str());
 	TWFunc::Exec_Cmd(Command, result);
 	if (TWFunc::Get_File_Size(Full_FileName) == 0) {
@@ -1424,7 +1450,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 				twrpTar tar;
 				tar.setdir("/");
 				tar.setfn(Full_FileName);
-				if (tar.extractTarThread() != 0)
+				if (tar.extractTarFork() != 0)
 					return false;
 				sprintf(split_index, "%03i", index);
 				Full_FileName = restore_folder + "/" + Backup_FileName + split_index;
@@ -1438,7 +1464,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		twrpTar tar;
 		tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
-		if (tar.extractTarThread() != 0)
+		if (tar.extractTarFork() != 0)
 			return false;
 	}
 	return true;

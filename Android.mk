@@ -36,7 +36,8 @@ LOCAL_SRC_FILES += \
     mtdutils/mtdutils.c \
     twinstall.cpp \
     twrp-functions.cpp \
-    openrecoveryscript.cpp
+    openrecoveryscript.cpp \
+    tarWrite.c
 
 ifneq ($(TARGET_RECOVERY_REBOOT_SRC),)
   LOCAL_SRC_FILES += $(TARGET_RECOVERY_REBOOT_SRC)
@@ -140,6 +141,9 @@ endif
 ifeq ($(TW_HAS_NO_RECOVERY_PARTITION), true)
     LOCAL_CFLAGS += -DTW_HAS_NO_RECOVERY_PARTITION
 endif
+ifeq ($(TW_HAS_NO_BOOT_PARTITION), true)
+    LOCAL_CFLAGS += -DTW_HAS_NO_BOOT_PARTITION
+endif
 ifeq ($(TW_NO_REBOOT_BOOTLOADER), true)
     LOCAL_CFLAGS += -DTW_NO_REBOOT_BOOTLOADER
 endif
@@ -221,9 +225,17 @@ ifeq ($(TW_INCLUDE_JB_CRYPTO), true)
     LOCAL_SRC_FILES += crypto/jb/cryptfs.c
     LOCAL_C_INCLUDES += system/extras/ext4_utils external/openssl/include
 endif
-
+ifeq ($(TW_USE_MODEL_HARDWARE_ID_FOR_DEVICE_ID), true)
+    LOCAL_CFLAGS += -DTW_USE_MODEL_HARDWARE_ID_FOR_DEVICE_ID
+endif
+ifneq ($(TW_BRIGHTNESS_PATH),)
+	LOCAL_CFLAGS += -DTW_BRIGHTNESS_PATH=$(TW_BRIGHTNESS_PATH)
+endif
+ifneq ($(TW_MAX_BRIGHTNESS),)
+	LOCAL_CFLAGS += -DTW_MAX_BRIGHTNESS=$(TW_MAX_BRIGHTNESS)
+endif
 ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
-LOCAL_CFLAGS += -DRK3066
+    LOCAL_CFLAGS += -DRK3066
 endif
 
 include $(BUILD_EXECUTABLE)

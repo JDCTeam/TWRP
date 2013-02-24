@@ -521,7 +521,8 @@ bool TWPartitionManager::Make_MD5(bool generate_md5, string Backup_Folder, strin
 
 bool TWPartitionManager::Backup_Partition(TWPartition* Part, string Backup_Folder, bool generate_md5, unsigned long long* img_bytes_remaining, unsigned long long* file_bytes_remaining, unsigned long *img_time, unsigned long *file_time, unsigned long long *img_bytes, unsigned long long *file_bytes) {
 	time_t start, stop;
-	int img_bps, file_bps;
+	int img_bps;
+	unsigned long long file_bps;
 	unsigned long total_time, remain_time, section_time;
 	int use_compression, backup_time;
 	float pos;
@@ -644,8 +645,9 @@ int TWPartitionManager::Run_Backup(void) {
 		backup_sys = Find_Partition_By_Path("/system");
 		if (backup_sys != NULL) {
 			partition_count++;
-			if (backup_sys->Backup_Method == 1)
+			if (backup_sys->Backup_Method == 1) {
 				file_bytes += backup_sys->Backup_Size;
+			}
 			else
 				img_bytes += backup_sys->Backup_Size;
 		} else {
@@ -702,6 +704,7 @@ int TWPartitionManager::Run_Backup(void) {
 			DataManager::SetValue(TW_BACKUP_RECOVERY_VAR, 0);
 		}
 	}
+#ifndef TW_HAS_NO_BOOT_PARTITION
 	DataManager::GetValue(TW_BACKUP_BOOT_VAR, check);
 	if (check) {
 		backup_boot = Find_Partition_By_Path("/boot");
@@ -716,6 +719,7 @@ int TWPartitionManager::Run_Backup(void) {
 			DataManager::SetValue(TW_BACKUP_BOOT_VAR, 0);
 		}
 	}
+#endif
 	DataManager::GetValue(TW_BACKUP_ANDSEC_VAR, check);
 	if (check) {
 		backup_andsec = Find_Partition_By_Path("/and-sec");
@@ -852,9 +856,9 @@ int TWPartitionManager::Run_Backup(void) {
 	if (file_time == 0)
 		file_time = 1;
 	int img_bps = (int)img_bytes / (int)img_time;
-	int file_bps = (int)file_bytes / (int)file_time;
+	unsigned long long file_bps = file_bytes / (int)file_time;
 
-	ui_print("Average backup rate for file systems: %lu MB/sec\n", (file_bps / (1024 * 1024)));
+	ui_print("Average backup rate for file systems: %llu MB/sec\n", (file_bps / (1024 * 1024)));
 	ui_print("Average backup rate for imaged drives: %lu MB/sec\n", (img_bps / (1024 * 1024)));
 
 	time(&total_stop);
@@ -862,7 +866,8 @@ int TWPartitionManager::Run_Backup(void) {
 	unsigned long long actual_backup_size = TWFunc::Get_Folder_Size(Full_Backup_Path, true);
     actual_backup_size /= (1024LLU * 1024LLU);
 
-	int prev_img_bps, prev_file_bps, use_compression;
+	int prev_img_bps, use_compression;
+	unsigned long long prev_file_bps;
 	DataManager::GetValue(TW_BACKUP_AVG_IMG_RATE, prev_img_bps);
 	img_bps += (prev_img_bps * 4);
     img_bps /= 5;
@@ -959,6 +964,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 			partition_count++;
 		}
 	}
+#ifndef TW_HAS_NO_BOOT_PARTITION
 	DataManager::GetValue(TW_RESTORE_BOOT_VAR, check);
 	if (check > 0) {
 		restore_boot = Find_Partition_By_Path("/boot");
@@ -968,6 +974,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 			partition_count++;
 		}
 	}
+#endif
 	DataManager::GetValue(TW_RESTORE_ANDSEC_VAR, check);
 	if (check > 0) {
 		restore_andsec = Find_Partition_By_Path("/and-sec");
