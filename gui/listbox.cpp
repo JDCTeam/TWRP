@@ -686,7 +686,6 @@ int GUIListBox::NotifyVarChange(std::string varName, std::string value)
 
 			p = strtok(NULL, "\n");
 		}
-		var_changed = 1;
 		delete[] cstr;
 		mUpdate = 1;
 	}
