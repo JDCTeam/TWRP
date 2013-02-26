@@ -102,6 +102,23 @@ int  blanktimer::setClockTimer(void) {
 	return -1;
 }
 
+void blanktimer::blankScreen()
+{
+	if(conblank != 1)
+	{
+		orig_brightness = getBrightness();
+		setBlank(1);
+		PageManager::ChangeOverlay("lock");
+	}
+
+	if(conblank == 1 && blanked != 1)
+	{
+		blanked = 1;
+		gr_fb_blank(conblank);
+		setBrightness(0);
+	}
+}
+
 int blanktimer::getBrightness(void) {
 	string results;
 	string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);

@@ -230,6 +230,11 @@
 				<touch key="power" />
 				<action function="overlay">lock</action>
 			</object>
+
+			<object type="action">
+				<touch key="voldown" />
+				<action function="timeout"/>
+			</object>
 		</template>
 
 		<template name="progress_bar">

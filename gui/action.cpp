@@ -818,6 +818,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
     if (isThreaded)
     {
+		if (function == "timeout")
+		{
+			blankTimer.blankScreen();
+			return 0;
+		}
+	
 		if (function == "multirom_delete")
 		{
 			int op_status = 0;

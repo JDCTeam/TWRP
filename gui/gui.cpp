@@ -262,7 +262,7 @@ input_thread (void *cookie)
 				  LOGE ("TOUCH_RELEASE: %d,%d\n", x, y);
 #endif
 				  PageManager::NotifyTouch (TOUCH_RELEASE, x, y);
-				  blankTimer.resetTimerAndUnblank();
+				  //blankTimer.resetTimerAndUnblank();
 				  touch_and_hold = 0;
 				  touch_repeat = 0;
 				  if (!key_repeat)
@@ -326,7 +326,7 @@ input_thread (void *cookie)
 				  touch_and_hold = 0;
 				  touch_repeat = 0;
 				  dontwait = 0;
-				  blankTimer.resetTimerAndUnblank();
+				  //blankTimer.resetTimerAndUnblank();
 				}
 			}
 		  else
@@ -337,7 +337,7 @@ input_thread (void *cookie)
 			  touch_and_hold = 0;
 			  touch_repeat = 0;
 			  dontwait = 0;
-                          blankTimer.resetTimerAndUnblank();
+			//blankTimer.resetTimerAndUnblank();
 			}
 		}
 	}
