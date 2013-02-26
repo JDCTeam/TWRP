@@ -259,6 +259,9 @@ int DataManager::LoadValues(const string filename)
         }
         else
             mValues.insert(TNameValuePair(Name, TStrIntPair(Value, 1)));
+
+		if (Name == "tw_screen_timeout_secs")
+			blankTimer.setTime(atoi(Value.c_str()));
     }
     fclose(in);
 
