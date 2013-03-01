@@ -104,18 +104,12 @@ int  blanktimer::setClockTimer(void) {
 
 void blanktimer::blankScreen()
 {
-	if(conblank != 1)
+	if(conblank == 0)
 	{
 		orig_brightness = getBrightness();
-		setBlank(1);
-		PageManager::ChangeOverlay("lock");
-	}
-
-	if(conblank == 1 && blanked != 1)
-	{
-		blanked = 1;
-		gr_fb_blank(conblank);
+		setConBlank(2);
 		setBrightness(0);
+		PageManager::ChangeOverlay("lock");
 	}
 }
 
