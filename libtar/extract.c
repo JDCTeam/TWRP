@@ -89,13 +89,13 @@ tar_set_file_perms(TAR *t, char *realname)
 
 /* switchboard */
 int
-tar_extract_file(TAR *t, char *realname)
+tar_extract_file(TAR *t, char *realname, char *prefix)
 {
 	int i;
 	char *lnp;
 	int pathname_len;
 	int realname_len;
-	
+
 	if (t->options & TAR_NOOVERWRITE)
 	{
 		struct stat s;
@@ -115,7 +115,7 @@ tar_extract_file(TAR *t, char *realname)
 	}
 	else if (TH_ISLNK(t)) {
 		printf("link\n");
-		i = tar_extract_hardlink(t, realname);
+		i = tar_extract_hardlink(t, realname, prefix);
 	}
 	else if (TH_ISSYM(t)) {
 		printf("sym\n");
@@ -139,13 +139,13 @@ tar_extract_file(TAR *t, char *realname)
 	}
 
 	if (i != 0) {
-		printf("here i: %d\n", i);
+		printf("FAILED RESTORE OF FILE i: %s\n", realname);
 		return i;
 	}
 
 	i = tar_set_file_perms(t, realname);
 	if (i != 0) {
-		printf("i: %d\n", i);
+		printf("FAILED SETTING PERMS: %d\n", i);
 		return i;
 	}
 /*
@@ -300,7 +300,7 @@ tar_skip_regfile(TAR *t)
 
 /* hardlink */
 int
-tar_extract_hardlink(TAR * t, char *realname)
+tar_extract_hardlink(TAR * t, char *realname, char *prefix)
 {
 	char *filename;
 	char *linktgt = NULL;
@@ -325,7 +325,8 @@ tar_extract_hardlink(TAR * t, char *realname)
 	}
 	else
 		linktgt = th_get_linkname(t);
-
+	char *newtgt = strdup(linktgt);
+	sprintf(linktgt, "%s/%s", prefix, newtgt);
 #ifdef DEBUG
 	printf("  ==> extracting: %s (link to %s)\n", filename, linktgt);
 #endif
@@ -346,7 +347,7 @@ int
 tar_extract_symlink(TAR *t, char *realname)
 {
 	char *filename;
-	
+
 	if (!TH_ISSYM(t))
 	{
 		printf("not a sym\n");
@@ -412,9 +413,9 @@ tar_extract_chardev(TAR *t, char *realname)
 		  compat_makedev(devmaj, devmin)) == -1)
 	{
 #ifdef DEBUG
-		perror("mknod()");
+		printf("mknod() failed, returning good anyway");
 #endif
-		return -1;
+		return 0;
 	}
 
 	return 0;
@@ -451,9 +452,9 @@ tar_extract_blockdev(TAR *t, char *realname)
 		  compat_makedev(devmaj, devmin)) == -1)
 	{
 #ifdef DEBUG
-		perror("mknod()");
+		printf("mknod() failed but returning anyway");
 #endif
-		return -1;
+		return 0;
 	}
 
 	return 0;

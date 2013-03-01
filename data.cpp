@@ -434,10 +434,12 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 
     if (pos->second.second != 0)
         SaveValues();
-	if (varName == "tw_screen_timeout_secs")
+	if (varName == "tw_screen_timeout_secs") {
 		blankTimer.setTime(atoi(value.c_str()));
-	else
+	}
+	else {
 		gui_notifyVarChange(varName.c_str(), value.c_str());
+	}
     return 0;
 }
 
@@ -856,6 +858,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_terminal_state", make_pair("0", 0)));
 	mValues.insert(make_pair("tw_background_thread_running", make_pair("0", 0)));
 	mValues.insert(make_pair(TW_RESTORE_FILE_DATE, make_pair("0", 0)));
+	mValues.insert(make_pair("tw_military_time", make_pair("0", 1)));
 	mValues.insert(make_pair("tw_screen_timeout_secs", make_pair("60", 1)));
 	mValues.insert(make_pair("tw_gui_done", make_pair("0", 0)));
 #ifdef TW_MAX_BRIGHTNESS
@@ -926,7 +929,13 @@ int DataManager::GetMagicValue(const string varName, string& value)
 		if (curTime.tv_sec > nextSecCheck)
 		{
 			char cap_s[4];
+#ifdef TW_CUSTOM_BATTERY_PATH
+			string capacity_file = EXPAND(TW_CUSTOM_BATTERY_PATH);
+			capacity_file += "/capacity";
+			FILE * cap = fopen(capacity_file.c_str(),"rt");
+#else
 			FILE * cap = fopen("/sys/class/power_supply/battery/capacity","rt");
+#endif
 			if (cap){
 				fgets(cap_s, 4, cap);
 				fclose(cap);
@@ -934,7 +943,13 @@ int DataManager::GetMagicValue(const string varName, string& value)
 				if (lastVal > 100)  lastVal = 101;
 				if (lastVal < 0)    lastVal = 0;
 			}
+#ifdef TW_CUSTOM_BATTERY_PATH
+			string status_file = EXPAND(TW_CUSTOM_BATTERY_PATH);
+			status_file += "/status";
+			cap = fopen(status_file.c_str(),"rt");
+#else
 			cap = fopen("/sys/class/power_supply/battery/status","rt");
+#endif
 			if (cap) {
 				fgets(cap_s, 2, cap);
 				fclose(cap);

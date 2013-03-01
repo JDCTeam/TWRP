@@ -66,7 +66,7 @@ LOCAL_SHARED_LIBRARIES :=
 LOCAL_STATIC_LIBRARIES += libmtdutils libcrecovery
 LOCAL_STATIC_LIBRARIES += libminadbd libminzip libunz
 LOCAL_STATIC_LIBRARIES += libminuitwrp libpixelflinger_static libpng libjpegtwrp libgui
-LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libmincrypt libext4_utils libtar
+LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libmincrypt libext4_utils libtar libblkid
 
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
 LOCAL_SHARED_LIBRARIES += libsparse
@@ -234,6 +234,9 @@ endif
 ifneq ($(TW_MAX_BRIGHTNESS),)
 	LOCAL_CFLAGS += -DTW_MAX_BRIGHTNESS=$(TW_MAX_BRIGHTNESS)
 endif
+ifneq ($(TW_CUSTOM_BATTERY_PATH),)
+	LOCAL_CFLAGS += -DTW_CUSTOM_BATTERY_PATH=$(TW_CUSTOM_BATTERY_PATH)
+endif
 ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
     LOCAL_CFLAGS += -DRK3066
 endif
@@ -297,7 +300,8 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
     $(commands_recovery_local_path)/crypto/cryptsettings/Android.mk \
     $(commands_recovery_local_path)/crypto/cryptfs/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
-    $(commands_recovery_local_path)/twmincrypt/Android.mk
+    $(commands_recovery_local_path)/twmincrypt/Android.mk \
+    $(commands_recovery_local_path)/libblkid/Android.mk
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
     include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk
@@ -306,7 +310,9 @@ endif
 ifeq ($(TW_INCLUDE_JB_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/fs_mgr/Android.mk
 endif
-
+ifeq ($(BUILD_ID), GINGERBREAD)
+    TW_NO_EXFAT := true
+endif
 ifneq ($(TW_NO_EXFAT), true)
     include $(commands_recovery_local_path)/exfat/exfat-fuse/Android.mk \
             $(commands_recovery_local_path)/exfat/mkfs/Android.mk \
