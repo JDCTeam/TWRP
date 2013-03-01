@@ -878,7 +878,7 @@ int GUIFileSelector::NotifyVarChange(std::string varName, std::string value)
 	if (varName == mPathVar || varName == mSortVariable)
 	{
 		// If needed, wait for render to finish before continuing or the list change may not register
-		while (updateFileList || mUpdate) {
+		while (isConditionTrue() && (updateFileList || mUpdate)) {
 			usleep(500);
 		}
 		updateFileList = true;
