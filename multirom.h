@@ -32,6 +32,13 @@ enum
     ROM_UNKNOWN           = 9
 };
 
+enum
+{
+	CMPR_GZIP   = 0,
+	CMPR_LZ4    = 1,
+	CMPR_LZMA   = 2,
+};
+
 #define M(x) (1 << x)
 #define MASK_UBUNTU (M(ROM_UBUNTU_INTERNAL) | M(ROM_UBUNTU_USB_IMG)| M(ROM_UBUNTU_USB_DIR))
 #define MASK_ANDROID (M(ROM_ANDROID_USB_DIR) | M(ROM_ANDROID_USB_IMG) | M(ROM_ANDROID_INTERNAL))
@@ -101,6 +108,8 @@ private:
 	static std::string getNewRomName(std::string zip);
 	static bool createDirs(std::string name, int type);
 	static bool androidExportBoot(std::string name, std::string zip, int type);
+	static bool compressRamdisk(const char *src, const char *dest, int cmpr);
+	static int decompressRamdisk(const char *src, const char *dest);
 	static bool extractBootForROM(std::string base);
 	static bool installFromBackup(std::string name, std::string path, int type);
 	static bool extractBackupFile(std::string path, std::string part);
@@ -755,9 +764,9 @@ bool MultiROM::injectBoot(std::string img_path)
 	// DECOMPRESS RAMDISK
 	ui_print("Decompressing ramdisk...\n");
 	system("mkdir /tmp/boot/rd");
-	sprintf(cmd, "cd /tmp/boot/rd && gzip -d -c ../%s-ramdisk.gz | cpio -i", p.c_str());
-	system(cmd);
-	if(stat("/tmp/boot/rd/init", &info) < 0)
+	sprintf(cmd, "/tmp/boot/%s-ramdisk.gz", p.c_str());
+	int rd_cmpr = decompressRamdisk(cmd, "/tmp/boot/rd/");
+	if(rd_cmpr == -1 || stat("/tmp/boot/rd/init", &info) < 0)
 	{
 		ui_print("Failed to decompress ramdisk!\n");
 		return false;
@@ -775,8 +784,9 @@ bool MultiROM::injectBoot(std::string img_path)
 
 	// COMPRESS RAMDISK
 	ui_print("Compressing ramdisk...\n");
-	sprintf(cmd, "cd /tmp/boot/rd && find . | cpio -o -H newc | gzip > ../%s-ramdisk.gz", p.c_str());
-	system(cmd);
+	sprintf(cmd, "/tmp/boot/%s-ramdisk.gz", p.c_str());
+	if(!compressRamdisk("/tmp/boot/rd", cmd, rd_cmpr))
+		return false;
 
 	// PACK BOOT IMG
 	ui_print("Packing boot image\n");
@@ -809,6 +819,80 @@ bool MultiROM::injectBoot(std::string img_path)
 		system(cmd);
 	}
 	return true;
+}
+
+int MultiROM::decompressRamdisk(const char *src, const char* dest)
+{
+	FILE *f = fopen(src, "r");
+	if(!f)
+	{
+		ui_printf("Failed to open initrd\n");
+		return -1;
+	}
+
+	char m[4];
+	if(fread(m, 1, sizeof(m), f) != sizeof(m))
+	{
+		ui_printf("Failed to read initrd magic\n");
+		return -1;
+	}
+	fclose(f);
+
+	char cmd[256];
+	// gzip
+	if(*((uint16_t*)m) == 0x8B1F)
+	{
+		ui_printf("Ramdisk uses GZIP compression\n");
+		sprintf(cmd, "cd \"%s\" && gzip -d -c \"%s\" | cpio -i", dest, src);
+		system(cmd);
+		return CMPR_GZIP;
+	}
+	// lz4
+	else if(*((uint32_t*)m) == 0x184C2102)
+	{
+		ui_printf("Ramdisk uses LZ4 compression\n");
+		sprintf(cmd, "cd \"%s\" && lz4 -d \"%s\" stdout | cpio -i", dest, src);
+		system(cmd);
+		return CMPR_LZ4;
+	}
+	// lzma
+	else if(*((uint32_t*)m) == 0x0000005D || *((uint32_t*)m) == 0x8000005D)
+	{
+		ui_printf("Ramdisk uses LZMA compression\n");
+		sprintf(cmd, "cd \"%s\" && lzma -d -c \"%s\" | cpio -i", dest, src);
+		system(cmd);
+		return CMPR_LZMA;
+	}
+	else
+		ui_printf("Unknown ramdisk compression (%X %X %X %X)\n", m[0], m[1], m[2], m[3]);
+
+	return -1;
+}
+
+bool MultiROM::compressRamdisk(const char* src, const char* dst, int cmpr)
+{
+	char cmd[256];
+	switch(cmpr)
+	{
+		case CMPR_GZIP:
+			sprintf(cmd, "cd \"%s\" && find . | cpio -o -H newc | gzip > \"%s\"", src, dst);
+			system(cmd);
+			return true;
+		case CMPR_LZ4:
+			sprintf(cmd, "cd \"%s\" && find . | cpio -o -H newc | lz4 stdin \"%s\"", src, dst);
+			system(cmd);
+			return true;
+		// FIXME: busybox can't compress with lzma
+		case CMPR_LZMA:
+			ui_printf("Recovery can't compress ramdisk using LZMA!\n");
+			return false;
+//			sprintf(cmd, "cd \"%s\" && find . | cpio -o -H newc | lzma > \"%s\"", src, dst);
+//			system(cmd);
+//			return true;
+		default:
+			ui_printf("Invalid compression type: %d", cmpr);
+			return false;
+	}
 }
 
 int MultiROM::copyBoot(std::string& orig, std::string rom)
@@ -1068,9 +1152,9 @@ bool MultiROM::extractBootForROM(std::string base)
 	system("rm -r /tmp/boot");
 	system("mkdir /tmp/boot");
 
-	sprintf(cmd, "cd /tmp/boot && gzip -d -c \"%s/boot/ramdisk.gz\" | cpio -i", base.c_str());
-	system(cmd);
-	if(stat("/tmp/boot/init", &info) < 0)
+	sprintf(cmd, "%s/boot/ramdisk.gz", base.c_str());
+	int rd_cmpr = decompressRamdisk(cmd, "/tmp/boot");
+	if(rd_cmpr == -1 || stat("/tmp/boot/init", &info) < 0)
 	{
 		ui_printf("Failed to extract ramdisk!\n");
 		return false;
