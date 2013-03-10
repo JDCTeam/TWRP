@@ -834,6 +834,7 @@ int MultiROM::decompressRamdisk(const char *src, const char* dest)
 	if(fread(m, 1, sizeof(m), f) != sizeof(m))
 	{
 		ui_printf("Failed to read initrd magic\n");
+		fclose(f);
 		return -1;
 	}
 	fclose(f);
