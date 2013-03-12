@@ -27,6 +27,7 @@ LOCAL_SRC_FILES := \
     verifier.cpp \
     fixPermissions.cpp \
     twrpTar.cpp \
+    twrpDigest.cpp \
     adb_install.cpp
 
 LOCAL_SRC_FILES += \
@@ -185,6 +186,9 @@ endif
 #endif
 ifeq ($(TW_HAS_DOWNLOAD_MODE), true)
     LOCAL_CFLAGS += -DTW_HAS_DOWNLOAD_MODE
+endif
+ifeq ($(TW_NO_SCREEN_BLANK), true)
+    LOCAL_CFLAGS += -DTW_NO_SCREEN_BLANK
 endif
 ifeq ($(TW_SDEXT_NO_EXT4), true)
     LOCAL_CFLAGS += -DTW_SDEXT_NO_EXT4
