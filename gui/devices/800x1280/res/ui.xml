@@ -765,7 +765,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%row3_y%" />
+				<placement x="%col1_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Home</text>
 				<image resource="main_button" />
@@ -773,6 +773,30 @@
 					<action function="set">tw_clear_destination=main2</action>
 					<action function="page">clear_vars</action>
 				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row3_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Inject curr. boot sector</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=main2</action>
+					<action function="set">tw_action=multirom_inject_curr_boot</action>
+					<action function="set">tw_text1=Inject current boot partition?</action>
+					<action function="set">tw_action_text1=Injecting...</action>
+					<action function="set">tw_complete_text1=Boot partition injected.</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%button_text_color%">
+				<font resource="font" />
+				<placement x="612" y="725" placement="5" />
+				<text>MultiROM:</text>
 			</object>
 
 			<object type="text" color="%text_fail_color%">
@@ -997,30 +1021,34 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
 				<text>%tw_complete_text1%</text>
 			</object>
 
 			<object type="text" color="%text_fail_color%">
 				<condition var1="tw_operation_status" op="!=" var2="0" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row2_text_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>Failed</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<condition var1="tw_operation_status" var2="0" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row2_text_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>Successful</text>
 			</object>
 
-			<object type="template" name="action_page_console" />
+			<object type="console">
+				<placement x="%console_x%" y="215" w="%console_width%" h="%console_installdone_height%" />
+				<color foreground="%console_foreground%" background="%console_background%" scroll="%console_scroll%" />
+				<font resource="fixed" />
+			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_show_reboot" var2="0" />
-				<placement x="%col_center_x%" y="%row4_y%" />
+				<placement x="%col_center_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Back</text>
 				<image resource="main_button" />
@@ -1032,8 +1060,19 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_show_reboot" var2="1" />
-				<placement x="%col_center_x%" y="%row4_y%" />
+				<placement x="%col1_x%" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Home</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_clear_destination=main2</action>
+					<action function="page">clear_vars</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Reboot System</text>
 				<image resource="main_button" />
