@@ -36,6 +36,8 @@ extern "C" {
 
 #include "../minadbd/adb.h"
 
+#include "../mrominstaller.h"
+
 int TWinstall_zip(const char* path, int* wipe_cache);
 void run_script(const char *str1, const char *str2, const char *str3, const char *str4, const char *str5, const char *str6, const char *str7, int request_confirm);
 int gui_console_only();
@@ -659,7 +661,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		if(MultiROM::folderExists())
 			return gui_changePage("multirom_main");
 		else
-			return gui_changePage("multirom_not_installed");
+		{
+			DataManager::SetValue("tw_mrom_title", "MultiROM is not installed!");
+			DataManager::SetValue("tw_mrom_text1", "/data/media/multirom not found.");
+			DataManager::SetValue("tw_mrom_text2", "/data/media/0/multirom not found.");
+			DataManager::SetValue("tw_mrom_back", "advanced");
+			return gui_changePage("multirom_msg");
+		}
 	}
 
 	if (function == "multirom_list")
@@ -723,21 +731,72 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 	if (function == "multirom_add_second")
 	{
-		std::string loc = DataManager::GetStrValue("tw_multirom_install_loc");
-		if(loc.compare(INTERNAL_MEM_LOC_TXT) == 0 || loc.find("(ext") != std::string::npos)
-		{
-			if(DataManager::GetIntValue("tw_multirom_type") == 1)
-				return gui_changePage("multirom_add_source");
-			else
-				return gui_changePage("multirom_add_select");
-		}
+		if(DataManager::GetIntValue("tw_multirom_type") == 1)
+			return gui_changePage("multirom_add_source");
 		else
+			return gui_changePage("multirom_add_select");
+	}
+
+	if (function == "multirom_add_file_selected")
+	{
+		std::string loc = DataManager::GetStrValue("tw_multirom_install_loc");
+		bool images = loc.compare(INTERNAL_MEM_LOC_TXT) != 0 && loc.find("(ext") == std::string::npos;
+		int type = DataManager::GetIntValue("tw_multirom_type");
+
+		MultiROM::clearBaseFolders();
+
+		if(type == 1 || type == 2)
 		{
-			DataManager::SetValue("tw_multirom_system_size", 640);
-			DataManager::SetValue("tw_multirom_data_size", 1024);
-			DataManager::SetValue("tw_multirom_cache_size", 436);
-			DataManager::SetValue("tw_multirom_root_size", 4095);
-			return gui_changePage("multirom_add_image_size");
+			if(type == 1)
+			{
+				MultiROM::addBaseFolder("data", 150, 1024);
+				MultiROM::addBaseFolder("system", 450, 640);
+				MultiROM::addBaseFolder("cache", 50, 436);
+			}
+			else
+				MultiROM::addBaseFolder("root", 2000, 4095);
+
+			MultiROM::updateImageVariables();
+
+			if(images)
+				return gui_changePage("multirom_add_image_size");
+			else
+				return gui_changePage("multirom_add_start_process");
+		}
+		else if(type == 3)
+		{
+			DataManager::SetValue("tw_mrom_back", "multirom_add");
+			DataManager::SetValue("tw_mrom_text2", "");
+
+			std:string ex;
+			MROMInstaller *i = new MROMInstaller();
+
+			DataManager::SetValue("tw_mrom_title", "Bad installer");
+			if(!(ex = i->open(DataManager::GetStrValue("tw_filename"))).empty())
+				return i->destroyWithErrorMsg(ex);
+
+			DataManager::SetValue("tw_mrom_title", "Unsupported device");
+			if(!(ex = i->checkDevices()).empty())
+				return i->destroyWithErrorMsg(ex);
+
+			DataManager::SetValue("tw_mrom_title", "Old MultiROM");
+			if(!(ex = i->checkVersion()).empty())
+				return i->destroyWithErrorMsg(ex);
+
+			DataManager::SetValue("tw_mrom_title", "Unsupported install location");
+			if(!(ex = i->checkInstallLoc(loc)).empty())
+				return i->destroyWithErrorMsg(ex);
+			
+			if(!(ex = i->parseBaseFolders(images, loc.find("ntfs") != std::string::npos)).empty())
+				return i->destroyWithErrorMsg(ex);
+
+			MultiROM::updateImageVariables();
+			MultiROM::setInstaller(i);
+
+			if(images)
+				return gui_changePage("multirom_add_image_size");
+			else
+				return gui_changePage("multirom_add_start_process");
 		}
 	}
 
@@ -747,40 +806,28 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		DataManager::SetValue("tw_multirom_image_too_big", 0);
 		DataManager::SetValue("tw_multirom_image_name", arg);
 
-		static const char *imgs[] = { "cache.img", "data.img", "system.img", "root.img", NULL };
-		static const char *sizes[] =
-		{
-			"tw_multirom_cache_size", "tw_multirom_data_size",
-			"tw_multirom_system_size", "tw_multirom_root_size",
-			NULL
-		};
-
-		for(int i = 0; imgs[i]; ++i)
-		{
-			if(arg != imgs[i])
-				continue;
-
-			DataManager::SetValue("tw_multirom_image_size", DataManager::GetIntValue(sizes[i]));
-			DataManager::SetValue("tw_multirom_image_idx", i);
-			break;
-		}
+		base_folder *b = MultiROM::getBaseFolder(arg);
+		if(b != NULL)
+			DataManager::SetValue("tw_multirom_image_size", b->def_size);
 
 		return gui_changePage("multirom_change_img_size");
 	}
 
 	if (function == "multirom_change_img_size_act")
 	{
-		static const int minSizes[] = { 150, 150, 450, 2000 };
 		int value = DataManager::GetIntValue("tw_multirom_image_size");
-		int idx = DataManager::GetIntValue("tw_multirom_image_idx");
+
+		base_folder *b = MultiROM::getBaseFolder(DataManager::GetStrValue("tw_multirom_image_name"));
+		if(!b)
+			return gui_changePage("multirom_add_image_size");
 
 		DataManager::SetValue("tw_multirom_image_too_small", 0);
 		DataManager::SetValue("tw_multirom_image_too_big", 0);
 
-		if(value < minSizes[idx])
+		if(value < b->min_size)
 		{
 			DataManager::SetValue("tw_multirom_image_too_small", 1);
-			DataManager::SetValue("tw_multirom_min_size", minSizes[idx]);
+			DataManager::SetValue("tw_multirom_min_size", b->min_size);
 			return gui_changePage("multirom_change_img_size");
 		}
 
@@ -791,14 +838,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			return gui_changePage("multirom_change_img_size");
 		}
 
-		static const char *sizes[] =
-		{
-			"tw_multirom_cache_size", "tw_multirom_data_size",
-			"tw_multirom_system_size", "tw_multirom_root_size",
-			NULL
-		};
-
-		DataManager::SetValue(sizes[idx], value);
+		b->def_size = value;
+		MultiROM::updateImageVariables();
 		return gui_changePage("multirom_add_image_size");
 	}
 

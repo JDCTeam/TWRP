@@ -4038,24 +4038,24 @@
 			</object>
 		</page>
 
-		<page name="multirom_not_installed">
+		<page name="multirom_msg">
 			<object type="template" name="header" />
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%center_x%" y="%row4_text_y%" placement="5"/>
-				<text>MultiROM is not installed!</text>
+				<text>%tw_mrom_title%</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%center_x%" y="%row7_text_y%" placement="5"/>
-				<text>/data/media/multirom not found.</text>
+				<text>%tw_mrom_text1%</text>
 			</object>
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%center_x%" y="%row8_text_y%" placement="5"/>
-				<text>/data/media/0/multirom not found.</text>
+				<text>%tw_mrom_text2%</text>
 			</object>
 
 			<object type="button">
@@ -4064,7 +4064,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Back</text>
 				<image resource="main_button" />
-				<action function="page">advanced</action>
+				<action function="page">%tw_mrom_back%</action>
 			</object>
 
 			<object type="action">
@@ -4074,7 +4074,7 @@
 
 			<object type="action">
 				<touch key="back" />
-				<action function="page">advanced</action>
+				<action function="page">%tw_mrom_back%</action>
 			</object>
 
 			<object type="template" name="footer" />
@@ -4670,7 +4670,7 @@
 			<object type="template" name="footer" />
 		</page>
 
-		<page name="multirom_settings">
+		<page name="multirom_settings" pname="multirom_add_image_size">
 			<object type="template" name="header" />
 
 			<object type="text" color="%text_color%">
@@ -4847,7 +4847,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="2" />
+				<condition var1="tw_multirom_type" var2="1" op="!="/>
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Android/Ubuntu touch</text>
@@ -4860,7 +4860,20 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="1" />
+				<condition var1="tw_multirom_type" var2="2" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Ubuntu desktop</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_type=2</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_type" var2="2" op="!="/>
 				<placement x="%col2_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
@@ -4873,13 +4886,26 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="2" />
-				<placement x="%col2_x%" y="%row2_text_y%" />
+				<condition var1="tw_multirom_type" var2="3" />
+				<placement x="%col1_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Ubuntu desktop</text>
+				<text>MultiROM installer (*.mrom files)</text>
 				<image resource="radio_true" />
 				<actions>
-					<action function="set">tw_multirom_type=2</action>
+					<action function="set">tw_multirom_type=3</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_type" var2="3" op="!="/>
+				<placement x="%col1_x%" y="%row3_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>MultiROM installer (*.mrom files)</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_type=3</action>
 					<action function="page">multirom_add</action>
 				</actions>
 			</object>
@@ -4887,7 +4913,7 @@
 			<object type="text" color="%text_success_color%">
 				<condition var1="tw_multirom_type" var2="1" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col1_x%" y="%row4_text_y%" />
 				<text>Share kernel with Internal ROM?</text>
 			</object>
 
@@ -4897,7 +4923,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="1" />
 				</conditions>
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Share (recommended)</text>
 				<image resource="radio_true" />
@@ -4913,7 +4939,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="0" />
 				</conditions>
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Share (recommended)</text>
 				<image resource="radio_false" />
@@ -4929,7 +4955,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="1" />
 				</conditions>
-				<placement x="%col2_x%" y="%row4_text_y%" />
+				<placement x="%col2_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Don't share</text>
 				<image resource="radio_false" />
@@ -4945,7 +4971,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="0" />
 				</conditions>
-				<placement x="%col2_x%" y="%row4_text_y%" />
+				<placement x="%col2_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Don't share</text>
 				<image resource="radio_true" />
@@ -4958,7 +4984,7 @@
 			<object type="text" color="#B3B2B2">
 				<condition var1="tw_multirom_type" var2="1" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
 				<text>Use "Don't share" only if sharing does not work.</text>
 			</object>
 
@@ -4967,7 +4993,7 @@
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<text>Install to:</text>
-				<placement x="20" y="%row6_text_y%" w="760" h="460" />
+				<placement x="20" y="%row7_text_y%" w="760" h="460" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -4986,7 +5012,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_medium_x%" y="%row16_text_y%" />
+				<placement x="%col1_medium_x%" y="940" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Refresh</text>
 				<image resource="medium_button" />
@@ -5127,44 +5153,29 @@
 				<selection name="tw_file" />
 			</object>
 
+			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
+				<condition var1="tw_multirom_type" var2="3" />
+				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Select MultiROM installer file:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter extn=".mrom" folders="1" files="1" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="tw_filename" />
+				<selection name="tw_file" />
+			</object>
+
 			<object type="template" name="sort_options" />
 
 			<object type="action">
-				<conditions>
-					<condition var1="tw_multirom_type" var2="1" />
-					<condition var1="tw_filename" op="modified" />
-				</conditions>
-				<actions>
-					<action function="set">tw_back=multirom_add</action>
-					<action function="set">tw_action=multirom_add_rom</action>
-					<action function="set">tw_text1=Install ROM</action>
-					<action function="set">tw_text2=%tw_filename%</action>
-					<action function="set">tw_text3=?</action>
-					<action function="set">tw_action_text1=Installing ROM...</action>
-					<action function="set">tw_complete_text1=ROM installed</action>
-					<action function="set">tw_slider_text=Swipe to Confirm</action>
-					<action function="set">tw_show_reboot=0</action>
-					<action function="page">confirm_action</action>
-				</actions>
-			</object>
-
-			<object type="action">
-				<conditions>
-					<condition var1="tw_multirom_type" var2="2" />
-					<condition var1="tw_filename" op="modified" />
-				</conditions>
-				<actions>
-					<action function="set">tw_back=multirom_add</action>
-					<action function="set">tw_action=multirom_add_rom</action>
-					<action function="set">tw_text1=Install Ubuntu image</action>
-					<action function="set">tw_text2=%tw_filename%</action>
-					<action function="set">tw_text3=?</action>
-					<action function="set">tw_action_text1=Installing Ubuntu...</action>
-					<action function="set">tw_complete_text1=Ubuntu installed</action>
-					<action function="set">tw_slider_text=Swipe to Confirm</action>
-					<action function="set">tw_show_reboot=0</action>
-					<action function="page">confirm_action</action>
-				</actions>
+				<condition var1="tw_filename" op="modified" />
+				<action function="multirom_add_file_selected" />
 			</object>
 
 			<object type="action">
@@ -5180,7 +5191,57 @@
 			<object type="template" name="footer" />
 		</page>
 
-		<page name="multirom_add_image_size">
+		<page name="multirom_add_start_process">
+			<object type="action">
+				<condition var1="tw_multirom_type" var2="1" />
+				<actions>
+					<action function="set">tw_back=multirom_add</action>
+					<action function="set">tw_action=multirom_add_rom</action>
+					<action function="set">tw_text1=Install ROM</action>
+					<action function="set">tw_text2=%tw_filename%</action>
+					<action function="set">tw_text3=?</action>
+					<action function="set">tw_action_text1=Installing ROM...</action>
+					<action function="set">tw_complete_text1=ROM installed</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<condition var1="tw_multirom_type" var2="2" />
+				<actions>
+					<action function="set">tw_back=multirom_add</action>
+					<action function="set">tw_action=multirom_add_rom</action>
+					<action function="set">tw_text1=Install Ubuntu image</action>
+					<action function="set">tw_text2=%tw_filename%</action>
+					<action function="set">tw_text3=?</action>
+					<action function="set">tw_action_text1=Installing Ubuntu...</action>
+					<action function="set">tw_complete_text1=Ubuntu installed</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<condition var1="tw_multirom_type" var2="3" />
+				<actions>
+					<action function="set">tw_back=multirom_add</action>
+					<action function="set">tw_action=multirom_add_rom</action>
+					<action function="set">tw_text1=Install file</action>
+					<action function="set">tw_text2=%tw_filename%</action>
+					<action function="set">tw_text3=?</action>
+					<action function="set">tw_action_text1=Installing ROM...</action>
+					<action function="set">tw_complete_text1=ROM installed</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+		</page>
+
+		<page pname="multirom_settings" name="multirom_add_image_size">
 			<object type="template" name="header" />
 
 			<object type="text" color="%text_color%">
@@ -5214,100 +5275,107 @@
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_type" var2="1" />
+				<condition var1="tw_mrom_image1"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
-				<text>cache.img: %tw_multirom_cache_size% MB</text>
+				<placement x="%col1_x%" y="400" />
+				<text>%tw_mrom_image1%: %tw_mrom_image1_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="1" />
-				<placement x="%col3_medium_x%" y="%row5_text_y%" />
+				<condition var1="tw_mrom_image1"/>
+				<placement x="%col3_medium_x%" y="350" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
 				<actions>
-					<action function="multirom_change_img_size">cache.img</action>
+					<action function="multirom_change_img_size">%tw_mrom_image1%</action>
 				</actions>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="1" />
+				<condition var1="tw_mrom_image2"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row9_text_y%" />
-				<text>data.img: %tw_multirom_data_size% MB</text>
+				<placement x="%col1_x%" y="%row8_text_y%" />
+				<text>%tw_mrom_image2%: %tw_mrom_image2_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="1" />
-				<placement x="%col3_medium_x%" y="%row8_text_y%" />
+				<condition var1="tw_mrom_image2"/>
+				<placement x="%col3_medium_x%" y="470" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
 				<actions>
-					<action function="multirom_change_img_size">data.img</action>
+					<action function="multirom_change_img_size">%tw_mrom_image2%</action>
 				</actions>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_type" var2="1" />
+				<condition var1="tw_mrom_image3"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row12_text_y%" />
-				<text>system.img: %tw_multirom_system_size% MB</text>
+				<placement x="%col1_x%" y="640" />
+				<text>%tw_mrom_image3%: %tw_mrom_image3_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="1" />
-				<placement x="%col3_medium_x%" y="%row11_text_y%" />
+				<condition var1="tw_mrom_image3"/>
+				<placement x="%col3_medium_x%" y="590" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
 				<actions>
-					<action function="multirom_change_img_size">system.img</action>
+					<action function="multirom_change_img_size">%tw_mrom_image3%</action>
 				</actions>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_type" var2="2" />
+				<condition var1="tw_mrom_image4"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
-				<text>root.img: %tw_multirom_root_size% MB</text>
+				<placement x="%col1_x%" y="760" />
+				<text>%tw_mrom_image4%: %tw_mrom_image4_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="2" />
-				<placement x="%col3_medium_x%" y="%row5_text_y%" />
+				<condition var1="tw_mrom_image4"/>
+				<placement x="%col3_medium_x%" y="710" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
 				<actions>
-					<action function="multirom_change_img_size">root.img</action>
+					<action function="multirom_change_img_size">%tw_mrom_image4%</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_mrom_image5"/>
+				<font resource="font" />
+				<placement x="%col1_x%" y="880" />
+				<text>%tw_mrom_image5%: %tw_mrom_image5_size% MB</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_mrom_image5"/>
+				<placement x="%col3_medium_x%" y="830" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Change</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="multirom_change_img_size">%tw_mrom_image5%</action>
 				</actions>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col_center_x%" y="%tz_set_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Next</text>
 				<image resource="main_button" />
-				<action function="page">multirom_add_source</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="2" />
-				<placement x="%col_center_x%" y="%tz_set_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Next</text>
-				<image resource="main_button" />
-				<action function="page">multirom_add_select</action>
+				<action function="page">multirom_add_start_process</action>
 			</object>
 
 			<object type="action">

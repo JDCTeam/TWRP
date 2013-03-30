@@ -40,6 +40,10 @@ LOCAL_SRC_FILES += \
     openrecoveryscript.cpp \
     tarWrite.c
 
+LOCAL_SRC_FILES += \
+    multirom.cpp \
+    mrominstaller.cpp
+
 ifneq ($(TARGET_RECOVERY_REBOOT_SRC),)
   LOCAL_SRC_FILES += $(TARGET_RECOVERY_REBOOT_SRC)
 endif
