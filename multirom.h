@@ -45,6 +45,7 @@ enum
 #define MASK_ANDROID (M(ROM_ANDROID_USB_DIR) | M(ROM_ANDROID_USB_IMG) | M(ROM_ANDROID_INTERNAL))
 #define MASK_IMAGES (M(ROM_ANDROID_USB_IMG) | M(ROM_UBUNTU_USB_IMG) | M(ROM_INSTALLER_USB_IMG))
 #define MASK_INTERNAL (M(ROM_ANDROID_INTERNAL) | M(ROM_UBUNTU_INTERNAL) | M(ROM_INSTALLER_INTERNAL))
+#define MASK_INSTALLER (M(ROM_INSTALLER_INTERNAL) | M(ROM_INSTALLER_USB_DIR) | M(ROM_INSTALLER_USB_IMG))
 
 #define INTERNAL_NAME "Internal"
 #define REALDATA "/realdata"
@@ -58,12 +59,13 @@ enum
 
 struct base_folder
 {
-	base_folder(const std::string& name, int min_size, int def_size);
+	base_folder(const std::string& name, int min_size, int size);
 	base_folder(const base_folder& other);
+	base_folder();
 
 	std::string name;
 	int min_size;
-	int def_size;
+	int size;
 };
 
 class MultiROM
@@ -96,6 +98,7 @@ public:
 
 	static void clearBaseFolders();
 	static const base_folder& addBaseFolder(const std::string& name, int min, int def);
+	static const base_folder& addBaseFolder(const base_folder& b);
 	static baseFolders& getBaseFolders();
 	static base_folder *getBaseFolder(const std::string& name);
 	static void updateImageVariables();

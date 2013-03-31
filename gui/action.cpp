@@ -787,7 +787,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			if(!(ex = i->checkInstallLoc(loc)).empty())
 				return i->destroyWithErrorMsg(ex);
 			
-			if(!(ex = i->parseBaseFolders(images, loc.find("ntfs") != std::string::npos)).empty())
+			if(!(ex = i->parseBaseFolders(loc.find("ntfs") != std::string::npos)).empty())
 				return i->destroyWithErrorMsg(ex);
 
 			MultiROM::updateImageVariables();
@@ -808,7 +808,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 		base_folder *b = MultiROM::getBaseFolder(arg);
 		if(b != NULL)
-			DataManager::SetValue("tw_multirom_image_size", b->def_size);
+			DataManager::SetValue("tw_multirom_image_size", b->size);
 
 		return gui_changePage("multirom_change_img_size");
 	}
@@ -838,7 +838,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			return gui_changePage("multirom_change_img_size");
 		}
 
-		b->def_size = value;
+		b->size = value;
 		MultiROM::updateImageVariables();
 		return gui_changePage("multirom_add_image_size");
 	}

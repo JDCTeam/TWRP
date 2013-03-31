@@ -10,18 +10,24 @@ MROMInstaller *MultiROM::m_installer = NULL;
 MultiROM::baseFolders MultiROM::m_base_folders;
 int MultiROM::m_base_folder_cnt = 0;
 
-base_folder::base_folder(const std::string& name, int min_size, int def_size)
+base_folder::base_folder(const std::string& name, int min_size, int size)
 {
 	this->name = name;
 	this->min_size = min_size;
-	this->def_size = def_size;
+	this->size = size;
 }
 
 base_folder::base_folder(const base_folder& other)
 {
 	name = other.name;
 	min_size = other.min_size;
-	def_size = other.def_size;
+	size = other.size;
+}
+
+base_folder::base_folder()
+{
+	min_size = 1;
+	size = 1;
 }
 
 MultiROM::config::config()
@@ -901,7 +907,7 @@ bool MultiROM::createImage(const std::string& base, const char *img, int size)
 bool MultiROM::createImagesFromBase(const std::string& base)
 {
 	for(baseFolders::const_iterator itr = m_base_folders.begin(); itr != m_base_folders.end(); ++itr)
-		if(!createImage(base, itr->first.c_str(), itr->second.def_size))
+		if(!createImage(base, itr->first.c_str(), itr->second.size))
 			return false;
 
 	return true;
@@ -1138,12 +1144,13 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 		}
 	}
 
+	system("mkdir /mnt_ub_img");
+	system("umount /mnt_ub_img");
+
 	ui_printf("Converting the image (may take a while)...\n");
 	sprintf(cmd, "simg2img \"%s\" /tmp/rootfs.img", img_path.c_str());
 	system(cmd);
 
-	system("mkdir /mnt_ub_img");
-	system("umount /mnt_ub_img");
 	system("mount /tmp/rootfs.img /mnt_ub_img");
 
 	if(stat("/mnt_ub_img/rootfs.tar.gz", &info) < 0)
@@ -1343,9 +1350,13 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 
 	int type = getType(os, loc);
 
+	if((M(type) & MASK_INSTALLER) && !m_installer->checkFreeSpace(getRomsPath(), type == ROM_INSTALLER_USB_IMG))
+		return false;
+
 	if(!createDirs(name, type))
 		return false;
 
+	std::string root = getRomsPath() + "/" + name;
 	bool res = false;
 	switch(type)
 	{
@@ -1378,7 +1389,7 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 		case ROM_UBUNTU_USB_DIR:
 		case ROM_UBUNTU_USB_IMG:
 		{
-			std::string dest = getRomsPath() + "/" + name + "/root";
+			std::string dest = root + "/root";
 			if(type == ROM_UBUNTU_USB_IMG && !mountUbuntuImage(name, dest))
 				break;
 
@@ -1402,12 +1413,6 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 		case ROM_INSTALLER_USB_DIR:
 		case ROM_INSTALLER_USB_IMG:
 		{
-			if(!m_installer)
-			{
-				ui_print("No installer object created!");
-				break;
-			}
-
 			std::string text = m_installer->getValue("install_text");
 			if(!text.empty())
 			{
@@ -1422,25 +1427,23 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 				ui_printf("  \n");
 			}
 
-			std::string base = getRomsPath() + "/" + name;
-			std::string root = base;
-
+			std::string base = root;
 			if(type == ROM_INSTALLER_USB_IMG && !mountBaseImages(root, base))
 				break;
 
-			if(!m_installer->runScripts("pre_install", base, root))
-				break;
-
-			if(!m_installer->extractDir("root_dir", root))
-				break;
-
-			if(!m_installer->extractTarballs(base))
-				break;
-
-			if(!m_installer->runScripts("post_install", base, root))
-				break;
-
 			res = true;
+
+			if(res && !m_installer->runScripts("pre_install", base, root))
+				res = false;
+
+			if(res && !m_installer->extractDir("root_dir", root))
+				res = false;
+
+			if(res && !m_installer->extractTarballs(base))
+				res = false;
+
+			if(res && !m_installer->runScripts("post_install", base, root))
+				res = false;
 
 			if(type == ROM_INSTALLER_USB_IMG)
 				 umountBaseImages(base);
@@ -1451,7 +1454,7 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 	if(!res)
 	{
 		ui_print("Erasing incomplete ROM...\n");
-		std::string cmd = "rm -rf \"" + getRomsPath() + "/" + name + "\"";
+		std::string cmd = "rm -rf \"" + root + "\"";
 		system(cmd.c_str());
 	}
 
@@ -1639,13 +1642,19 @@ void MultiROM::updateImageVariables()
 	{
 		sprintf(name, "tw_mrom_image%d", i++);
 		DataManager::SetValue(name, itr->first);
-		DataManager::SetValue(std::string(name) + "_size", itr->second.def_size);
+		DataManager::SetValue(std::string(name) + "_size", itr->second.size);
 	}
 }
 
 const base_folder& MultiROM::addBaseFolder(const std::string& name, int min, int def)
 {
 	base_folder b(name, min, def);
+	return addBaseFolder(b);
+}
+
+const base_folder& MultiROM::addBaseFolder(const base_folder& b)
+{
+	LOGI("MROMInstaller: base folder: %s (min: %dMB def: %dMB)\n", b.name.c_str(), b.min_size, b.size);
 	return m_base_folders.insert(std::make_pair<std::string, base_folder>(b.name, b)).first->second;
 }
 

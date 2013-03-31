@@ -17,7 +17,8 @@ public:
 	std::string checkInstallLoc(std::string loc) const;
 	std::string checkDevices() const;
 	std::string checkVersion() const;
-	std::string parseBaseFolders(bool parseImageSizes, bool ntfs);
+	std::string parseBaseFolders(bool ntfs);
+	bool checkFreeSpace(const std::string& base, bool images);
 
 	int getIntValue(const std::string& name, int def = 0) const;
 	std::string getValue(const std::string& name, std::string def = "") const;

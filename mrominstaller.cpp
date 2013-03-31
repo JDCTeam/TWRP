@@ -2,6 +2,11 @@
 #include <algorithm>
 #include <limits>
 
+// android does not have statvfs
+//#include <sys/statvfs.h>
+#include <sys/vfs.h>
+#define statvfs statfs
+
 #include "mrominstaller.h"
 #include "minzip/Zip.h"
 #include "common.h"
@@ -183,56 +188,41 @@ std::string MROMInstaller::checkVersion() const
 	return std::string();
 }
 
-std::string MROMInstaller::parseBaseFolders(bool parseImageSizes, bool ntfs)
+std::string MROMInstaller::parseBaseFolders(bool ntfs)
 {
 	MultiROM::clearBaseFolders();
-	
-	std::string s = getValue("base_folders");
-	char *p = strtok((char*)s.c_str(), " ");
-	while(p)
-	{
-		const base_folder& b = MultiROM::addBaseFolder(p, 1, 1);
-		LOGI("MROMInstaller: base folder %s\n", b.name.c_str());
 
-		p = strtok(NULL, " ");
+	char *itr, *itr2, *p, *t;
+	base_folder b;
+	std::string s = getValue("base_folders");
+
+	p = strtok_r((char*)s.c_str(), " ", &itr);
+	for(int i = 0; p; ++i)
+	{
+		t = strtok_r(p, ":", &itr2);
+		for(int x = 0; t; ++x)
+		{
+			switch(x)
+			{
+				case 0:
+					b.name = t;
+					break;
+				case 1:
+					b.min_size = std::min(atoi(t), ntfs ? INT_MAX : 4095);
+					break;
+				case 2:
+					b.size = std::min(atoi(t), ntfs ? INT_MAX : 4095);
+					MultiROM::addBaseFolder(b);
+					break;
+			}
+			t = strtok_r(NULL, ":", &itr2);
+		}
+		p = strtok_r(NULL, " ", &itr);
 	}
 
 	if(MultiROM::getBaseFolders().size() > MAX_BASE_FOLDER_CNT)
 		return "Too many base folders!";
 
-	if(!parseImageSizes)
-		return std::string();
-
-	char *itr, *itr2;
-	base_folder *b = NULL;
-	s = getValue("img_sizes");
-	p = strtok_r((char*)s.c_str(), " ", &itr);
-	for(int i = 0; p; ++i)
-	{
-		char *t = strtok_r(p, ":", &itr2);
-		for(int x = 0; t; ++x)
-		{
-			if(x == 0)
-			{
-				b = MultiROM::getBaseFolder(t);
-				if(b == NULL)
-				{
-					LOGE("MROMInstaller: image sizes for unknown base folder %s\n", t);
-					break;
-				}
-			}
-			else if(x == 1)
-				b->min_size = std::min(atoi(t), ntfs ? INT_MAX : 4095);
-			else if(x == 2)
-			{
-				b->def_size = std::min(atoi(t), ntfs ? INT_MAX : 4095);
-				LOGI("MROMInstaller: base folder %s min: %d def: %d\n", b->name.c_str(), b->min_size, b->def_size);
-			}
-			t = strtok_r(NULL, ":", &itr2);
-		}
-		
-		p = strtok_r(NULL, " ", &itr);
-	}
 	return std::string();
 }
 
@@ -303,8 +293,11 @@ bool MROMInstaller::hasEntry(const std::string& name)
 		return false;
 	}
 
+	// Check also for entry with / - according to minzip, folders
+	// usually (but not always) end with /
 	const ZipEntry *entry1 = mzFindZipEntry(&zip, name.c_str());
 	const ZipEntry *entry2 = mzFindZipEntry(&zip, (name + "/").c_str());
+
 	mzCloseZipArchive(&zip);
 
 	return entry1 || entry2;
@@ -326,6 +319,8 @@ bool MROMInstaller::runScripts(const std::string& dir, const std::string& base, 
 	if(system("ls /tmp/script/*.sh") == 0)
 	{
 		system("chmod -R 777 /tmp/script/*");
+
+		ui_printf("Running %s scripts...\n", dir.c_str());
 
 		char cmd[512];
 		sprintf(cmd, "sh -c 'for x in $(ls /tmp/script/*.sh); do echo Running script $x; sh $x %s %s || exit 1; done'", base.c_str(), root.c_str());
@@ -417,3 +412,32 @@ bool MROMInstaller::extractTarball(const std::string& base, const std::string& n
 	return res;
 }
 
+bool MROMInstaller::checkFreeSpace(const std::string& base, bool images)
+{
+	struct statvfs s;
+	int res = statvfs(base.c_str(), &s);
+	if(res < 0)
+	{
+		ui_printf("Check for free space failed: %s %d %d %s!\n", base.c_str(), res, errno, strerror(errno));
+		return false;
+	}
+
+	int free = (s.f_bavail * (s.f_bsize/1024) ) / 1024;
+	int req = 0;
+
+	const MultiROM::baseFolders& folders = MultiROM::getBaseFolders();
+	MultiROM::baseFolders::const_iterator itr;
+	for(itr = folders.begin(); itr != folders.end(); ++itr)
+	{
+		if(images)
+			req += itr->second.size;
+		else
+			req += itr->second.min_size;
+	}
+
+	ui_printf("Free space check: Required: %d MB, free: %d MB\n", req, free);
+	if(free < req)
+		LOGE("Not enough free space!\n");
+
+	return free >= req;
+}
