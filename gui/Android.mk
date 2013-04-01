@@ -17,6 +17,7 @@ LOCAL_SRC_FILES := \
     animation.cpp \
     conditional.cpp \
     slider.cpp \
+    slidervalue.cpp \
     listbox.cpp \
     keyboard.cpp \
     input.cpp \
