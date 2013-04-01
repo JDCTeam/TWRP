@@ -79,7 +79,7 @@ public:
 		std::string current_rom;
 		int auto_boot_seconds;
 		std::string auto_boot_rom;
-		int set_quiet_ubuntu;
+		int colors;
 	};
 
 	struct file_backup {

@@ -313,8 +313,8 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.auto_boot_seconds = atoi(val.c_str());
 			else if(name == "auto_boot_rom")
 				cfg.auto_boot_rom = val;
-			else if(name == "set_quiet_ubuntu")
-				cfg.set_quiet_ubuntu = atoi(val.c_str());
+			else if(name == "colors")
+				cfg.colors = atoi(val.c_str());
 		}
 		fclose(f);
 	}
@@ -330,7 +330,7 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "current_rom=%s\n", cfg.current_rom.c_str());
 	fprintf(f, "auto_boot_seconds=%d\n", cfg.auto_boot_seconds);
 	fprintf(f, "auto_boot_rom=%s\n", cfg.auto_boot_rom.c_str());
-	fprintf(f, "set_quiet_ubuntu=%d\n", cfg.set_quiet_ubuntu);
+	fprintf(f, "colors=%d\n", cfg.colors);
 
 	fclose(f);
 }
@@ -343,7 +343,7 @@ bool MultiROM::changeMounts(std::string name)
 	mkdir(REALDATA, 0777);
 	if(mount("/dev/block/platform/sdhci-tegra.3/by-name/UDA",
 	    REALDATA, "ext4", MS_RELATIME | MS_NOATIME,
-		"user_xattr,acl,barrier=1,data=ordered") < 0)
+		"user_xattr,acl,barrier=1,data=ordered,discard") < 0)
 	{
 		ui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
 		return false;
