@@ -17,7 +17,7 @@
 
 MROMInstaller::MROMInstaller()
 {
-
+	m_type = ROM_UNKNOWN;
 }
 
 MROMInstaller::~MROMInstaller()
@@ -115,25 +115,80 @@ std::string MROMInstaller::getValue(const std::string& name, std::string def) co
 	return itr->second;
 }
 
-std::string MROMInstaller::checkInstallLoc(std::string loc) const
+int MROMInstaller::getStringList(std::vector<std::string>& list, const std::string& name) const
 {
-	bool internal = loc.compare(INTERNAL_MEM_LOC_TXT) == 0;
-	bool imgs = !internal && loc.find("(ext") == std::string::npos;
+	std::string str = getValue(name);
+	if(str.empty())
+		return 0;
 
-	if(internal)
+	size_t idx = 0, idx_next = 0, len;
+	int cnt = 0;
+
+	do
 	{
-		if(getIntValue("loc_internal")) return std::string();
-		else return "ROM can't be installed to internal memory!";
+		idx_next = str.find(' ', idx+1);
+		if(idx != 0)
+			++idx;
+
+		len = std::min(idx_next, str.size()) - idx;
+
+		list.push_back(str.substr(idx, len));
+		idx = idx_next;
+		++cnt;
+	} while(idx != std::string::npos);
+
+	if(cnt == 0)
+	{
+		++cnt;
+		list.push_back(str);
 	}
-	else if(imgs)
+
+	return cnt;
+}
+
+std::string MROMInstaller::setInstallLoc(const std::string& loc, bool &images)
+{
+	if(loc.compare(INTERNAL_MEM_LOC_TXT) == 0)
 	{
-		if(getIntValue("loc_usb_img")) return std::string();
-		else return "ROM can't be installed to USB w/ FAT32/NTFS!";
+		if(getIntValue("enable_internal"))
+		{
+			images = false;
+			m_type = ROM_INSTALLER_INTERNAL;
+			return std::string();
+		}
+		else
+			return "ROM can't be installed to internal memory!";
 	}
 	else
 	{
-		if(getIntValue("loc_usb_dir")) return std::string();
-		else return "ROM can't be installed to USB w/ ext fs!";
+		size_t start = loc.find('(');
+		size_t end = loc.find(')');
+		if(start == std::string::npos || end == std::string::npos)
+			return "Failed to get filesystem of target location";
+
+		++start;
+		std::string fs = loc.substr(start, end-start);
+
+		// try to be dir first
+		std::vector<std::string> supported;
+		getStringList(supported, "usb_dir_fs");
+		if(std::find(supported.begin(), supported.end(), fs) != supported.end())
+		{
+			images = false;
+			m_type = ROM_INSTALLER_USB_DIR;
+			return std::string();
+		}
+
+		// now images
+		supported.clear();
+		getStringList(supported, "usb_img_fs");
+		if(std::find(supported.begin(), supported.end(), fs) != supported.end())
+		{
+			images = true;
+			m_type = ROM_INSTALLER_USB_IMG;
+			return std::string();
+		}
+		return std::string("Install location has unsupported fs (") + fs + ")";
 	}
 	return std::string();
 }

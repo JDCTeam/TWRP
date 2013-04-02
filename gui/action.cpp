@@ -786,7 +786,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				return i->destroyWithErrorMsg(ex);
 
 			DataManager::SetValue("tw_mrom_title", "Unsupported install location");
-			if(!(ex = i->checkInstallLoc(loc)).empty())
+			if(!(ex = i->setInstallLoc(loc, images)).empty())
 				return i->destroyWithErrorMsg(ex);
 			
 			if(!(ex = i->parseBaseFolders(loc.find("ntfs") != std::string::npos)).empty())

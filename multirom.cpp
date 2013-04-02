@@ -1309,13 +1309,7 @@ int MultiROM::getType(int os, std::string loc)
 				return ROM_UBUNTU_USB_IMG;
 			break;
 		case 3: // installer
-			if(loc == INTERNAL_MEM_LOC_TXT)
-				return ROM_INSTALLER_INTERNAL;
-			else if(ext)
-				return ROM_INSTALLER_USB_DIR;
-			else
-				return ROM_INSTALLER_USB_IMG;
-			break;
+			return m_installer->getRomType();
 	}
 	return ROM_UNKNOWN;
 }
