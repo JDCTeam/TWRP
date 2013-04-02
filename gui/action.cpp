@@ -701,7 +701,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			DataManager::SetValue("tw_multirom_delay", cfg.auto_boot_seconds);
 		DataManager::SetValue("tw_multirom_current", cfg.current_rom);
 		DataManager::SetValue("tw_multirom_auto_boot_rom", cfg.auto_boot_rom);
-		DataManager::SetValue("tw_multirom_set_quiet_ubuntu", cfg.set_quiet_ubuntu);
+		DataManager::SetValue("tw_multirom_colors", cfg.colors);
+		DataManager::SetValue("tw_multirom_brightness", cfg.brightness);
 
 		DataManager::SetValue("tw_multirom_roms", MultiROM::listRoms());
 		return gui_changePage("multirom_settings");
@@ -716,7 +717,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		else
 			cfg.auto_boot_seconds = 0;
 		cfg.auto_boot_rom = DataManager::GetStrValue("tw_multirom_auto_boot_rom");
-		cfg.set_quiet_ubuntu = DataManager::GetIntValue("tw_multirom_set_quiet_ubuntu");
+		cfg.colors = DataManager::GetIntValue("tw_multirom_colors");
+		cfg.brightness = DataManager::GetIntValue("tw_multirom_brightness");
 
 		MultiROM::saveConfig(cfg);
 		return gui_changePage("multirom_main");

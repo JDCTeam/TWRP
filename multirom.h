@@ -80,6 +80,7 @@ public:
 		int auto_boot_seconds;
 		std::string auto_boot_rom;
 		int colors;
+		int brightness;
 	};
 
 	struct file_backup {

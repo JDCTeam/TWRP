@@ -36,7 +36,8 @@ MultiROM::config::config()
 	current_rom = INTERNAL_NAME;
 	auto_boot_seconds = 5;
 	auto_boot_rom = INTERNAL_NAME;
-	set_quiet_ubuntu = 1;
+	colors = 0;
+	brightness = 40;
 }
 
 bool MultiROM::folderExists()
@@ -315,6 +316,8 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.auto_boot_rom = val;
 			else if(name == "colors")
 				cfg.colors = atoi(val.c_str());
+			else if(name == "brightness")
+				cfg.brightness = atoi(val.c_str());
 		}
 		fclose(f);
 	}
@@ -331,6 +334,7 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "auto_boot_seconds=%d\n", cfg.auto_boot_seconds);
 	fprintf(f, "auto_boot_rom=%s\n", cfg.auto_boot_rom.c_str());
 	fprintf(f, "colors=%d\n", cfg.colors);
+	fprintf(f, "brightness=%d\n", cfg.brightness);
 
 	fclose(f);
 }
