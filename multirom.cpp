@@ -1197,7 +1197,7 @@ bool MultiROM::patchUbuntuInit(std::string rootDir)
 		return false;
 	}
 
-	char cmd[256];
+	char cmd[512];
 	sprintf(cmd, "cp -a \"%s/ubuntu-init/init\" \"%s\"", m_path.c_str(), initPath.c_str());
 	system(cmd);
 	sprintf(cmd, "cp -a \"%s/ubuntu-init/local\" \"%s\"", m_path.c_str(), locPath.c_str());
@@ -1210,7 +1210,7 @@ bool MultiROM::patchUbuntuInit(std::string rootDir)
 
 void MultiROM::setUpChroot(bool start, std::string rootDir)
 {
-	char cmd[256];
+	char cmd[512];
 	static const char *dirs[] = { "dev", "sys", "proc" };
 	for(size_t i = 0; i < sizeof(dirs)/sizeof(dirs[0]); ++i)
 	{
@@ -1228,7 +1228,7 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 
 	setUpChroot(true, rootDir);
 
-	char cmd[256];
+	char cmd[512];
 
 	sprintf(cmd, "chroot \"%s\" apt-get -y --force-yes purge ac100-tarball-installer flash-kernel", rootDir.c_str());
 	system(cmd);
@@ -1250,7 +1250,7 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 void MultiROM::ubuntuDisableFlashKernel(bool initChroot, std::string rootDir)
 {
 	ui_print("Disabling flash-kernel");
-	char cmd[256];
+	char cmd[512];
 	if(initChroot)
 	{
 		setUpChroot(true, rootDir);
@@ -1395,7 +1395,7 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 				patchUbuntuInit(dest) && ubuntuUpdateInitramfs(dest))
 				res = true;
 
-			char cmd[256];
+			char cmd[512];
 			sprintf(cmd, "touch %s/var/lib/oem-config/run", dest.c_str());
 			system(cmd);
 
