@@ -703,6 +703,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		DataManager::SetValue("tw_multirom_auto_boot_rom", cfg.auto_boot_rom);
 		DataManager::SetValue("tw_multirom_colors", cfg.colors);
 		DataManager::SetValue("tw_multirom_brightness", cfg.brightness);
+		DataManager::SetValue("tw_multirom_enable_adb", cfg.enable_adb);
 
 		DataManager::SetValue("tw_multirom_roms", MultiROM::listRoms());
 		return gui_changePage("multirom_settings");
@@ -719,6 +720,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		cfg.auto_boot_rom = DataManager::GetStrValue("tw_multirom_auto_boot_rom");
 		cfg.colors = DataManager::GetIntValue("tw_multirom_colors");
 		cfg.brightness = DataManager::GetIntValue("tw_multirom_brightness");
+		cfg.enable_adb = DataManager::GetIntValue("tw_multirom_enable_adb");
 
 		MultiROM::saveConfig(cfg);
 		return gui_changePage("multirom_main");

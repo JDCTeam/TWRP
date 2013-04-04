@@ -4687,6 +4687,14 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="checkbox">
+				<placement x="%col2_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Enable ADB</text>
+				<data variable="tw_multirom_enable_adb" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
 				<placement x="%col1_x%" y="%row3_text_y%" />

@@ -81,6 +81,7 @@ public:
 		std::string auto_boot_rom;
 		int colors;
 		int brightness;
+		int enable_adb;
 	};
 
 	struct file_backup {

@@ -318,6 +318,8 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.colors = atoi(val.c_str());
 			else if(name == "brightness")
 				cfg.brightness = atoi(val.c_str());
+			else if(name == "enable_adb")
+				cfg.enable_adb = atoi(val.c_str());
 		}
 		fclose(f);
 	}
@@ -335,6 +337,7 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "auto_boot_rom=%s\n", cfg.auto_boot_rom.c_str());
 	fprintf(f, "colors=%d\n", cfg.colors);
 	fprintf(f, "brightness=%d\n", cfg.brightness);
+	fprintf(f, "enable_adb=%d\n", cfg.enable_adb);
 
 	fclose(f);
 }
