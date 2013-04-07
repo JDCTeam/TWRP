@@ -953,7 +953,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_start("Injecting");
 			int op_status = !MultiROM::folderExists();
 			if(op_status)
-				ui_print("MultiROM is not installed!\n");
+				gui_print("MultiROM is not installed!\n");
 			else
 				op_status = !MultiROM::injectBoot("/dev/block/mmcblk0p2");
 			operation_end(op_status, simulate);

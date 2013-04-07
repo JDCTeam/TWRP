@@ -2,6 +2,10 @@
 
 #include "multirom.h"
 
+extern "C" {
+#include "twcommon.h"
+}
+
 std::string MultiROM::m_path = "";
 std::string MultiROM::m_mount_rom_paths[2] = { "", "" };
 std::vector<MultiROM::file_backup> MultiROM::m_mount_bak;
@@ -155,7 +159,7 @@ bool MultiROM::move(std::string from, std::string to)
 	std::string cmd = "mv \"" + roms + "/" + from + "\" ";
 	cmd += "\"" + roms + "/" + to + "\"";
 
-	ui_print("Moving ROM \"%s\" to \"%s\"...\n", from.c_str(), to.c_str());
+	gui_print("Moving ROM \"%s\" to \"%s\"...\n", from.c_str(), to.c_str());
 
 	return system(cmd.c_str()) == 0;
 }
@@ -164,17 +168,17 @@ bool MultiROM::erase(std::string name)
 {
 	std::string path = getRomsPath() + "/" + name;
 
-	ui_print("Erasing ROM \"%s\"...\n", name.c_str());
+	gui_print("Erasing ROM \"%s\"...\n", name.c_str());
 	std::string cmd = "rm -rf \"" + path + "\"";
 	return system(cmd.c_str()) == 0;
 }
 
 bool MultiROM::wipe(std::string name, std::string what)
 {
-	ui_print("Changing mountpoints...\n");
+	gui_print("Changing mountpoints...\n");
 	if(!changeMounts(name))
 	{
-		ui_print("Failed to change mountpoints!\n");
+		gui_print("Failed to change mountpoints!\n");
 		return false;
 	}
 
@@ -191,23 +195,23 @@ bool MultiROM::wipe(std::string name, std::string what)
 		for(uint8_t i = 0; res && i < sizeof(dirs)/sizeof(dirs[0]); ++i)
 		{
 			sprintf(cmd, "rm -rf \"/%s\"", dirs[i]);
-			ui_print("Wiping dalvik: %s...\n", dirs[i]);
+			gui_print("Wiping dalvik: %s...\n", dirs[i]);
 			res = (system(cmd) == 0);
 		}
 	}
 	else
 	{
 		sprintf(cmd, "rm -rf \"/%s/\"*", what.c_str());
-		ui_print("Wiping ROM's /%s...\n", what.c_str());
+		gui_print("Wiping ROM's /%s...\n", what.c_str());
 		res = (system(cmd) == 0);
 	}
 
 	sync();
 
 	if(!res)
-		ui_print("ERROR: Failed to erase %s!\n", what.c_str());
+		gui_print("ERROR: Failed to erase %s!\n", what.c_str());
 
-	ui_print("Restoring mountpoints...\n");
+	gui_print("Restoring mountpoints...\n");
 	restoreMounts();
 	return res;
 }
@@ -352,7 +356,7 @@ bool MultiROM::changeMounts(std::string name)
 	    REALDATA, "ext4", MS_RELATIME | MS_NOATIME,
 		"user_xattr,acl,barrier=1,data=ordered,discard") < 0)
 	{
-		ui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
+		gui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
 		return false;
 	}
 
@@ -466,7 +470,7 @@ bool MultiROM::changeMounts(std::string name)
 
 	system("mv /sbin/umount /sbin/umount.bak");
 
-	load_volume_table();
+	//load_volume_table();
 	return true;
 }
 
@@ -496,7 +500,7 @@ void MultiROM::restoreMounts()
 	}
 
 	system("umount "REALDATA);
-	load_volume_table();
+	//load_volume_table();
 	system("mount /data");
 }
 
@@ -505,17 +509,17 @@ void MultiROM::restoreMounts()
 
 bool MultiROM::flashZip(std::string rom, std::string file)
 {
-	ui_print("Flashing ZIP file %s\n", file.c_str());
-	ui_print("ROM: %s\n", rom.c_str());
+	gui_print("Flashing ZIP file %s\n", file.c_str());
+	gui_print("ROM: %s\n", rom.c_str());
 
-	ui_print("Preparing ZIP file...\n");
+	gui_print("Preparing ZIP file...\n");
 	if(!prepareZIP(file))
 		return false;
 
-	ui_print("Changing mountpoints\n");
+	gui_print("Changing mountpoints\n");
 	if(!changeMounts(rom))
 	{
-		ui_print("Failed to change mountpoints!\n");
+		gui_print("Failed to change mountpoints!\n");
 		return false;
 	}
 
@@ -538,9 +542,9 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		system("rm /tmp/mr_update.zip");
 
 	if(status != INSTALL_SUCCESS)
-		ui_print("Failed to install ZIP!\n");
+		gui_print("Failed to install ZIP!\n");
 	else
-		ui_print("ZIP successfully installed\n");
+		gui_print("ZIP successfully installed\n");
 
 	restoreMounts();
 	return (status == INSTALL_SUCCESS);
@@ -581,19 +585,19 @@ bool MultiROM::prepareZIP(std::string& file)
 	struct stat info;
 	if(stat(file.c_str(), &info) >= 0 && info.st_size < 450*1024*1024)
 	{
-		ui_print("Copying ZIP to /tmp...\n");
+		gui_print("Copying ZIP to /tmp...\n");
 		sprintf(cmd, "cp \"%s\" /tmp/mr_update.zip", file.c_str());
 		system(cmd);
 		file = "/tmp/mr_update.zip";
 	}
 	else
 	{
-		ui_print(" \n");
-		ui_print("=======================================================\n");
-		ui_print("WARN: Modifying the real ZIP, it is too big!\n");
-		ui_print("The ZIP file is now unusable for non-MultiROM flashing!\n");
-		ui_print("=======================================================\n");
-		ui_print(" \n");
+		gui_print(" \n");
+		gui_print("=======================================================\n");
+		gui_print("WARN: Modifying the real ZIP, it is too big!\n");
+		gui_print("The ZIP file is now unusable for non-MultiROM flashing!\n");
+		gui_print("=======================================================\n");
+		gui_print(" \n");
 	}
 
 	sprintf(cmd, "mkdir -p /tmp/%s", MR_UPDATE_SCRIPT_PATH);
@@ -641,7 +645,7 @@ bool MultiROM::prepareZIP(std::string& file)
 			return false;
 	}
 	else
-		ui_print("No need to change ZIP.");
+		gui_print("No need to change ZIP.");
 
 	return true;
 
@@ -659,12 +663,12 @@ bool MultiROM::injectBoot(std::string img_path)
 
 	if (stat(path_trampoline.c_str(), &info) < 0)
 	{
-		ui_print("%s not found!\n", path_trampoline.c_str());
+		gui_print("%s not found!\n", path_trampoline.c_str());
 		return false;
 	}
 
 	// EXTRACT BOOTIMG
-	ui_print("Extracting boot image...\n");
+	gui_print("Extracting boot image...\n");
 	system("rm -r /tmp/boot; mkdir /tmp/boot");
 	sprintf(cmd, "unpackbootimg -i \"%s\" -o /tmp/boot/", img_path.c_str());
 	system(cmd);
@@ -673,23 +677,23 @@ bool MultiROM::injectBoot(std::string img_path)
 	sprintf(cmd, "/tmp/boot/%s-zImage", p.c_str());
 	if(stat(cmd, &info) < 0)
 	{
-		ui_print("Failed to unpack boot img!\n");
+		gui_print("Failed to unpack boot img!\n");
 		return false;
 	}
 
 	// DECOMPRESS RAMDISK
-	ui_print("Decompressing ramdisk...\n");
+	gui_print("Decompressing ramdisk...\n");
 	system("mkdir /tmp/boot/rd");
 	sprintf(cmd, "/tmp/boot/%s-ramdisk.gz", p.c_str());
 	int rd_cmpr = decompressRamdisk(cmd, "/tmp/boot/rd/");
 	if(rd_cmpr == -1 || stat("/tmp/boot/rd/init", &info) < 0)
 	{
-		ui_print("Failed to decompress ramdisk!\n");
+		gui_print("Failed to decompress ramdisk!\n");
 		return false;
 	}
 
 	// COPY TRAMPOLINE
-	ui_print("Copying trampoline...\n");
+	gui_print("Copying trampoline...\n");
 	if(stat("/tmp/boot/rd/main_init", &info) < 0)
 		system("mv /tmp/boot/rd/init /tmp/boot/rd/main_init");
 
@@ -699,17 +703,17 @@ bool MultiROM::injectBoot(std::string img_path)
 	system("ln -sf ../main_init /tmp/boot/rd/sbin/ueventd");
 
 	// COMPRESS RAMDISK
-	ui_print("Compressing ramdisk...\n");
+	gui_print("Compressing ramdisk...\n");
 	sprintf(cmd, "/tmp/boot/%s-ramdisk.gz", p.c_str());
 	if(!compressRamdisk("/tmp/boot/rd", cmd, rd_cmpr))
 		return false;
 
 	// PACK BOOT IMG
-	ui_print("Packing boot image\n");
+	gui_print("Packing boot image\n");
 	FILE *script = fopen("/tmp/boot/create.sh", "w");
 	if(!script)
 	{
-		ui_print("Failed to open script file!\n");
+		gui_print("Failed to open script file!\n");
 		return false;
 	}
 	std::string base_cmd = "mkbootimg --kernel /tmp/boot/%s-zImage --ramdisk /tmp/boot/%s-ramdisk.gz "
@@ -723,7 +727,7 @@ bool MultiROM::injectBoot(std::string img_path)
 	system("chmod 777 /tmp/boot/create.sh && /tmp/boot/create.sh");
 	if(stat("/tmp/newboot.img", &info) < 0)
 	{
-		ui_print("Failed to pack boot image!\n");
+		gui_print("Failed to pack boot image!\n");
 		return false;
 	}
 	system("rm -r /tmp/boot");
@@ -742,14 +746,14 @@ int MultiROM::decompressRamdisk(const char *src, const char* dest)
 	FILE *f = fopen(src, "r");
 	if(!f)
 	{
-		ui_printf("Failed to open initrd\n");
+		gui_print("Failed to open initrd\n");
 		return -1;
 	}
 
 	char m[4];
 	if(fread(m, 1, sizeof(m), f) != sizeof(m))
 	{
-		ui_printf("Failed to read initrd magic\n");
+		gui_print("Failed to read initrd magic\n");
 		fclose(f);
 		return -1;
 	}
@@ -759,7 +763,7 @@ int MultiROM::decompressRamdisk(const char *src, const char* dest)
 	// gzip
 	if(*((uint16_t*)m) == 0x8B1F)
 	{
-		ui_printf("Ramdisk uses GZIP compression\n");
+		gui_print("Ramdisk uses GZIP compression\n");
 		sprintf(cmd, "cd \"%s\" && gzip -d -c \"%s\" | cpio -i", dest, src);
 		system(cmd);
 		return CMPR_GZIP;
@@ -767,7 +771,7 @@ int MultiROM::decompressRamdisk(const char *src, const char* dest)
 	// lz4
 	else if(*((uint32_t*)m) == 0x184C2102)
 	{
-		ui_printf("Ramdisk uses LZ4 compression\n");
+		gui_print("Ramdisk uses LZ4 compression\n");
 		sprintf(cmd, "cd \"%s\" && lz4 -d \"%s\" stdout | cpio -i", dest, src);
 		system(cmd);
 		return CMPR_LZ4;
@@ -775,13 +779,13 @@ int MultiROM::decompressRamdisk(const char *src, const char* dest)
 	// lzma
 	else if(*((uint32_t*)m) == 0x0000005D || *((uint32_t*)m) == 0x8000005D)
 	{
-		ui_printf("Ramdisk uses LZMA compression\n");
+		gui_print("Ramdisk uses LZMA compression\n");
 		sprintf(cmd, "cd \"%s\" && lzma -d -c \"%s\" | cpio -i", dest, src);
 		system(cmd);
 		return CMPR_LZMA;
 	}
 	else
-		ui_printf("Unknown ramdisk compression (%X %X %X %X)\n", m[0], m[1], m[2], m[3]);
+		gui_print("Unknown ramdisk compression (%X %X %X %X)\n", m[0], m[1], m[2], m[3]);
 
 	return -1;
 }
@@ -801,13 +805,13 @@ bool MultiROM::compressRamdisk(const char* src, const char* dst, int cmpr)
 			return true;
 		// FIXME: busybox can't compress with lzma
 		case CMPR_LZMA:
-			ui_printf("Recovery can't compress ramdisk using LZMA!\n");
+			gui_print("Recovery can't compress ramdisk using LZMA!\n");
 			return false;
 //			sprintf(cmd, "cd \"%s\" && find . | cpio -o -H newc | lzma > \"%s\"", src, dst);
 //			system(cmd);
 //			return true;
 		default:
-			ui_printf("Invalid compression type: %d", cmpr);
+			gui_print("Invalid compression type: %d", cmpr);
 			return false;
 	}
 }
@@ -886,11 +890,11 @@ std::string MultiROM::getNewRomName(std::string zip, std::string def)
 
 bool MultiROM::createImage(const std::string& base, const char *img, int size)
 {
-	ui_print("Creating %s.img...\n", img);
+	gui_print("Creating %s.img...\n", img);
 
 	if(size <= 0)
 	{
-		ui_printf("Failed to create %s image: invalid size (%d)\n", img, size);
+		gui_print("Failed to create %s image: invalid size (%d)\n", img, size);
 		return false;
 	}
 
@@ -902,7 +906,7 @@ bool MultiROM::createImage(const std::string& base, const char *img, int size)
 	sprintf(cmd, "%s/%s.img", base.c_str(), img);
 	if(stat(cmd, &info) < 0)
 	{
-		ui_print("Failed to create %s image, probably not enough space.\n", img);
+		gui_print("Failed to create %s image, probably not enough space.\n", img);
 		return false;
 	}
 
@@ -926,7 +930,7 @@ bool MultiROM::createDirsFromBase(const string& base)
 	{
 		if (mkdir((base + "/" + itr->first).c_str(), 0777) < 0)
 		{
-			ui_print("Failed to create folder %s/%s!\n", base.c_str(), itr->first.c_str());
+			gui_print("Failed to create folder %s/%s!\n", base.c_str(), itr->first.c_str());
 			return false;
 		}
 	}
@@ -938,11 +942,11 @@ bool MultiROM::createDirs(std::string name, int type)
 	std::string base = getRomsPath() + "/" + name;
 	if(mkdir(base.c_str(), 0777) < 0)
 	{
-		ui_print("Failed to create ROM folder!\n");
+		gui_print("Failed to create ROM folder!\n");
 		return false;
 	}
 
-	ui_print("Creating folders and images for type %d\n", type);
+	gui_print("Creating folders and images for type %d\n", type);
 
 	switch(type)
 	{
@@ -953,14 +957,14 @@ bool MultiROM::createDirs(std::string name, int type)
 				mkdir((base + "/data").c_str(), 0771) < 0 ||
 				mkdir((base + "/cache").c_str(), 0770) < 0)
 			{
-				ui_print("Failed to create android folders!\n");
+				gui_print("Failed to create android folders!\n");
 				return false;
 			}
 			break;
 		case ROM_ANDROID_USB_IMG:
 			if (mkdir((base + "/boot").c_str(), 0777) < 0)
 			{
-				ui_print("Failed to create android folders!\n");
+				gui_print("Failed to create android folders!\n");
 				return false;
 			}
 
@@ -980,7 +984,7 @@ bool MultiROM::createDirs(std::string name, int type)
 				return false;
 			break;
 		default:
-			ui_print("Unknown ROM type %d!\n", type);
+			gui_print("Unknown ROM type %d!\n", type);
 			return false;
 
 	}
@@ -989,7 +993,7 @@ bool MultiROM::createDirs(std::string name, int type)
 
 bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int type)
 {
-	ui_print("Processing boot.img of ROM %s...\n", name.c_str());
+	gui_print("Processing boot.img of ROM %s...\n", name.c_str());
 
 	std::string base = getRomsPath() + "/" + name;
 	char cmd[256];
@@ -997,11 +1001,11 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 	FILE *img = fopen((base + "/boot.img").c_str(), "w");
 	if(!img)
 	{
-		ui_print("Failed to create boot.img!\n");
+		gui_print("Failed to create boot.img!\n");
 		return false;
 	}
 
-	ui_print("Extracting boot.img from ZIP file...\n");
+	gui_print("Extracting boot.img from ZIP file...\n");
 
 	const ZipEntry *script_entry;
 	int img_len;
@@ -1010,7 +1014,7 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 
 	if (mzOpenZipArchive(zip_path.c_str(), &zip) != 0)
 	{
-		ui_print("Failed to open zip file %s!\n", name.c_str());
+		gui_print("Failed to open zip file %s!\n", name.c_str());
 		goto fail;
 	}
 
@@ -1019,7 +1023,7 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 	{
 		if (read_data(&zip, script_entry, &img_data, &img_len) < 0)
 		{
-			ui_printf("Failed to read boot.img from ZIP!\n");
+			gui_print("Failed to read boot.img from ZIP!\n");
 			goto fail;
 		}
 
@@ -1027,13 +1031,13 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 	}
 	else
 	{
-		ui_printf("boot.img not found in the root of ZIP file!\n");
-		ui_printf("WARNING: Using current boot sector as boot.img!!\n");
+		gui_print("boot.img not found in the root of ZIP file!\n");
+		gui_print("WARNING: Using current boot sector as boot.img!!\n");
 
 		FILE *b = fopen("/dev/block/platform/sdhci-tegra.3/by-name/LNX", "r");
 		if(!b)
 		{
-			ui_printf("Failed to open boot sector!\n");
+			gui_print("Failed to open boot sector!\n");
 			goto fail;
 		}
 
@@ -1068,14 +1072,14 @@ bool MultiROM::extractBootForROM(std::string base)
 	char cmd[256];
 	struct stat info;
 
-	ui_printf("Extracting contents of boot.img...\n");
+	gui_print("Extracting contents of boot.img...\n");
 	sprintf(cmd, "unpackbootimg -i \"%s/boot.img\" -o \"%s/boot/\"", base.c_str(), base.c_str());
 	system(cmd);
 
 	sprintf(cmd, "%s/boot/boot.img-zImage", base.c_str());
 	if(stat(cmd, &info) < 0)
 	{
-		ui_print("Failed to unpack boot.img!\n");
+		gui_print("Failed to unpack boot.img!\n");
 		return false;
 	}
 
@@ -1096,7 +1100,7 @@ bool MultiROM::extractBootForROM(std::string base)
 	int rd_cmpr = decompressRamdisk(cmd, "/tmp/boot");
 	if(rd_cmpr == -1 || stat("/tmp/boot/init", &info) < 0)
 	{
-		ui_printf("Failed to extract ramdisk!\n");
+		gui_print("Failed to extract ramdisk!\n");
 		return false;
 	}
 
@@ -1120,7 +1124,7 @@ bool MultiROM::extractBootForROM(std::string base)
 
 	if (DataManager::GetIntValue("tw_multirom_share_kernel") == 0)
 	{
-		ui_printf("Injecting boot.img..\n");
+		gui_print("Injecting boot.img..\n");
 		if(!injectBoot(base + "/boot.img") != 0)
 			return false;
 	}
@@ -1139,14 +1143,14 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 
 	if(img_path.find("img.gz") != std::string::npos)
 	{
-		ui_printf("Decompressing the image (may take a while)...\n");
+		gui_print("Decompressing the image (may take a while)...\n");
 		sprintf(cmd, "gzip -d \"%s\"", img_path.c_str());
 		system(cmd);
 
 		img_path.erase(img_path.size()-3);
 		if(stat(img_path.c_str(), &info) < 0)
 		{
-			ui_print("Failed to decompress the image, more space needed?");
+			gui_print("Failed to decompress the image, more space needed?");
 			return false;
 		}
 	}
@@ -1154,7 +1158,7 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 	system("mkdir /mnt_ub_img");
 	system("umount /mnt_ub_img");
 
-	ui_printf("Converting the image (may take a while)...\n");
+	gui_print("Converting the image (may take a while)...\n");
 	sprintf(cmd, "simg2img \"%s\" /tmp/rootfs.img", img_path.c_str());
 	system(cmd);
 
@@ -1164,11 +1168,11 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 	{
 		system("umount /mnt_ub_img");
 		system("rm /tmp/rootfs.img");
-		ui_printf("Invalid Ubuntu image (rootfs.tar.gz not found)!\n");
+		gui_print("Invalid Ubuntu image (rootfs.tar.gz not found)!\n");
 		return false;
 	}
 
-	ui_print("Extracting rootfs.tar.gz (will take a while)...\n");
+	gui_print("Extracting rootfs.tar.gz (will take a while)...\n");
 	sprintf(cmd, "zcat /mnt_ub_img/rootfs.tar.gz | gnutar x --numeric-owner -C \"%s\"",  dest.c_str());
 	system(cmd);
 
@@ -1180,7 +1184,7 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 	sprintf(cmd, "%s/boot/vmlinuz", dest.c_str());
 	if(stat(cmd, &info) < 0)
 	{
-		ui_print("Failed to extract rootfs!\n");
+		gui_print("Failed to extract rootfs!\n");
 		return false;
 	}
 	return true;
@@ -1188,7 +1192,7 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 
 bool MultiROM::patchUbuntuInit(std::string rootDir)
 {
-	ui_print("Patching ubuntu init...\n");
+	gui_print("Patching ubuntu init...\n");
 
 	std::string initPath = rootDir + "/usr/share/initramfs-tools/";
 	std::string locPath = rootDir + "/usr/share/initramfs-tools/scripts/";
@@ -1196,7 +1200,7 @@ bool MultiROM::patchUbuntuInit(std::string rootDir)
 	struct stat info;
 	if(stat(initPath.c_str(), &info) < 0 || stat(locPath.c_str(), &info) < 0)
 	{
-		ui_printf("init paths do not exits\n");
+		gui_print("init paths do not exits\n");
 		return false;
 	}
 
@@ -1227,7 +1231,7 @@ void MultiROM::setUpChroot(bool start, std::string rootDir)
 
 bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 {
-	ui_print("Removing tarball installer...\n");
+	gui_print("Removing tarball installer...\n");
 
 	setUpChroot(true, rootDir);
 
@@ -1238,7 +1242,7 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 
 	ubuntuDisableFlashKernel(false, rootDir);
 
-	ui_print("Updating initramfs...\n");
+	gui_print("Updating initramfs...\n");
 	sprintf(cmd, "chroot \"%s\" update-initramfs -u", rootDir.c_str());
 	system(cmd);
 
@@ -1252,7 +1256,7 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 
 void MultiROM::ubuntuDisableFlashKernel(bool initChroot, std::string rootDir)
 {
-	ui_print("Disabling flash-kernel");
+	gui_print("Disabling flash-kernel");
 	char cmd[512];
 	if(initChroot)
 	{
@@ -1326,7 +1330,7 @@ bool MultiROM::mountUbuntuImage(std::string name, std::string& dest)
 
 	if(system(cmd) != 0)
 	{
-		ui_print("Failed to mount ubuntu image!\n");
+		gui_print("Failed to mount ubuntu image!\n");
 		return false;
 	}
 	dest = "/mnt_ubuntu";
@@ -1344,10 +1348,10 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 	name = getNewRomName(zip, name);
 	if(name.empty())
 	{
-		ui_print("Failed to fixup ROMs name!\n");
+		gui_print("Failed to fixup ROMs name!\n");
 		return false;
 	}
-	ui_print("Installing ROM %s...\n", name.c_str());
+	gui_print("Installing ROM %s...\n", name.c_str());
 
 	int type = getType(os, loc);
 
@@ -1380,7 +1384,7 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 			}
 			else
 			{
-				ui_printf("Wrong source: %s\n", src.c_str());
+				gui_print("Wrong source: %s\n", src.c_str());
 				break;
 			}
 			res = true;
@@ -1423,9 +1427,9 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 					++start_pos;
 				}
 
-				ui_printf("  \n");
-				ui_print(text.c_str());
-				ui_printf("  \n");
+				gui_print("  \n");
+				gui_print(text.c_str());
+				gui_print("  \n");
 			}
 
 			std::string base = root;
@@ -1454,7 +1458,7 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 
 	if(!res)
 	{
-		ui_print("Erasing incomplete ROM...\n");
+		gui_print("Erasing incomplete ROM...\n");
 		std::string cmd = "rm -rf \"" + root + "\"";
 		system(cmd.c_str());
 	}
@@ -1471,11 +1475,11 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 
 bool MultiROM::patchInit(std::string name)
 {
-	ui_print("Patching init for rom %s...\n", name.c_str());
+	gui_print("Patching init for rom %s...\n", name.c_str());
 	int type = getType(name);
 	if(!(M(type) & MASK_UBUNTU))
 	{
-		ui_printf("This is not ubuntu ROM. (%d)\n", type);
+		gui_print("This is not ubuntu ROM. (%d)\n", type);
 		return false;
 	}
 	std::string dest;
@@ -1494,7 +1498,7 @@ bool MultiROM::patchInit(std::string name)
 
 			if(system(cmd) != 0)
 			{
-				ui_print("Failed to mount ubuntu image!\n");
+				gui_print("Failed to mount ubuntu image!\n");
 				return false;
 			}
 			dest = "/mnt_ubuntu/";
@@ -1522,14 +1526,14 @@ bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 
 	if(stat((path + "/boot.emmc.win").c_str(), &info) < 0)
 	{
-		ui_print("Backup must contain boot image!\n");
+		gui_print("Backup must contain boot image!\n");
 		return false;
 	}
 
 	DIR *d = opendir(path.c_str());
 	if(!d)
 	{
-		ui_printf("Failed to list backup folder\n");
+		gui_print("Failed to list backup folder\n");
 		return false;
 	}
 
@@ -1545,7 +1549,7 @@ bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 
 	if(!has_system)
 	{
-		ui_print("Backup must contain system image!\n");
+		gui_print("Backup must contain system image!\n");
 		return false;
 	}
 
@@ -1555,10 +1559,10 @@ bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 	if(!extractBootForROM(base))
 		return false;
 
-	ui_print("Changing mountpoints\n");
+	gui_print("Changing mountpoints\n");
 	if(!changeMounts(name))
 	{
-		ui_print("Failed to change mountpoints!\n");
+		gui_print("Failed to change mountpoints!\n");
 		return false;
 	}
 
@@ -1573,7 +1577,7 @@ bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 
 bool MultiROM::extractBackupFile(std::string path, std::string part)
 {
-	ui_printf("Extracting backup of %s partition...\n", part.c_str());
+	gui_print("Extracting backup of %s partition...\n", part.c_str());
 
 	struct stat info;
 	std::string filename = part + ".ext4.win";
@@ -1588,7 +1592,7 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 		full_path = path + "/" + filename + split_index;
 		while (stat(full_path.c_str(), &info) >= 0)
 		{
-			ui_print("Restoring archive %i...\n", ++index);
+			gui_print("Restoring archive %i...\n", ++index);
 
 			sprintf(cmd, "cd /%s && gnutar -xf \"%s\"", part.c_str(), full_path.c_str());
 			system(cmd);
@@ -1599,7 +1603,7 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 
 		if (index == 0)
 		{
-			ui_printf("Failed to locate backup file %s\n", full_path.c_str());
+			gui_print("Failed to locate backup file %s\n", full_path.c_str());
 			return false;
 		}
 	}
@@ -1686,7 +1690,7 @@ bool MultiROM::mountBaseImages(std::string base, std::string& dest)
 		sprintf(cmd, "mount -o loop %s/%s.img /mnt_installer/%s", base.c_str(), itr->first.c_str(), itr->first.c_str());
 		if(system(cmd) != 0)
 		{
-			ui_print("Failed to mount image %s image!\n", itr->first.c_str());
+			gui_print("Failed to mount image %s image!\n", itr->first.c_str());
 			return false;
 		}
 	}

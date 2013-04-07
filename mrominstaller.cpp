@@ -13,6 +13,11 @@
 #include "multirom.h"
 #include "cutils/properties.h"
 
+
+extern "C" {
+#include "twcommon.h"
+}
+
 #define INTERNAL_MEM_LOC_TXT "Internal memory"
 
 MROMInstaller::MROMInstaller()
@@ -73,7 +78,7 @@ std::string MROMInstaller::open(const std::string& file)
 		char *end = strrchr(val, '"');
 
 		if(!start || start == end || start+1 == end)
-			ui_printf("Line %d: failed to parse string\n", line_cnt);
+			gui_print("Line %d: failed to parse string\n", line_cnt);
 		else
 		{
 			++start;
@@ -286,7 +291,7 @@ bool MROMInstaller::extractDir(const std::string& name, const std::string& dest)
 	ZipArchive zip;
 	if (mzOpenZipArchive(m_file.c_str(), &zip) != 0)
 	{
-		ui_printf("Failed to open ZIP file %s\n", m_file.c_str());
+		gui_print("Failed to open ZIP file %s\n", m_file.c_str());
 		return false;
 	}
 
@@ -298,7 +303,7 @@ bool MROMInstaller::extractDir(const std::string& name, const std::string& dest)
 
 	if(!success)
 	{
-		ui_printf("Failed to extract dir %s from zip %s\n", name.c_str(), m_file.c_str());
+		gui_print("Failed to extract dir %s from zip %s\n", name.c_str(), m_file.c_str());
 		return false;
 	}
 	return true;
@@ -309,7 +314,7 @@ bool MROMInstaller::extractFile(const std::string& name, const std::string& dest
 	ZipArchive zip;
 	if (mzOpenZipArchive(m_file.c_str(), &zip) != 0)
 	{
-		ui_printf("Failed to open ZIP file %s\n", m_file.c_str());
+		gui_print("Failed to open ZIP file %s\n", m_file.c_str());
 		return false;
 	}
 
@@ -318,20 +323,20 @@ bool MROMInstaller::extractFile(const std::string& name, const std::string& dest
 	const ZipEntry* entry = mzFindZipEntry(&zip, name.c_str());
 	if (entry == NULL)
 	{
-		ui_printf("Could not find file %s in zip %s\n", name.c_str(), m_file.c_str());
+		gui_print("Could not find file %s in zip %s\n", name.c_str(), m_file.c_str());
 		goto exit;
 	}
 
 	f = fopen(dest.c_str(), "wb");
 	if(!f)
 	{
-		ui_printf("Could not open dest file %s for writing!\n", dest.c_str());
+		gui_print("Could not open dest file %s for writing!\n", dest.c_str());
 		goto exit;
 	}
 
 	res = mzExtractZipEntryToFile(&zip, entry, fileno(f));
 	if(!res)
-		ui_printf("Failed to extract file %s from the ZIP!", name.c_str());
+		gui_print("Failed to extract file %s from the ZIP!", name.c_str());
 
 	fclose(f);
 exit:
@@ -344,7 +349,7 @@ bool MROMInstaller::hasEntry(const std::string& name)
 	ZipArchive zip;
 	if (mzOpenZipArchive(m_file.c_str(), &zip) != 0)
 	{
-		ui_printf("Failed to open ZIP file %s\n", m_file.c_str());
+		gui_print("Failed to open ZIP file %s\n", m_file.c_str());
 		return false;
 	}
 
@@ -375,14 +380,14 @@ bool MROMInstaller::runScripts(const std::string& dir, const std::string& base, 
 	{
 		system("chmod -R 777 /tmp/script/*");
 
-		ui_printf("Running %s scripts...\n", dir.c_str());
+		gui_print("Running %s scripts...\n", dir.c_str());
 
 		char cmd[512];
 		sprintf(cmd, "sh -c 'for x in $(ls /tmp/script/*.sh); do echo Running script $x; sh $x %s %s || exit 1; done'", base.c_str(), root.c_str());
 		if(system(cmd) != 0)
 		{
 			system("rm -r /tmp/script/");
-			ui_printf("One of the ROM scripts returned error status!");
+			gui_print("One of the ROM scripts returned error status!");
 			return false;
 		}
 	}
@@ -399,7 +404,7 @@ bool MROMInstaller::extractTarballs(const std::string& base)
 
 	if(!hasEntry("rom"))
 	{
-		ui_printf("Skippping tarball extractions - no rom folder in the ZIP file\n");
+		gui_print("Skippping tarball extractions - no rom folder in the ZIP file\n");
 		return true;
 	}
 
@@ -410,7 +415,7 @@ bool MROMInstaller::extractTarballs(const std::string& base)
 	{
 		if(!extractBase(base, itr->first))
 		{
-			ui_printf("Failed to extract base %s\n", itr->first.c_str());
+			gui_print("Failed to extract base %s\n", itr->first.c_str());
 			goto exit;
 		}
 	}
@@ -447,7 +452,7 @@ bool MROMInstaller::extractBase(const std::string& base, const std::string& name
 
 bool MROMInstaller::extractTarball(const std::string& base, const std::string& name, const std::string& tarball)
 {
-	ui_printf("Extrating tarball %s...\n", tarball.c_str());
+	gui_print("Extrating tarball %s...\n", tarball.c_str());
 
 	system("rm /tmp/tarballs/rom.tar.gz");
 	if(!extractFile(tarball, "/tmp/tarballs/rom.tar.gz"))
@@ -459,7 +464,7 @@ bool MROMInstaller::extractTarball(const std::string& base, const std::string& n
 	sprintf(cmd, "gnutar --numeric-owner --overwrite -C \"%s\" -xf /tmp/tarballs/rom.tar.gz", (base + "/" + name).c_str());
 	if(system(cmd) != 0)
 	{
-		ui_printf("Failed to extract tarball %s for folder %s!\n", tarball.c_str(), name.c_str());
+		gui_print("Failed to extract tarball %s for folder %s!\n", tarball.c_str(), name.c_str());
 		res = false;
 	}
 
@@ -473,7 +478,7 @@ bool MROMInstaller::checkFreeSpace(const std::string& base, bool images)
 	int res = statvfs(base.c_str(), &s);
 	if(res < 0)
 	{
-		ui_printf("Check for free space failed: %s %d %d %s!\n", base.c_str(), res, errno, strerror(errno));
+		gui_print("Check for free space failed: %s %d %d %s!\n", base.c_str(), res, errno, strerror(errno));
 		return false;
 	}
 
@@ -490,9 +495,9 @@ bool MROMInstaller::checkFreeSpace(const std::string& base, bool images)
 			req += itr->second.min_size;
 	}
 
-	ui_printf("Free space check: Required: %d MB, free: %d MB\n", req, free);
+	gui_print("Free space check: Required: %d MB, free: %d MB\n", req, free);
 	if(free < req)
-		LOGE("Not enough free space!\n");
+		LOGERR("Not enough free space!\n");
 
 	return free >= req;
 }
