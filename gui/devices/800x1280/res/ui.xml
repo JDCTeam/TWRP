@@ -4081,59 +4081,19 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
-				<font resource="mediumfont" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="1" />
-				</conditions>
-				<text>Use external SD</text>
-				<image resource="radio_true" />
-				<action function="togglestorage">external</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
-				<font resource="mediumfont" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="0" />
-				</conditions>
-				<text>Use external SD</text>
-				<image resource="radio_false" />
-				<action function="togglestorage">external</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row1_text_y%" />
-				<font resource="mediumfont" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="1" />
-				</conditions>
-				<text>Use internal storage</text>
-				<image resource="radio_false" />
-				<action function="togglestorage">internal</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row1_text_y%" />
-				<font resource="mediumfont" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="0" />
-				</conditions>
-				<text>Use internal storage</text>
-				<image resource="radio_true" />
-				<action function="togglestorage">internal</action>
+				<fill color="%button_fill_color%" />
+				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
+				<actions>
+					<action function="set">tw_back=multirom_flash_select</action>
+					<action function="page">selectstorage</action>
+				</actions>
 			</object>
 
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
-				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>%tw_zip_location%</text>
@@ -4371,9 +4331,21 @@
 				<text>MultiROM - Inject boot.img</text>
 			</object>
 
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<fill color="%button_fill_color%" />
+				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
+				<actions>
+					<action function="set">tw_back=multirom_flash_select</action>
+					<action function="page">selectstorage</action>
+				</actions>
+			</object>
+
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
-				<placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>%tw_zip_location%</text>
@@ -4642,54 +4614,14 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
-				<font resource="mediumfont" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="1" />
-				</conditions>
-				<text>Use external SD</text>
-				<image resource="radio_true" />
-				<action function="togglestorage">external</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
-				<font resource="mediumfont" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="0" />
-				</conditions>
-				<text>Use external SD</text>
-				<image resource="radio_false" />
-				<action function="togglestorage">external</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row1_text_y%" />
-				<font resource="mediumfont" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="1" />
-				</conditions>
-				<text>Use internal storage</text>
-				<image resource="radio_false" />
-				<action function="togglestorage">internal</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row1_text_y%" />
-				<font resource="mediumfont" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="0" />
-				</conditions>
-				<text>Use internal storage</text>
-				<image resource="radio_true" />
-				<action function="togglestorage">internal</action>
+				<fill color="%button_fill_color%" />
+				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
+				<actions>
+					<action function="set">tw_back=multirom_add_select</action>
+					<action function="page">selectstorage</action>
+				</actions>
 			</object>
 
 			<object type="fileselector">
@@ -4698,7 +4630,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_add_source" var2="zip" />
 				</conditions>
-				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select ROM's ZIP file:</text>
@@ -4719,7 +4651,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_add_source" var2="backup" />
 				</conditions>
-				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select ROM's backup:</text>
@@ -4737,7 +4669,7 @@
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
-				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select Ubuntu image file:</text>
@@ -4755,7 +4687,7 @@
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
 				<condition var1="tw_multirom_type" var2="3" />
-				<placement x="%fileselector_x%" y="%row2_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select MultiROM installer file:</text>
