@@ -39,8 +39,7 @@ extern "C" {
 #include "blanktimer.hpp"
 #include "../data.hpp"
 extern "C" {
-#include "../common.h"
-#include "../recovery_ui.h"
+#include "../twcommon.h"
 }
 #include "../twrp-functions.hpp"
 #include "../variables.h"
@@ -120,7 +119,17 @@ int blanktimer::getBrightness(void) {
 	string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
 	if ((TWFunc::read_file(brightness_path, results)) != 0)
 		return -1;
-	return atoi(results.c_str());
+	int result = atoi(results.c_str());
+	if (result == 0) {
+		int tw_brightness;
+		DataManager::GetValue("tw_brightness", tw_brightness);
+		if (tw_brightness) {
+			result = tw_brightness;
+		} else {
+			result = 255;
+		}
+	}
+	return result;
 
 }
 
@@ -141,7 +150,7 @@ void blanktimer::resetTimerAndUnblank(void) {
 		case 3:
 #ifndef TW_NO_SCREEN_BLANK
 			if (gr_fb_blank(0) < 0) {
-				LOGI("blanktimer::resetTimerAndUnblank failed to gr_fb_blank(0)\n");
+				LOGINFO("blanktimer::resetTimerAndUnblank failed to gr_fb_blank(0)\n");
 				break;
 			}
 #endif

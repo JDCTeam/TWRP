@@ -18,9 +18,8 @@
 #include <string>
 
 extern "C" {
-#include "../common.h"
+#include "../twcommon.h"
 #include "../minuitwrp/minui.h"
-#include "../recovery_ui.h"
 }
 
 #include "rapidxml.hpp"
@@ -165,7 +164,10 @@ int GUIText::Update(void)
     if (mIsStatic || !mVarChanged)      return 0;
 
     std::string newValue = parseText();
-    if (mLastValue == newValue)         return 0;
+    if (mLastValue == newValue)
+		return 0;
+	else
+		mLastValue = newValue;
     return 2;
 }
 
@@ -176,6 +178,7 @@ int GUIText::GetCurrentBounds(int& w, int& h)
     if (mFont)  fontResource = mFont->GetResource();
 
     h = mFontHeight;
+	mLastValue = parseText();
     w = gr_measureEx(mLastValue.c_str(), fontResource);
     return 0;
 }

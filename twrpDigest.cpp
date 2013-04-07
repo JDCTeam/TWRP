@@ -36,7 +36,7 @@ extern "C" {
 #include <sstream>
 #include <dirent.h>
 #include <sys/mman.h>
-#include "common.h"
+#include "twcommon.h"
 #include "data.hpp"
 #include "variables.h"
 #include "twrp-functions.hpp"
@@ -61,6 +61,7 @@ int twrpDigest::computeMD5(void) {
 	while ((len = fread(buf, 1, sizeof(buf), file)) > 0) {
 		MD5Update(&md5c, buf, len);
 	}
+	fclose(file);
 	MD5Final(md5sum ,&md5c);
 	return 0;
 }
@@ -84,7 +85,7 @@ int twrpDigest::write_md5digest(void) {
 
 int twrpDigest::read_md5digest(void) {
 	string md5file = md5fn + ".md5";
-	if (TWFunc::read_file(md5file, lines) != 0)
+	if (TWFunc::read_file(md5file, line) != 0)
 		return -1;
 	return 0;
 }
@@ -94,10 +95,9 @@ int twrpDigest::verify_md5digest(void) {
 	char hex[3];
 	int i;
 	string md5string;
-
 	if (read_md5digest() != 0)
 		return -1;
-	stringstream ss(lines.at(0));
+	stringstream ss(line);
 	vector<string> tokens;
 	while (ss >> buf)
 		tokens.push_back(buf);

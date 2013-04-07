@@ -18,9 +18,8 @@
 #include <string>
 
 extern "C" {
-#include "../common.h"
+#include "../twcommon.h"
 #include "../minuitwrp/minui.h"
-#include "../recovery_ui.h"
 }
 
 #include "rapidxml.hpp"
@@ -54,7 +53,7 @@ GUISliderValue::GUISliderValue(xml_node<>* node) : Conditional(node)
 
 	if (!node)
 	{
-		LOGE("GUISliderValue created without XML node\n");
+		LOGERR("GUISliderValue created without XML node\n");
 		return;
 	}
 
@@ -256,6 +255,7 @@ int GUISliderValue::SetRenderPos(int x, int y, int w, int h)
 	mActionY = mRenderY;
 	mActionW = mRenderW;
 	mActionH = mRenderH;
+	lineW = mRenderW - (mLinePadding * 2);
 
 	return 0;
 }
@@ -278,13 +278,19 @@ int GUISliderValue::Render(void)
 
 	if(mLabel)
 	{
+		int w, h;
+		mLabel->GetCurrentBounds(w, h);
+		if (w != mLabelW) {
+			mLabelW = w;
+			int textX = mRenderX + (mRenderW/2 - mLabelW/2);
+			mLabel->SetRenderPos(textX, mRenderY);
+		}
 		int res = mLabel->Render();
 		if(res < 0)
 			return res;
 	}
 
 	// line
-	int lineW = mRenderW-mLinePadding*2;
 	gr_color(mLineColor.red, mLineColor.green, mLineColor.blue, mLineColor.alpha);
 	gr_fill(mLineX, mLineY, lineW, mLineH);
 
@@ -329,12 +335,12 @@ int GUISliderValue::Update(void)
 int GUISliderValue::valueFromPct(float pct)
 {
 	int range = abs(mMax - mMin);
-	return mMin + (pct*range)/100;
+	return mMin + (pct * range) / 100;
 }
 
 float GUISliderValue::pctFromValue(int value)
 {
-	return float((value-mMin)*100)/abs(mMax - mMin);
+	return float((value - mMin) * 100) / abs(mMax - mMin);
 }
 
 int GUISliderValue::NotifyTouch(TOUCH_STATE state, int x, int y)
@@ -356,22 +362,20 @@ int GUISliderValue::NotifyTouch(TOUCH_STATE state, int x, int y)
 		if (!dragging)  return 0;
 
 		x = std::max(mLineX, x);
-		x = std::min(mRenderX+mRenderW-mLinePadding, x);
+		x = std::min(mLineX + lineW, x);
 
-		mValuePct = float((x - mLineX)*100)/(mRenderW-mLinePadding*2);
+		mValuePct = float(((x - mLineX) * 100) / lineW);
 		int newVal = valueFromPct(mValuePct);
-		if(newVal != mValue)
-		{
+		if (newVal != mValue) {
+			mRendered = false;
 			mValue = newVal;
-			if(mChangeOnDrag)
-			{
+			if (mChangeOnDrag) {
 				if (!mVariable.empty())
 					DataManager::SetValue(mVariable, mValue);
-				mAction->doActions();
+				if (mAction)
+					mAction->doActions();
 			}
 		}
-
-		mRendered = false;
 		break;
 	}
 	case TOUCH_RELEASE:
@@ -381,7 +385,9 @@ int GUISliderValue::NotifyTouch(TOUCH_STATE state, int x, int y)
 
 		if (!mVariable.empty())
 			DataManager::SetValue(mVariable, mValue);
-		mAction->doActions();
+
+		if (mAction)
+			mAction->doActions();
 		break;
 	}
 	case TOUCH_REPEAT:
@@ -393,8 +399,16 @@ int GUISliderValue::NotifyTouch(TOUCH_STATE state, int x, int y)
 
 int GUISliderValue::NotifyVarChange(std::string varName, std::string value)
 {
-	if(mLabel)
-		return mLabel->NotifyVarChange(varName, value);
+	if (mLabel)
+		mLabel->NotifyVarChange(varName, value);
+	if (varName == mVariable) {
+		int newVal = atoi(value.c_str());
+		if(newVal != mValue) {
+			mValue = newVal;
+			mValuePct = pctFromValue(mValue);
+			mRendered = false;
+		}
+	}
 	return 0;
 }
 

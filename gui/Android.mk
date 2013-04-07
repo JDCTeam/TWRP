@@ -22,6 +22,7 @@ LOCAL_SRC_FILES := \
     keyboard.cpp \
     input.cpp \
     blanktimer.cpp \
+    partitionlist.cpp \
     ../minuitwrp/graphics.c
 
 ifneq ($(TWRP_CUSTOM_KEYBOARD),)
@@ -30,7 +31,7 @@ else
   LOCAL_SRC_FILES += hardwarekeyboard.cpp
 endif
 
-LOCAL_MODULE := libgui
+LOCAL_MODULE := libguitwrp
 
 # Use this flag to create a build that simulates threaded actions like installing zips, backups, restores, and wipes for theme testing
 #TWRP_SIMULATE_ACTIONS := true
@@ -51,6 +52,11 @@ ifneq ($(TW_EXTERNAL_STORAGE_PATH),)
 endif
 ifneq ($(TW_BRIGHTNESS_PATH),)
 	LOCAL_CFLAGS += -DTW_BRIGHTNESS_PATH=$(TW_BRIGHTNESS_PATH)
+endif
+ifneq ($(TW_MAX_BRIGHTNESS),)
+	LOCAL_CFLAGS += -DTW_MAX_BRIGHTNESS=$(TW_MAX_BRIGHTNESS)
+else
+	LOCAL_CFLAGS += -DTW_MAX_BRIGHTNESS=255
 endif
 ifneq ($(TW_NO_SCREEN_BLANK),)
 	LOCAL_CFLAGS += -DTW_NO_SCREEN_BLANK

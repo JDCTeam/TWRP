@@ -18,9 +18,8 @@
 #include <string>
 
 extern "C" {
-#include "../common.h"
+#include "../twcommon.h"
 #include "../minuitwrp/minui.h"
-#include "../recovery_ui.h"
 }
 
 #include "rapidxml.hpp"
@@ -35,8 +34,10 @@ GUIFill::GUIFill(xml_node<>* node)
         return;
 
     attr = node->first_attribute("color");
-    if (!attr)
+    if (!attr) {
+		LOGERR("No color specified for fill\n");
         return;
+	}
 
     std::string color = attr->value();
     ConvertStrToColor(color, &mColor);
