@@ -26,7 +26,10 @@
 
 extern "C" {
 	#include "libcrecovery/common.h"
+	#include "minuitwrp/minui.h"
 }
+
+#include "gui/objects.hpp"
 
 /* Execute a command */
 int TWFunc::Exec_Cmd(string cmd, string &result) {
@@ -677,4 +680,112 @@ bool TWFunc::Install_SuperSU(void) {
 	if (!Fix_su_Perms())
 		return false;
 	return true;
+}
+
+bool TWFunc::loadTheme()
+{
+#ifndef TW_HAS_LANDSCAPE
+	DataManager::SetValue(TW_ENABLE_ROTATION, 0);
+#endif
+
+    std::string base_xml = getDefaultThemePath(gr_get_rotation()) + "ui.xml";
+
+    if (DataManager::GetIntValue(TW_IS_ENCRYPTED))
+    {
+		if(PageManager::LoadPackage ("TWRP", base_xml, "decrypt") != 0)
+		{
+			LOGERR("Failed to load base packages.\n");
+			return false;
+		}
+		else
+		{
+#ifdef TW_HAS_LANDSCAPE
+			DataManager::SetValue(TW_ENABLE_ROTATION, 1);
+#endif
+			return true;
+		}
+    }
+
+    // This is for kindle fire apparently.
+    // It is used to flash fire fire fire bootloader
+    if (PageManager::LoadPackage("TWRP", "/script/ui.xml", "main") == 0)
+	{
+		DataManager::SetValue(TW_ENABLE_ROTATION, 0);
+		return true;
+	}
+
+    std::string theme_path = DataManager::GetSettingsStoragePath();
+    if (!PartitionManager.Mount_Settings_Storage(false))
+    {
+        int retry_count = 5;
+        while (retry_count > 0 && !PartitionManager.Mount_Settings_Storage(false))
+        {
+            usleep (500000);
+            retry_count--;
+        }
+
+        if (PartitionManager.Mount_Settings_Storage(false))
+        {
+			theme_path += "/TWRP/theme/ui.zip";
+			if(PageManager::LoadPackage("TWRP", theme_path, "main") == 0)
+			{
+				DataManager::SetValue(TW_ENABLE_ROTATION, 0);
+				return true;
+			}
+        }
+        else
+			LOGERR("Unable to mount %s during GUI startup.\n",
+                   theme_path.c_str ());
+    }
+
+    if(PageManager::LoadPackage("TWRP", base_xml, "main") != 0)
+	{
+		LOGERR("Failed to load base packages.\n");
+		return false;
+	}
+	else
+	{
+#ifdef TW_HAS_LANDSCAPE
+		DataManager::SetValue(TW_ENABLE_ROTATION, 1);
+#endif
+		return true;
+	}
+}
+
+bool TWFunc::reloadTheme()
+{
+	std::string theme_path = DataManager::GetSettingsStoragePath();
+	if (PartitionManager.Mount_By_Path(theme_path.c_str(), 1))
+	{
+		theme_path += "/TWRP/theme/ui.zip";
+		if(PageManager::ReloadPackage("TWRP", theme_path) == 0)
+		{
+			DataManager::SetValue(TW_ENABLE_ROTATION, 0);
+			return true;
+		}
+	}
+	else
+		LOGERR("Unable to mount %s during reload function startup.\n", theme_path.c_str());
+
+	// Loading the custom theme failed - try loading the stock theme
+	LOGINFO("Attempting to reload stock theme...\n");
+	theme_path = getDefaultThemePath(gr_get_rotation()) + "ui.xml";
+	if (PageManager::ReloadPackage("TWRP", theme_path) != 0)
+	{
+		LOGERR("Failed to load base packages.\n");
+		return false;
+	}
+	return true;
+}
+
+std::string TWFunc::getDefaultThemePath(int rotation)
+{
+#ifndef TW_HAS_LANDSCAPE
+	return "/res/";
+#else
+	if(rotation%180 == 0)
+		return "/res/";
+	else
+		return "/res/landscape/";
+#endif
 }

@@ -13,6 +13,7 @@ typedef struct {
 // Utility Functions
 int ConvertStrToColor(std::string str, COLOR* color);
 int gui_forceRender(void);
+int gui_setRenderEnabled(int enable);
 int gui_changePage(std::string newPage);
 int gui_changeOverlay(std::string newPage);
 std::string gui_parse_text(string inText);
@@ -66,7 +67,8 @@ public:
 
     Page* FindPage(std::string name);
     int SetPage(std::string page);
-	int SetOverlay(Page* page);
+    std::string GetCurrentPage() const;
+    int SetOverlay(Page* page);
     Resource* FindResource(std::string name);
 
     // Helper routine for identifing if we're the current page
@@ -105,7 +107,8 @@ public:
 
     // Used for actions and pages
     static int ChangePage(std::string name);
-	static int ChangeOverlay(std::string name);
+    static std::string GetCurrentPage();
+    static int ChangeOverlay(std::string name);
     static Resource* FindResource(std::string name);
     static Resource* FindResource(std::string package, std::string name);
 

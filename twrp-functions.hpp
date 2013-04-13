@@ -50,6 +50,9 @@ public:
 	static bool Fix_su_Perms(void); // sets proper permissions for su binaries and superuser apk
 	static int tw_chmod(string fn, string mode); // chmod function that converts a 4 char string into st_mode automatically
 	static bool Install_SuperSU(void); // Installs su binary and apk and sets proper permissions
+	static bool loadTheme();
+	static bool reloadTheme();
+	static std::string getDefaultThemePath(int rotation);
 
 private:
 	static void Copy_Log(string Source, string Destination);

@@ -926,6 +926,13 @@ void DataManager::SetDefaultValues()
 	}
 #endif
 	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("0", 1)));
+
+#if defined(TW_HAS_LANDSCAPE) && defined(TW_DEFAULT_ROTATION)
+	mValues.insert(make_pair(TW_ROTATION, make_pair(EXPAND(TW_DEFAULT_ROTATION), 1)));
+#else
+	mValues.insert(make_pair(TW_ROTATION, make_pair("0", 1)));
+#endif
+	mValues.insert(make_pair(TW_ENABLE_ROTATION, make_pair("0", 0)));
 }
 
 // Magic Values

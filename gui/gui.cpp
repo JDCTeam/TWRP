@@ -58,8 +58,7 @@ static gr_surface gCurtain = NULL;
 static int gGuiInitialized = 0;
 static int gGuiConsoleRunning = 0;
 static int gGuiConsoleTerminate = 0;
-static int gForceRender = 0;
-pthread_mutex_t gForceRendermutex;
+
 static int gNoAnimation = 1;
 static int gGuiInputRunning = 0;
 blanktimer blankTimer;
@@ -68,6 +67,17 @@ blanktimer blankTimer;
 int gGuiRunning = 0;
 
 static int gRecorder = -1;
+
+enum RenderStates
+{
+  RENDER_NORMAL    = 0x00,
+  RENDER_FORCE     = 0x01,
+  RENDER_DISABLE   = 0x02,
+};
+
+static int gRenderState = RENDER_NORMAL;
+static pthread_mutex_t gRenderStateMutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 extern "C" void gr_write_frame_to_file (int fd);
 
@@ -384,117 +394,94 @@ loopTimer (void)
   return;
 }
 
-static int
-runPages (void)
+static inline void doRenderIteration(void)
 {
-  // Raise the curtain
-  if (gCurtain != NULL)
-	{
-	  gr_surface surface;
+    loopTimer ();
 
-	  PageManager::Render ();
-	  gr_get_surface (&surface);
-	  curtainRaise (surface);
-	  gr_free_surface (surface);
-	}
+    pthread_mutex_lock(&gRenderStateMutex);
 
-  gGuiRunning = 1;
+    if(gRenderState & RENDER_DISABLE)
+    {
+        pthread_mutex_unlock(&gRenderStateMutex);
+        return;
+    }
 
-  DataManager::SetValue ("tw_loaded", 1);
+    if(gRenderState == RENDER_NORMAL)
+    {
+        int ret = PageManager::Update();
+        if(ret > 1)
+            PageManager::Render();
+        if(ret > 0)
+            flip();
+    }
+    else if(gRenderState & RENDER_FORCE)
+    {
+        gRenderState &= ~(RENDER_FORCE);
+        PageManager::Render ();
+        flip ();
+    }
 
-  for (;;)
-	{
-	  loopTimer ();
+    pthread_mutex_unlock(&gRenderStateMutex);
+}
 
-	  if (!gForceRender)
-		{
-		  int ret;
+static void runPageLoop(const std::string& stopVar)
+{
+    // Raise the curtain
+    if (gCurtain != NULL)
+    {
+        gr_surface surface;
 
-		  ret = PageManager::Update ();
-		  if (ret > 1)
-			PageManager::Render ();
+        PageManager::Render ();
+        gr_get_surface (&surface);
+        curtainRaise (surface);
+        gr_free_surface (surface);
+    }
 
-		  if (ret > 0)
-			flip ();
-		}
-	  else
-		{
-		  pthread_mutex_lock(&gForceRendermutex);
-		  gForceRender = 0;
-		  pthread_mutex_unlock(&gForceRendermutex);
-		  PageManager::Render ();
-		  flip ();
-		}
-		if (DataManager::GetIntValue("tw_gui_done") != 0)
-		{
-			break;
-		}
-	}
+    gGuiRunning = 1;
 
-  gGuiRunning = 0;
+    DataManager::SetValue ("tw_loaded", 1);
+
+    while(true)
+    {
+        doRenderIteration();
+
+        if(DataManager::GetIntValue(stopVar) != 0)
+            break;
+    }
+
+    gGuiRunning = 0;
+}
+
+static int runPages (void)
+{
+  runPageLoop("tw_gui_done");
   return 0;
 }
 
-static int
-runPage (const char *page_name)
+static int runPage (const char *page_name)
 {
   gui_changePage (page_name);
-
-  // Raise the curtain
-  if (gCurtain != NULL)
-	{
-	  gr_surface surface;
-
-	  PageManager::Render ();
-	  gr_get_surface (&surface);
-	  curtainRaise (surface);
-	  gr_free_surface (surface);
-	}
-
-  gGuiRunning = 1;
-
-  DataManager::SetValue ("tw_loaded", 1);
-
-  for (;;)
-	{
-	  loopTimer ();
-
-	  if (!gForceRender)
-		{
-		  int ret;
-
-		  ret = PageManager::Update ();
-		  if (ret > 1)
-			PageManager::Render ();
-
-		  if (ret > 0)
-			flip ();
-		}
-	  else
-		{
-		  pthread_mutex_lock(&gForceRendermutex);
-		  gForceRender = 0;
-		  pthread_mutex_unlock(&gForceRendermutex);
-		  PageManager::Render ();
-		  flip ();
-		}
-	  if (DataManager::GetIntValue ("tw_page_done") != 0)
-		{
-		  gui_changePage ("main");
-		  break;
-		}
-	}
-
-  gGuiRunning = 0;
+  runPageLoop("tw_page_done");
+  gui_changePage ("main");
   return 0;
 }
 
-int
-gui_forceRender (void)
+int gui_forceRender(void)
 {
-  pthread_mutex_lock(&gForceRendermutex);
-  gForceRender = 1;
-  pthread_mutex_unlock(&gForceRendermutex);
+  pthread_mutex_lock(&gRenderStateMutex);
+  gRenderState |= RENDER_FORCE;
+  pthread_mutex_unlock(&gRenderStateMutex);
+  return 0;
+}
+
+int gui_setRenderEnabled(int enable)
+{
+  pthread_mutex_lock(&gRenderStateMutex);
+  if(enable)
+      gRenderState &= ~(RENDER_DISABLE);
+  else
+      gRenderState |= RENDER_DISABLE;
+  pthread_mutex_unlock(&gRenderStateMutex);
   return 0;
 }
 
@@ -503,9 +490,7 @@ gui_changePage (std::string newPage)
 {
   LOGINFO("Set page: '%s'\n", newPage.c_str ());
   PageManager::ChangePage (newPage);
-  pthread_mutex_lock(&gForceRendermutex);
-  gForceRender = 1;
-  pthread_mutex_unlock(&gForceRendermutex);
+  gui_forceRender();
   return 0;
 }
 
@@ -513,9 +498,7 @@ int
 gui_changeOverlay (std::string overlay)
 {
   PageManager::ChangeOverlay (overlay);
-  pthread_mutex_lock(&gForceRendermutex);
-  gForceRender = 1;
-  pthread_mutex_unlock(&gForceRendermutex);
+  gui_forceRender();
   return 0;
 }
 
@@ -523,9 +506,7 @@ int
 gui_changePackage (std::string newPackage)
 {
   PageManager::SelectPackage (newPackage);
-  pthread_mutex_lock(&gForceRendermutex);
-  gForceRender = 1;
-  pthread_mutex_unlock(&gForceRendermutex);
+  gui_forceRender();
   return 0;
 }
 
@@ -573,12 +554,21 @@ gui_init ()
 
   gr_init ();
 
-  if (res_create_surface ("/res/images/curtain.jpg", &gCurtain))
-	{
-	  printf
-		("Unable to locate '/res/images/curtain.jpg'\nDid you set a DEVICE_RESOLUTION in your config files?\n");
-	  return -1;
-	}
+  std::string curtain = "/res/images/curtain.jpg";
+
+#if defined(TW_HAS_LANDSCAPE) && defined(TW_DEFAULT_ROTATION)
+  gr_set_rotation(TW_DEFAULT_ROTATION);
+  gr_update_surface_dimensions();
+  if(TW_DEFAULT_ROTATION%180 != 0)
+    curtain = "/res/landscape/images/curtain.jpg";
+#endif
+
+  if (res_create_surface (curtain.c_str(), &gCurtain))
+  {
+    printf("Unable to locate '/res/images/curtain.jpg'\n"
+           "Did you set a DEVICE_RESOLUTION in your config files?\n");
+    return -1;
+  }
 
   curtainSet ();
 
@@ -593,51 +583,8 @@ gui_loadResources ()
 //    rename("/sdcard/video.bin", "/sdcard/video.last");
 //    gRecorder = open("/sdcard/video.bin", O_CREAT | O_WRONLY);
 
-  int check = 0;
-  DataManager::GetValue (TW_IS_ENCRYPTED, check);
-  if (check)
-	{
-	  if (PageManager::LoadPackage ("TWRP", "/res/ui.xml", "decrypt"))
-		{
-		  LOGERR("Failed to load base packages.\n");
-		  goto error;
-		}
-	  else
-		check = 1;
-	}
-  if (check == 0
-	  && PageManager::LoadPackage("TWRP", "/script/ui.xml", "main"))
-	{
-	  std::string theme_path;
-
-	  theme_path = DataManager::GetSettingsStoragePath ();
-	  if (!PartitionManager.Mount_Settings_Storage(false))
-		{
-		  int retry_count = 5;
-		  while (retry_count > 0
-				 && !PartitionManager.Mount_Settings_Storage(false))
-			{
-			  usleep (500000);
-			  retry_count--;
-			}
-		  if (!PartitionManager.Mount_Settings_Storage(false))
-			{
-			  LOGERR("Unable to mount %s during GUI startup.\n",
-					theme_path.c_str ());
-			  check = 1;
-			}
-		}
-
-	  theme_path += "/TWRP/theme/ui.zip";
-	  if (check || PageManager::LoadPackage("TWRP", theme_path, "main"))
-		{
-		  if (PageManager::LoadPackage("TWRP", "/res/ui.xml", "main"))
-			{
-			  LOGERR("Failed to load base packages.\n");
-			  goto error;
-			}
-		}
-	}
+  if(!TWFunc::loadTheme())
+    goto error;
 
   // Set the default package
   PageManager::SelectPackage ("TWRP");
@@ -703,37 +650,13 @@ gui_startPage (const char *page_name)
 static void *
 console_thread (void *cookie)
 {
-  PageManager::SwitchToConsole ();
+    PageManager::SwitchToConsole();
 
-  while (!gGuiConsoleTerminate)
-	{
-	  loopTimer ();
+    while (!gGuiConsoleTerminate)
+        doRenderIteration();
 
-	  if (!gForceRender)
-		{
-		  int ret;
-
-		  ret = PageManager::Update ();
-		  if (ret > 1)
-			PageManager::Render ();
-
-		  if (ret > 0)
-			flip ();
-
-		  if (ret < 0)
-			LOGERR("An update request has failed.\n");
-		}
-	  else
-		{
-		  pthread_mutex_lock(&gForceRendermutex);
-		  gForceRender = 0;
-		  pthread_mutex_unlock(&gForceRendermutex);
-		  PageManager::Render ();
-		  flip ();
-		}
-	}
-  gGuiConsoleRunning = 0;
-  return NULL;
+    gGuiConsoleRunning = 0;
+    return NULL;
 }
 
 extern "C" int
@@ -750,4 +673,42 @@ gui_console_only ()
   pthread_create (&t, NULL, console_thread, NULL);
 
   return 0;
+}
+
+int gui_rotate(int rotation)
+{
+#ifndef TW_HAS_LANDSCAPE
+     return -1;
+#else
+     LOGINFO("gui_rotate(): %d\n", rotation);
+     if(gr_get_rotation() == rotation)
+          return 0;
+
+     std::string pagename = PageManager::GetCurrentPage();
+
+     gr_freeze_fb(1);
+     gui_setRenderEnabled(0);
+     gr_set_rotation(rotation);
+
+     bool reloaded = TWFunc::reloadTheme();
+
+     // failed, try to rotate to 0
+     if(!reloaded && rotation != 0)
+     {
+          gr_freeze_fb(0);
+          return gui_rotate(0);
+     }
+
+     DataManager::SetValue(TW_ROTATION, rotation);
+
+     gr_update_surface_dimensions();
+     gr_freeze_fb(0);
+     gui_setRenderEnabled(1);
+
+     if(!pagename.empty())
+          PageManager::ChangePage(pagename);
+
+     gui_forceRender();
+     return reloaded ? 0 : -1;
+#endif
 }
