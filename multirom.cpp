@@ -1592,9 +1592,10 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 		full_path = path + "/" + filename + split_index;
 		while (stat(full_path.c_str(), &info) >= 0)
 		{
-			gui_print("Restoring archive %i...\n", ++index);
+			gui_print("Restoring archive #%i...\n", ++index);
 
-			sprintf(cmd, "cd /%s && gnutar -xf \"%s\"", part.c_str(), full_path.c_str());
+			sprintf(cmd, "cd / && gnutar -xf \"%s\"", full_path.c_str());
+			LOGI("Restore cmd: %s\n", cmd);
 			system(cmd);
 
 			sprintf(split_index, "%03i", index);
@@ -1610,6 +1611,7 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 	else
 	{
 		sprintf(cmd, "cd /%s && gnutar -xf \"%s\"", part.c_str(), full_path.c_str());
+		LOGI("Restore cmd: %s\n", cmd);
 		system(cmd);
 	}
 	return true;
