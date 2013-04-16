@@ -838,8 +838,15 @@ std::string MultiROM::getNewRomName(std::string zip, std::string def)
 
 		if(zip.substr(idx) == "/rootfs.img")
 			name = "Ubuntu";
-		else if(idx != std::string::npos && idx_dot != std::string::npos && idx_dot > idx)
-			name = zip.substr(idx+1, idx_dot-idx-1);
+		else if(idx != std::string::npos)
+		{
+			// android backups
+			if(DataManager::GetStrValue("tw_multirom_add_source") == "backup")
+				name = "bckp_" + zip.substr(idx+1);
+			// ZIP files
+			else if(idx_dot != std::string::npos && idx_dot > idx)
+				name = zip.substr(idx+1, idx_dot-idx-1);
+		}
 	}
 	else
 		name = def;
@@ -1469,6 +1476,8 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 
 	delete m_installer;
 	m_installer = NULL;
+
+	DataManager::SetValue("tw_multirom_add_source", "");
 
 	return res;
 }
