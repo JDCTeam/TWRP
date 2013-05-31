@@ -1263,7 +1263,7 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 
 void MultiROM::ubuntuDisableFlashKernel(bool initChroot, std::string rootDir)
 {
-	gui_print("Disabling flash-kernel");
+	gui_print("Disabling flash-kernel\n");
 	char cmd[512];
 	if(initChroot)
 	{
@@ -1276,7 +1276,7 @@ void MultiROM::ubuntuDisableFlashKernel(bool initChroot, std::string rootDir)
 	sprintf(cmd, "chroot \"%s\" bash -c \"echo flash-kernel hold | dpkg --set-selections\"", rootDir.c_str());
 	system(cmd);
 
-	sprintf(cmd, "if [ \"$(grep FLASH_KERNEL_SKIP '%s/etc/environment')\" == \"\" ]; then"
+	sprintf(cmd, "if [ \"$(grep FLASH_KERNEL_SKIP '%s/etc/environment')\" == \"\" ]; then "
 			"chroot \"%s\" bash -c \"echo FLASH_KERNEL_SKIP=1 >> /etc/environment\"; fi;",
 			rootDir.c_str(), rootDir.c_str());
 	system(cmd);
