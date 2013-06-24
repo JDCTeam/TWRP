@@ -392,7 +392,7 @@ bool MultiROM::changeMounts(std::string name)
 
 		m_mount_bak.push_back(b);
 	}
-	system("umount /system /data /cache");
+	system("umount -d /system /data /cache");
 
 	FILE *f_fstab = fopen("/etc/fstab", "w");
 	if(!f_fstab)
@@ -477,7 +477,7 @@ bool MultiROM::changeMounts(std::string name)
 void MultiROM::restoreMounts()
 {
 	system("mv /sbin/umount.bak /sbin/umount");
-	system("umount /system /data /cache");
+	system("umount -d /system /data /cache");
 
 	for(size_t i = 0; i < m_mount_bak.size(); ++i)
 	{
@@ -1163,7 +1163,7 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 	}
 
 	system("mkdir /mnt_ub_img");
-	system("umount /mnt_ub_img");
+	system("umount -d /mnt_ub_img");
 
 	gui_print("Converting the image (may take a while)...\n");
 	sprintf(cmd, "simg2img \"%s\" /tmp/rootfs.img", img_path.c_str());
@@ -1173,7 +1173,7 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 
 	if(stat("/mnt_ub_img/rootfs.tar.gz", &info) < 0)
 	{
-		system("umount /mnt_ub_img");
+		system("umount -d /mnt_ub_img");
 		system("rm /tmp/rootfs.img");
 		gui_print("Invalid Ubuntu image (rootfs.tar.gz not found)!\n");
 		return false;
@@ -1185,7 +1185,7 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 
 	sync();
 
-	system("umount /mnt_ub_img");
+	system("umount -d /mnt_ub_img");
 	system("rm /tmp/rootfs.img");
 
 	sprintf(cmd, "%s/boot/vmlinuz", dest.c_str());
@@ -1522,7 +1522,7 @@ bool MultiROM::patchInit(std::string name)
 	sync();
 
 	if(type == ROM_UBUNTU_USB_IMG)
-		umount("/mnt_ubuntu");;
+		system("umount -d /mnt_ubuntu");;
 	return res;
 }
 
@@ -1716,8 +1716,10 @@ void MultiROM::umountBaseImages(const std::string& base)
 	char cmd[256];
 	for(baseFolders::const_iterator itr = m_base_folders.begin(); itr != m_base_folders.end(); ++itr)
 	{
+		sprintf(cmd, "umount -d %s/%s", base.c_str(), itr->first.c_str());
+		system(cmd);
+
 		sprintf(cmd, "%s/%s", base.c_str(), itr->first.c_str());
-		umount(cmd);
 		rmdir(cmd);
 	}
 	rmdir(base.c_str());
