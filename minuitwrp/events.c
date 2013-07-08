@@ -303,12 +303,12 @@ static int vk_tp_to_screen(struct position *p, int *x, int *y)
 #endif
 
 #ifndef RECOVERY_TOUCHSCREEN_SWAP_XY
-    int fb_width = gr_fb_width();
-    int fb_height = gr_fb_height();
+    int fb_width = gr_screen_width();
+    int fb_height = gr_screen_height();
 #else
     // We need to swap the scaling sizes, too
-    int fb_width = gr_fb_height();
-    int fb_height = gr_fb_width();
+    int fb_width = gr_screen_height();
+    int fb_height = gr_screen_width();
 #endif
 
     *x = (p->x - p->xi.minimum) * (fb_width - 1) / (p->xi.maximum - p->xi.minimum);
@@ -567,6 +567,54 @@ static int vk_modify(struct ev *e, struct input_event *ev)
 #endif
 #ifdef RECOVERY_TOUCHSCREEN_FLIP_Y
     y = gr_fb_height() - y;
+#endif
+
+#ifdef TW_HAS_LANDSCAPE
+    switch(gr_get_rotation())
+    {
+        case 0:
+        default:
+            break;
+        case 90:
+#ifdef RECOVERY_TOUCHSCREEN_FLIP_X
+            x = gr_fb_width() - x;
+#endif
+#ifdef RECOVERY_TOUCHSCREEN_FLIP_Y
+            y = gr_fb_height() - y;
+#endif
+
+            x ^= y;
+            y ^= x;
+            x ^= y;
+
+#ifndef RECOVERY_TOUCHSCREEN_FLIP_X
+            y = gr_fb_height() - y;
+#endif
+            break;
+        case 180:
+            y = gr_fb_height() - y;
+            x = gr_fb_width() - x;
+            break;
+        case 270:
+#ifdef RECOVERY_TOUCHSCREEN_FLIP_X
+            x = gr_fb_width() - x;
+#endif
+#ifdef RECOVERY_TOUCHSCREEN_FLIP_Y
+            y = gr_fb_height() - y;
+#endif
+
+            x ^= y;
+            y ^= x;
+            x ^= y;
+
+#ifdef RECOVERY_TOUCHSCREEN_FLIP_X
+            y = gr_fb_height() - y;
+#endif
+#ifndef RECOVERY_TOUCHSCREEN_FLIP_Y
+            x = gr_fb_width() - x;
+#endif
+            break;
+    }
 #endif
 
 #ifdef _EVENT_LOGGING

@@ -151,6 +151,8 @@
 #define TW_DATA_BLK_DEVICE          "tw_data_blk_device"  // Original block device - not decrypted
 #define TW_SDEXT_DISABLE_EXT4       "tw_sdext_disable_ext4"
 #define TW_MILITARY_TIME            "tw_military_time"
+#define TW_ROTATION                 "tw_rotation"
+#define TW_ENABLE_ROTATION          "tw_enable_rotation"
 
 // Also used:
 //   tw_boot_is_mountable

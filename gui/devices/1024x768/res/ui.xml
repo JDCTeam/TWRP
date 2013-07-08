@@ -2613,7 +2613,7 @@
 
 			<object type="slidervalue">
 				<condition var1="tw_has_brightnesss_file" var2="1" />
-				<placement x="slidervalue_x" y="%row12_text_y%" w="%slidervalue_w%" />
+				<placement x="slidervalue_x" y="%row10_text_y%" w="%slidervalue_w%" />
 				<font resource="font" color="%text_color%" />
 				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
 				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
@@ -2624,6 +2624,61 @@
 					<action function="compute">tw_brightness*%tw_brightness_pct%</action>
 					<action function="compute">tw_brightness/100</action>
 					<action function="cmd">echo %tw_brightness% > &quot;%tw_brightness_file%&quot;</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_enable_rotation" var2="1" />
+				<font resource="font" />
+				<placement x="%center_x%" y="%row15_text_y%" placement="5" />
+				<text>Rotation (degrees, clockwise):</text>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_enable_rotation" var2="1" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_medium_x%" y="%row16_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>0</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="rotation">0</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_enable_rotation" var2="1" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_medium_x%" y="%row16_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>90</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="rotation">90</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_enable_rotation" var2="1" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row16_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>180</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="rotation">180</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_enable_rotation" var2="1" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col4_medium_x%" y="%row16_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>270</text>
+				<image resource="medium_button" />
+				<actions>
+					<action function="rotation">270</action>
 				</actions>
 			</object>
 

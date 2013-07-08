@@ -61,6 +61,12 @@ endif
 ifneq ($(TW_NO_SCREEN_BLANK),)
 	LOCAL_CFLAGS += -DTW_NO_SCREEN_BLANK
 endif
+ifneq ($(LANDSCAPE_RESOLUTION),)
+	LOCAL_CFLAGS += -DTW_HAS_LANDSCAPE
+endif
+ifneq ($(TW_DEFAULT_ROTATION),)
+	LOCAL_CFLAGS += -DTW_DEFAULT_ROTATION=$(TW_DEFAULT_ROTATION)
+endif
 
 LOCAL_C_INCLUDES += bionic external/stlport/stlport $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)
 
@@ -76,6 +82,7 @@ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/res
 TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices
 TWRP_RES_GEN := $(intermediates)/twrp
 
+ifeq ($(LANDSCAPE_RESOLUTION),)
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
 	cp -fr $(TWRP_RES_LOC)/common/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
@@ -84,6 +91,17 @@ $(TWRP_RES_GEN):
 	ln -sf /sbin/busybox $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
 	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
+else
+$(TWRP_RES_GEN):
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	cp -fr $(TWRP_RES_LOC)/$(DEVICE_RESOLUTION)/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+	cp -fr $(TWRP_RES_LOC)/$(LANDSCAPE_RESOLUTION)/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+	ln -sf /sbin/busybox $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
+	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
+	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
+endif
 
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)
 LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN)

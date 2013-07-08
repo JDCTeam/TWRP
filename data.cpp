@@ -930,12 +930,20 @@ void DataManager::SetDefaultValues()
 	}
 #endif
 	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("0", 1)));
+
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	mValues.insert(make_pair("tw_include_encrypted_backup", make_pair("1", 0)));
 #else
 	LOGINFO("TW_EXCLUDE_ENCRYPTED_BACKUPS := true\n");
 	mValues.insert(make_pair("tw_include_encrypted_backup", make_pair("0", 0)));
 #endif
+
+#if defined(TW_HAS_LANDSCAPE) && defined(TW_DEFAULT_ROTATION)
+	mValues.insert(make_pair(TW_ROTATION, make_pair(EXPAND(TW_DEFAULT_ROTATION), 1)));
+#else
+	mValues.insert(make_pair(TW_ROTATION, make_pair("0", 1)));
+#endif
+	mValues.insert(make_pair(TW_ENABLE_ROTATION, make_pair("0", 0)));
 }
 
 // Magic Values

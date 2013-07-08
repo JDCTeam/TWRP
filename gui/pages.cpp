@@ -566,6 +566,11 @@ int PageSet::SetPage(std::string page)
     return -1;
 }
 
+std::string PageSet::GetCurrentPage() const
+{
+    return mCurrentPage ? mCurrentPage->GetName() : "";
+}
+
 int PageSet::SetOverlay(Page* page)
 {
     if (mOverlayPage)   mOverlayPage->SetPageFocus(0);
@@ -823,6 +828,7 @@ int PageManager::ReloadPackage(std::string name, std::string package)
         return -1;
     }
     if (mCurrentSet == set)     SelectPackage(name);
+    if (mBaseSet == set)        mBaseSet = mCurrentSet;
     delete set;
     return 0;
 }
@@ -846,6 +852,11 @@ int PageManager::ChangePage(std::string name)
     DataManager::SetValue("tw_operation_state", 0);
     int ret = (mCurrentSet ? mCurrentSet->SetPage(name) : -1);
     return ret;
+}
+
+std::string PageManager::GetCurrentPage()
+{
+    return mCurrentSet ? mCurrentSet->GetCurrentPage() : "";
 }
 
 int PageManager::ChangeOverlay(std::string name)
