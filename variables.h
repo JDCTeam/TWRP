@@ -17,7 +17,7 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
-#define TW_VERSION_STR              "2.5.0.0"
+#define TW_VERSION_STR              "2.6.0.0"
 
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
 #define TW_FILENAME                 "tw_filename"
@@ -166,6 +166,7 @@
 
 // Max archive size for tar backups before we split (1.5GB)
 #define MAX_ARCHIVE_SIZE 1610612736LLU
+//#define MAX_ARCHIVE_SIZE 52428800LLU // 50MB split for testing
 
 #ifndef CUSTOM_LUN_FILE
 #define CUSTOM_LUN_FILE "/sys/devices/platform/usb_mass_storage/lun%d/file"

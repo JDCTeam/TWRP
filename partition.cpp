@@ -87,6 +87,8 @@ TWPartition::TWPartition(void) {
 	Backup_FileName = "";
 	MTD_Name = "";
 	Backup_Method = NONE;
+	Can_Encrypt_Backup = false;
+	Use_Userdata_Encryption = false;
 	Has_Data_Media = false;
 	Has_Android_Secure = false;
 	Is_Storage = false;
@@ -210,6 +212,8 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Wipe_Available_in_GUI = true;
 			Wipe_During_Factory_Reset = true;
 			Can_Be_Backed_Up = true;
+			Can_Encrypt_Backup = true;
+			Use_Userdata_Encryption = true;
 #ifdef RECOVERY_SDCARD_ON_DATA
 			Storage_Name = "Internal Storage";
 			Has_Data_Media = true;
@@ -287,6 +291,8 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			SubPartition_Of = "/data";
 			DataManager::SetValue(TW_HAS_DATADATA, 1);
 			Can_Be_Backed_Up = true;
+			Can_Encrypt_Backup = true;
+			Use_Userdata_Encryption = false; // This whole partition should be encrypted
 		} else if (Mount_Point == "/sd-ext") {
 			Wipe_During_Factory_Reset = true;
 			Display_Name = "SD-Ext";
@@ -295,6 +301,8 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Wipe_Available_in_GUI = true;
 			Removable = true;
 			Can_Be_Backed_Up = true;
+			Can_Encrypt_Backup = true;
+			Use_Userdata_Encryption = true;
 		} else if (Mount_Point == "/boot") {
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
@@ -445,6 +453,20 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 		} else if (ptr_len > 7 && strncmp(ptr, "length=", 7) == 0) {
 			ptr += 7;
 			Length = atoi(ptr);
+		} else if (ptr_len > 17 && strncmp(ptr, "canencryptbackup=", 17) == 0) {
+			ptr += 17;
+			if (*ptr == '1' || *ptr == 'y' || *ptr == 'Y')
+				Can_Encrypt_Backup = true;
+			else
+				Can_Encrypt_Backup = false;
+		} else if (ptr_len > 21 && strncmp(ptr, "userdataencryptbackup=", 21) == 0) {
+			ptr += 21;
+			if (*ptr == '1' || *ptr == 'y' || *ptr == 'Y') {
+				Can_Encrypt_Backup = true;
+				Use_Userdata_Encryption = true;
+			} else {
+				Use_Userdata_Encryption = false;
+			}
 		} else {
 			if (Display_Error)
 				LOGERR("Unhandled flag: '%s'\n", ptr);
@@ -458,7 +480,7 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 		Storage_Name = Display_Name;
 	if (!has_display_name && has_storage_name)
 		Display_Name = Storage_Name;
-	if (has_display_name && !has_backup_name)
+	if (has_display_name && !has_backup_name && Backup_Display_Name != "Android Secure")
 		Backup_Display_Name = Display_Name;
 	if (!has_display_name && has_backup_name)
 		Display_Name = Backup_Display_Name;
@@ -615,6 +637,8 @@ bool TWPartition::Find_MTD_Block_Device(string MTD_Name) {
 			if (sscanf(device,"mtd%d", &deviceId) == 1) {
 				sprintf(device, "/dev/block/mtdblock%d", deviceId);
 				Primary_Block_Device = device;
+				fclose(fp);
+				return true;
 			}
 		}
 	}
@@ -806,22 +830,41 @@ bool TWPartition::Mount(bool Display_Error) {
 	}
 	if (Fstab_File_System == "yaffs2") {
 		// mount an MTD partition as a YAFFS2 filesystem.
-		mtd_scan_partitions();
-		const MtdPartition* partition;
-		partition = mtd_find_partition_by_name(MTD_Name.c_str());
-		if (partition == NULL) {
-			LOGERR("Failed to find '%s' partition to mount at '%s'\n",
-			MTD_Name.c_str(), Mount_Point.c_str());
-			return false;
-		}
-		if (mtd_mount_partition(partition, Mount_Point.c_str(), Fstab_File_System.c_str(), 0)) {
-			if (Display_Error)
-				LOGERR("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
-			else
-				LOGINFO("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
-			return false;
-		} else
+		const unsigned long flags = MS_NOATIME | MS_NODEV | MS_NODIRATIME;
+		if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Fstab_File_System.c_str(), flags, NULL) < 0) {
+			if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Fstab_File_System.c_str(), flags | MS_RDONLY, NULL) < 0) {
+				if (Display_Error)
+					LOGERR("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+				else
+					LOGINFO("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+				return false;
+			} else {
+				LOGINFO("Mounted '%s' (MTD) as RO\n", Mount_Point.c_str());
+				return true;
+			}
+		} else {
+			struct stat st;
+			string test_path = Mount_Point;
+			if (stat(test_path.c_str(), &st) < 0) {
+				if (Display_Error)
+					LOGERR("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+				else
+					LOGINFO("Failed to mount '%s' (MTD)\n", Mount_Point.c_str());
+				return false;
+			}
+			mode_t new_mode = st.st_mode | S_IXUSR | S_IXGRP | S_IXOTH;
+			if (new_mode != st.st_mode) {
+				LOGINFO("Fixing execute permissions for %s\n", Mount_Point.c_str());
+				if (chmod(Mount_Point.c_str(), new_mode) < 0) {
+					if (Display_Error)
+						LOGERR("Couldn't fix permissions for %s: %s\n", Mount_Point.c_str(), strerror(errno));
+					else
+						LOGINFO("Couldn't fix permissions for %s: %s\n", Mount_Point.c_str(), strerror(errno));
+					return false;
+				}
+			}
 			return true;
+		}
 	} else if (!exfat_mounted && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
 #ifdef TW_NO_EXFAT_FUSE
 		if (Current_File_System == "exfat") {
@@ -1046,8 +1089,8 @@ bool TWPartition::Check_MD5(string restore_folder) {
 			return false;
 		}
 		md5sum.setfn(split_filename);
-		while (index < 1000 && TWFunc::Path_Exists(split_filename)) {
-			if (md5sum.verify_md5digest() != 0) {
+		while (index < 1000) {
+			if (TWFunc::Path_Exists(split_filename) && md5sum.verify_md5digest() != 0) {
 				LOGERR("MD5 failed to match on '%s'.\n", split_filename);
 				return false;
 			}
@@ -1136,6 +1179,9 @@ bool TWPartition::Wipe_Encryption() {
 		return false;
 
 	Has_Data_Media = false;
+	Decrypted_Block_Device = "";
+	Is_Decrypted = false;
+	Is_Encrypted = false;
 	if (Wipe(Fstab_File_System)) {
 		Has_Data_Media = Save_Data_Media;
 		if (Has_Data_Media && !Symlink_Mount_Point.empty()) {
@@ -1168,13 +1214,15 @@ void TWPartition::Check_FS_Type() {
 		LOGINFO("Can't probe device %s\n", Actual_Block_Device.c_str());
 		return;
 	}
+
 	if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0) { 
 		blkid_free_probe(pr);
 		LOGINFO("can't find filesystem on device %s\n", Actual_Block_Device.c_str());
 		return;
 	}
+
 	Current_File_System = type;
-	return;
+	blkid_free_probe(pr);
 }
 
 bool TWPartition::Wipe_EXT23(string File_System) {
@@ -1370,7 +1418,7 @@ bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 bool TWPartition::Backup_Tar(string backup_folder) {
 	char back_name[255], split_index[5];
 	string Full_FileName, Split_FileName, Tar_Args, Command;
-	int use_compression, index, backup_count;
+	int use_compression, use_encryption = 0, index, backup_count;
 	struct stat st;
 	unsigned long long total_bsize = 0, file_size;
 	twrpTar tar;
@@ -1383,11 +1431,23 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	gui_print("Backing up %s...\n", Backup_Display_Name.c_str());
 
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
+	tar.use_compression = use_compression;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+	DataManager::GetValue("tw_encrypt_backup", use_encryption);
+	if (use_encryption && Can_Encrypt_Backup) {
+		tar.use_encryption = use_encryption;
+		if (Use_Userdata_Encryption)
+			tar.userdata_encryption = use_encryption;
+	} else {
+		use_encryption = false;
+	}
+#endif
 
 	sprintf(back_name, "%s.%s.win", Backup_Name.c_str(), Current_File_System.c_str());
 	Backup_FileName = back_name;
 	Full_FileName = backup_folder + "/" + Backup_FileName;
-	 if (Backup_Size > MAX_ARCHIVE_SIZE) {
+	tar.has_data_media = Has_Data_Media;
+	if (!use_encryption && Backup_Size > MAX_ARCHIVE_SIZE) {
 		// This backup needs to be split into multiple archives
 		gui_print("Breaking backup file into multiple archives...\n");
 		sprintf(back_name, "%s", Backup_Path.c_str());
@@ -1401,20 +1461,16 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		return true;
 	} else {
 		Full_FileName = backup_folder + "/" + Backup_FileName;
-		if (use_compression) {
-			tar.setdir(Backup_Path);
-			tar.setfn(Full_FileName);
-			if (tar.createTarGZFork() != 0)
-				return -1;
+		tar.setdir(Backup_Path);
+		tar.setfn(Full_FileName);
+		if (tar.createTarFork() != 0)
+			return false;
+		if (use_compression && !use_encryption) {
 			string gzname = Full_FileName + ".gz";
 			rename(gzname.c_str(), Full_FileName.c_str());
 		}
-		else {
-			tar.setdir(Backup_Path);
-			tar.setfn(Full_FileName);
-			if (tar.createTarFork() != 0)
-				return -1;
-		}
+		if (use_encryption)
+			Full_FileName += "000";
 		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
 			LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
 			return false;
@@ -1493,7 +1549,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		return false;
 
 	Full_FileName = restore_folder + "/" + Backup_FileName;
-	if (!TWFunc::Path_Exists(Full_FileName)) {
+	/*if (!TWFunc::Path_Exists(Full_FileName)) {
 		if (!TWFunc::Path_Exists(Full_FileName)) {
 			// Backup is multiple archives
 			LOGINFO("Backup is multiple archives.\n");
@@ -1516,13 +1572,14 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 				return false;
 			}
 		}
-	} else {
+	} else {*/
 		twrpTar tar;
 		tar.setdir(Backup_Path);
 		tar.setfn(Full_FileName);
+		tar.backup_name = Backup_Name;
 		if (tar.extractTarFork() != 0)
 			return false;
-	}
+	//}
 	return true;
 }
 

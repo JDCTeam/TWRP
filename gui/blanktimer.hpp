@@ -31,6 +31,7 @@ class blanktimer {
 		void resetTimerAndUnblank(void);
 		void blankScreen(void);
 		void setTime(int newtime);
+		bool IsScreenOff();
 
 	private:
 		void setConBlank(int blank);
@@ -48,6 +49,7 @@ class blanktimer {
 		timespec btimer;
 		unsigned long long sleepTimer;
 		int orig_brightness;
+		bool screenoff;
 };
 
 extern blanktimer blankTimer;

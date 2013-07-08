@@ -110,6 +110,8 @@ protected:
 	string Storage_Name;                                                      // Name displayed in the partition list for storage selection
 	string Backup_FileName;                                                   // Actual backup filename
 	Backup_Method_enum Backup_Method;                                         // Method used for backup
+	bool Can_Encrypt_Backup;                                                  // Indicates if this item can be encrypted during backup
+	bool Use_Userdata_Encryption;                                             // Indicates if we will use userdata encryption splitting on an encrypted backup
 	bool Has_Data_Media;                                                      // Indicates presence of /data/media, may affect wiping and backup methods
 	bool Has_Android_Secure;                                                  // Indicates the presence of .android_secure on this partition
 	bool Is_Storage;                                                          // Indicates if this partition is used for storage for backup, restore, and installing zips
@@ -208,6 +210,7 @@ public:
 	virtual int Fix_Permissions(); 
 	virtual void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
 	virtual int Fstab_Processed();                                            // Indicates if the fstab has been processed or not
+	virtual void Output_Storage_Fstab();                                      // Creates a /cache/recovery/storage.fstab file with a list of all potential storage locations for app use
 
 private:
 	bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename); // Generates an MD5 after a backup is made

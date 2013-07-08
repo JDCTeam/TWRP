@@ -236,6 +236,11 @@ endif
 ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
     LOCAL_CFLAGS += -DRK3066
 endif
+ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
+    LOCAL_SHARED_LIBRARIES += libopenaes
+else
+    LOCAL_CFLAGS += -DTW_EXCLUDE_ENCRYPTED_BACKUPS
+endif
 
 include $(BUILD_EXECUTABLE)
 
@@ -275,7 +280,7 @@ LOCAL_MODULE := libaosprecovery
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULES_TAGS = optional
 LOCAL_CFLAGS = 
-LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp verifier.cpp
+LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp verifier.cpp mtdutils/mtdutils.c
 LOCAL_SHARED_LIBRARIES += libc liblog libcutils libmtdutils
 LOCAL_STATIC_LIBRARIES += libmincrypt
 
@@ -308,7 +313,8 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
     $(commands_recovery_local_path)/crypto/cryptfs/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
     $(commands_recovery_local_path)/libblkid/Android.mk \
-    $(commands_recovery_local_path)/minuitwrp/Android.mk
+    $(commands_recovery_local_path)/minuitwrp/Android.mk \
+    $(commands_recovery_local_path)/openaes/Android.mk
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
     include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk
@@ -329,6 +335,11 @@ ifneq ($(TW_NO_EXFAT), true)
 endif
 ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/ics/Android.mk
+endif
+
+# FB2PNG
+ifeq ($(TW_INCLUDE_FB2PNG), true)
+    include $(commands_recovery_local_path)/fb2png/Android.mk
 endif
 
 commands_recovery_local_path :=
