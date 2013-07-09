@@ -85,6 +85,8 @@ public:
 		int colors;
 		int brightness;
 		int enable_adb;
+		int hide_internal;
+		std::string int_display_name;
 	};
 
 	struct file_backup {

@@ -42,6 +42,8 @@ MultiROM::config::config()
 	auto_boot_rom = INTERNAL_NAME;
 	colors = 0;
 	brightness = 40;
+	hide_internal = 0;
+	int_display_name = INTERNAL_NAME;
 }
 
 bool MultiROM::folderExists()
@@ -324,6 +326,10 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.brightness = atoi(val.c_str());
 			else if(name == "enable_adb")
 				cfg.enable_adb = atoi(val.c_str());
+			else if(name == "hide_internal")
+				cfg.hide_internal = atoi(val.c_str());
+			else if(name == "int_display_name")
+				cfg.int_display_name = val;
 		}
 		fclose(f);
 	}
@@ -342,6 +348,8 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "colors=%d\n", cfg.colors);
 	fprintf(f, "brightness=%d\n", cfg.brightness);
 	fprintf(f, "enable_adb=%d\n", cfg.enable_adb);
+	fprintf(f, "hide_internal=%d\n", cfg.hide_internal);
+	fprintf(f, "int_display_name=%s\n", cfg.int_display_name.c_str());
 
 	fclose(f);
 }

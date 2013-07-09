@@ -4586,7 +4586,7 @@
 			<object type="template" name="footer" />
 		</page>
 
-		<page name="multirom_settings" pname="multirom_add_image_size">
+		<page name="multirom_settings">
 			<object type="template" name="header" />
 
 			<object type="text" color="%text_color%">
@@ -4598,16 +4598,82 @@
 			<object type="checkbox">
 				<placement x="%col1_x%" y="%row1_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Enable auto-boot</text>
-				<data variable="tw_multirom_enable_auto_boot" />
+				<text>Enable ADB</text>
+				<data variable="tw_multirom_enable_adb" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col2_x%" y="%row1_text_y%" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Enable ADB</text>
-				<data variable="tw_multirom_enable_adb" />
+				<text>Hide internal ROM</text>
+				<data variable="tw_multirom_hide_internal" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_x%" y="%row4_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Configure autoboot</text>
+				<image resource="main_button" />
+				<action function="page">multirom_settings_autoboot</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row4_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Rename internal ROM</text>
+				<image resource="main_button" />
+				<action function="page">multirom_settings_rename_internal</action>
+			</object>
+
+			<object type="slidervalue">
+				<placement x="0" y="%row10_text_y%" w="800" />
+				<font resource="font" color="%text_color%" />
+				<colors line="#FFFFFF" slider="#33B5E5" />
+				<dimensions lineh="2" linepadding="20" sliderw="10" sliderh="60" />
+				<text>Screen brightness: %tw_multirom_brightness%</text>
+				<data variable="tw_multirom_brightness" min="30" max="255" showrange="1" showcurr="0" changeondrag="1" />
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col_center_x%" y="%row15_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Save</text>
+				<image resource="main_button" />
+				<action function="multirom_settings_save"></action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">multirom_main</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+		
+		<page name="multirom_settings_autoboot">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - settings - autoboot</text>
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Enable auto-boot</text>
+				<data variable="tw_multirom_enable_auto_boot" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
@@ -4659,21 +4725,12 @@
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select ROM to auto-boot:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
-				<placement x="20" y="%row5_text_y%" w="760" h="400" />
+				<placement x="20" y="%row5_text_y%" w="760" h="500" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<data name="tw_multirom_auto_boot_rom" />
 				<items>tw_multirom_roms</items>
-			</object>
-
-			<object type="slidervalue">
-				<placement x="0" y="830" w="800" />
-				<font resource="font" color="%text_color%" />
-				<colors line="#FFFFFF" slider="#33B5E5" />
-				<dimensions lineh="2" linepadding="20" sliderw="10" sliderh="60" />
-				<text>Screen brightness: %tw_multirom_brightness%</text>
-				<data variable="tw_multirom_brightness" min="30" max="255" showrange="1" showcurr="0" changeondrag="1" />
 			</object>
 
 			<object type="button">
@@ -4682,7 +4739,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Save</text>
 				<image resource="main_button" />
-				<action function="multirom_settings_save"></action>
+				<action function="multirom_settings"></action>
 			</object>
 
 			<object type="action">
@@ -4692,7 +4749,59 @@
 
 			<object type="action">
 				<touch key="back" />
-				<action function="page">multirom_main</action>
+				<action function="page">multirom_settings</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="multirom_settings_rename_internal">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - settings - rename internal</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row2_text_y%" placement="5"/>
+				<text>Set new name for Internal ROM</text>
+			</object>
+
+			<object type="input">
+				<placement x="%col1_x%" y="%row3_text_y%" w="%input_width%" h="%input_height%" placement="0" />
+				<background color="%input_background_color%" />
+				<cursor color="%input_cursor_color%" hasfocus="1" width="%input_cursor_width%" />
+				<font resource="font" color="%text_color%" />
+				<text>%tw_multirom_int_display_name%</text>
+				<data name="tw_multirom_int_display_name" />
+				<restrict minlen="1" maxlen="26" disable=" " />
+				<action function="page">multirom_settings</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col_center_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Cancel</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="page">multirom_settings</action>
+				</actions>
+			</object>
+
+			<object type="template" name="keyboardtemplate" />
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">multirom_settings</action>
 			</object>
 
 			<object type="template" name="footer" />
@@ -5251,7 +5360,7 @@
 			</object>
 		</page>
 
-		<page pname="multirom_settings" name="multirom_add_image_size">
+		<page name="multirom_add_image_size">
 			<object type="template" name="header" />
 
 			<object type="text" color="%text_color%">

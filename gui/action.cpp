@@ -742,6 +742,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		DataManager::SetValue("tw_multirom_colors", cfg.colors);
 		DataManager::SetValue("tw_multirom_brightness", cfg.brightness);
 		DataManager::SetValue("tw_multirom_enable_adb", cfg.enable_adb);
+		DataManager::SetValue("tw_multirom_hide_internal", cfg.hide_internal);
+		DataManager::SetValue("tw_multirom_int_display_name", cfg.int_display_name);
 
 		DataManager::SetValue("tw_multirom_roms", MultiROM::listRoms());
 		return gui_changePage("multirom_settings");
@@ -759,6 +761,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		cfg.colors = DataManager::GetIntValue("tw_multirom_colors");
 		cfg.brightness = DataManager::GetIntValue("tw_multirom_brightness");
 		cfg.enable_adb = DataManager::GetIntValue("tw_multirom_enable_adb");
+		cfg.hide_internal = DataManager::GetIntValue("tw_multirom_hide_internal");
+		cfg.int_display_name = DataManager::GetStrValue("tw_multirom_int_display_name");
 
 		MultiROM::saveConfig(cfg);
 		return gui_changePage("multirom_main");
