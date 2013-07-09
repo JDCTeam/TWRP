@@ -800,14 +800,22 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 		if(type == 1 || type == 2 || type == 4)
 		{
-			if(type == 1 || type == 4)
+			switch(type)
 			{
-				MultiROM::addBaseFolder("data", 150, 1024);
-				MultiROM::addBaseFolder("system", 450, 640);
-				MultiROM::addBaseFolder("cache", 50, 436);
+				case 1: // Android
+					MultiROM::addBaseFolder("data", 150, 1024);
+					MultiROM::addBaseFolder("system", 450, 640);
+					MultiROM::addBaseFolder("cache", 50, 436);
+					break;
+				case 2: // Ubuntu dekstop
+					MultiROM::addBaseFolder("root", 2000, 4095);
+					break;
+				case 4: // Ubuntu touch
+					MultiROM::addBaseFolder("data", 1024, 2048);
+					MultiROM::addBaseFolder("system", 450, 640);
+					MultiROM::addBaseFolder("cache", 50, 436);
+					break;
 			}
-			else
-				MultiROM::addBaseFolder("root", 2000, 4095);
 
 			MultiROM::updateImageVariables();
 
