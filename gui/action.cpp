@@ -773,10 +773,17 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 	if (function == "multirom_add_second")
 	{
-		if(DataManager::GetIntValue("tw_multirom_type") == 1)
-			return gui_changePage("multirom_add_source");
-		else
-			return gui_changePage("multirom_add_select");
+		switch(DataManager::GetIntValue("tw_multirom_type"))
+		{
+			case 1:
+				return gui_changePage("multirom_add_source");
+			case 4:
+				DataManager::SetValue("tw_touch_filename_device", "");
+				DataManager::SetValue("tw_touch_filename_core", "");
+				return gui_changePage("multirom_add_touch");
+			default:
+				return gui_changePage("multirom_add_select");
+		}
 	}
 
 	if (function == "multirom_add_file_selected")
@@ -787,9 +794,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 		MultiROM::clearBaseFolders();
 
-		if(type == 1 || type == 2)
+		if(type == 1 || type == 2 || type == 4)
 		{
-			if(type == 1)
+			if(type == 1 || type == 4)
 			{
 				MultiROM::addBaseFolder("data", 150, 1024);
 				MultiROM::addBaseFolder("system", 450, 640);
@@ -931,6 +938,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 			PartitionManager.Update_System_Details();
 			operation_end(op_status, simulate);
+			return 0;
 		}
 
 		if (function == "multirom_inject")
@@ -944,6 +952,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			if(!op_status)
 				op_status = !MultiROM::injectBoot(path);
 			operation_end(op_status, simulate);
+			return 0;
 		}
 
 		if (function == "multirom_inject_curr_boot")
@@ -955,6 +964,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			else
 				op_status = !MultiROM::injectBoot("/dev/block/mmcblk0p2");
 			operation_end(op_status, simulate);
+			return 0;
 		}
 
 		if (function == "multirom_add_rom")
@@ -966,6 +976,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 											  DataManager::GetStrValue("tw_multirom_install_loc"));
 			PartitionManager.Update_System_Details();
 			operation_end(op_status, simulate);
+			return 0;
 		}
 
 		if (function == "multirom_ubuntu_patch_init")
@@ -973,6 +984,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_start("Patching");
 			int op_status = !MultiROM::patchInit(DataManager::GetStrValue("tw_multirom_rom_name"));
 			operation_end(op_status, simulate);
+			return 0;
 		}
 
 		if (function == "multirom_wipe")
@@ -981,6 +993,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			int op_status = !MultiROM::wipe(DataManager::GetStrValue("tw_multirom_rom_name"),
 											DataManager::GetStrValue("tw_multirom_wipe"));
 			operation_end(op_status, simulate);
+			return 0;
 		}
 
 		if (function == "multirom_disable_flash_kernel")
@@ -989,6 +1002,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			int op_status = !MultiROM::disableFlashKernelAct(DataManager::GetStrValue("tw_multirom_rom_name"),
 															 DataManager::GetStrValue("tw_multirom_install_loc"));
 			operation_end(op_status, simulate);
+			return 0;
 		}
 
         if (function == "fileexists")

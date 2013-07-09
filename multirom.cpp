@@ -968,6 +968,16 @@ bool MultiROM::createDirs(std::string name, int type)
 				return false;
 			}
 			break;
+		case ROM_UTOUCH_INTERNAL:
+		case ROM_UTOUCH_USB_DIR:
+			if (mkdir((base + "/system").c_str(), 0755) < 0 ||
+				mkdir((base + "/data").c_str(), 0771) < 0 ||
+				mkdir((base + "/cache").c_str(), 0770) < 0)
+			{
+				gui_print("Failed to create ubuntu touch folders!\n");
+				return false;
+			}
+			break;
 		case ROM_ANDROID_USB_IMG:
 			if (mkdir((base + "/boot").c_str(), 0777) < 0)
 			{
@@ -987,6 +997,7 @@ bool MultiROM::createDirs(std::string name, int type)
 			break;
 		case ROM_UBUNTU_USB_IMG:
 		case ROM_INSTALLER_USB_IMG:
+		case ROM_UTOUCH_USB_IMG:
 			if(!createImagesFromBase(base))
 				return false;
 			break;
@@ -1324,6 +1335,14 @@ int MultiROM::getType(int os, std::string loc)
 			break;
 		case 3: // installer
 			return m_installer->getRomType();
+		case 4:
+			if(loc == INTERNAL_MEM_LOC_TXT)
+				return ROM_UTOUCH_INTERNAL;
+			else if(ext)
+				return ROM_UTOUCH_USB_DIR;
+			else
+				return ROM_UTOUCH_USB_IMG;
+			break;
 	}
 	return ROM_UNKNOWN;
 }
@@ -1459,6 +1478,36 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 
 			if(type == ROM_INSTALLER_USB_IMG)
 				 umountBaseImages(base);
+			break;
+		}
+		case ROM_UTOUCH_INTERNAL:
+		case ROM_UTOUCH_USB_DIR:
+		case ROM_UTOUCH_USB_IMG:
+		{
+			std::string device_zip = DataManager::GetStrValue("tw_touch_filename_device");
+			std::string core_zip = DataManager::GetStrValue("tw_touch_filename_core");
+
+			gui_print("  \n");
+			gui_print("Flashing device zip...\n");
+			if(!flashZip(name, device_zip))
+				break;
+
+			gui_print("  \n");
+			gui_print("Flashing core zip...\n");
+
+			system("ln -sf /sbin/gnutar /sbin/tar");
+			bool flash_res = flashZip(name, core_zip);
+			system("ln -sf /sbin/busybox /sbin/tar");
+			if(!flash_res)
+				break;
+
+			if(!ubuntuTouchProcessBoot(root, device_zip))
+				break;
+
+			if(!ubuntuTouchProcess(root, name))
+				break;
+
+			res = true;
 			break;
 		}
 	}
@@ -1723,4 +1772,137 @@ void MultiROM::umountBaseImages(const std::string& base)
 		rmdir(cmd);
 	}
 	rmdir(base.c_str());
+}
+
+bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const std::string& zip_name)
+{
+	gui_print("Processing boot.img for Ubuntu Touch\n");
+	FILE *img = fopen("/tmp/boot.img", "w");
+	if(!img)
+	{
+		gui_print("Failed to create boot.img!\n");
+		return false;
+	}
+
+	gui_print("Extracting boot.img from ZIP file...\n");
+
+	const ZipEntry *script_entry;
+	int img_len;
+	char* img_data = NULL;
+	ZipArchive zip;
+	char cmd[256];
+	struct stat info;
+	int rd_cmpr;
+
+	if (mzOpenZipArchive(zip_name.c_str(), &zip) != 0)
+	{
+		gui_print("Failed to open zip file %s!\n", zip_name.c_str());
+		goto fail_zip;
+	}
+
+	script_entry = mzFindZipEntry(&zip, "boot.img");
+	if(!script_entry)
+	{
+		gui_print("Failed to find boot.img in the ZIP!\n");
+		goto fail_zip;
+	}
+
+	if (read_data(&zip, script_entry, &img_data, &img_len) < 0)
+	{
+		gui_print("Failed to read boot.img from ZIP!\n");
+		goto fail_zip;
+	}
+
+	fwrite(img_data, 1, img_len, img);
+	fclose(img);
+
+	mzCloseZipArchive(&zip);
+	free(img_data);
+
+	// EXTRACT BOOTIMG
+	gui_print("Extracting boot image...\n");
+	system("rm -r /tmp/boot; mkdir /tmp/boot");
+	system("unpackbootimg -i /tmp/boot.img -o /tmp/boot/");
+	if(stat("/tmp/boot/boot.img-zImage", &info) < 0)
+	{
+		gui_print("Failed to unpack boot img!\n");
+		goto fail_inject;
+	}
+
+	// DECOMPRESS RAMDISK
+	gui_print("Decompressing ramdisk...\n");
+	system("mkdir /tmp/boot/rd");
+	rd_cmpr = decompressRamdisk("/tmp/boot/boot.img-ramdisk.gz", "/tmp/boot/rd/");
+	if(rd_cmpr == -1 || stat("/tmp/boot/rd/init", &info) < 0)
+	{
+		gui_print("Failed to decompress ramdisk!\n");
+		goto fail_inject;
+	}
+
+	// COPY INIT FILES
+	sprintf(cmd, "cp -ra %s/ubuntu-touch-init/* /tmp/boot/rd/", m_path.c_str());
+	system(cmd);
+
+	// COMPRESS RAMDISK
+	gui_print("Compressing ramdisk...\n");
+	if(!compressRamdisk("/tmp/boot/rd", "/tmp/boot/boot.img-ramdisk.gz", rd_cmpr))
+		return false;
+
+	// DEPLOY
+	sprintf(cmd, "cp /tmp/boot/boot.img-ramdisk.gz %s/initrd.img", root.c_str());
+	system(cmd);
+	sprintf(cmd, "cp /tmp/boot/boot.img-zImage %s/zImage", root.c_str());
+	system(cmd);
+
+	system("rm /tmp/boot.img");
+	system("rm -r /tmp/boot");
+	return true;
+
+fail_zip:
+	mzCloseZipArchive(&zip);
+	free(img_data);
+	fclose(img);
+	return false;
+
+fail_inject:
+	system("rm /tmp/boot.img");
+	system("rm -r /tmp/boot");
+	return false;
+}
+
+bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& name)
+{
+	// rom_info.txt
+	char cmd[256];
+	sprintf(cmd, "cp %s/infos/ubuntu_touch.txt %s/rom_info.txt", m_path.c_str(), root.c_str());
+	system(cmd);
+
+	gui_print("Changing mountpoints\n");
+	if(!changeMounts(name))
+	{
+		gui_print("Failed to change mountpoints\n");
+		return false;
+	}
+
+	// fstab
+	system("mkdir -p /data/ubuntu/systemorig");
+	system("echo \"/dev/mmcblk0p3\t/systemorig\text4\tro\t0\t0\" >> /data/ubuntu/etc/fstab");
+	system("echo \"/system/vendor\t/vendor\tauto\tro,bind\t0\t0\" >> /data/ubuntu/etc/fstab");
+
+	// change the way android lxc is initiated
+	system("echo -e \""
+		"if [ \\\"\\$INITRD\\\" = \\\"/boot/android-ramdisk.img\\\" ]; then\\n"
+		"    sed -i \\\"/mount_all /d\\\" \\$LXC_ROOTFS_PATH/init.*.rc\\n"
+		"    sed -i \\\"/on nonencrypted/d\\\" \\$LXC_ROOTFS_PATH/init.rc\\n"
+		"    folders=\\\"data system cache\\\"\\n"
+		"    for dir in \\$folders; do\\n"
+		"        mkdir -p \\$LXC_ROOTFS_PATH/\\$dir\\n"
+		"        mount -n -o bind,recurse /mrom_dir/\\$dir \\$LXC_ROOTFS_PATH/\\$dir\\n"
+		"    done\\n"
+		"fi\\n"
+		"\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
+
+	gui_print("Restoring mounts\n");
+	restoreMounts();
+	return true;
 }

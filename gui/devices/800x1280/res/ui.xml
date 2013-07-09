@@ -4783,7 +4783,7 @@
 				<condition var1="tw_multirom_type" var2="1" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Android/Ubuntu touch</text>
+				<text>Android</text>
 				<image resource="radio_true" />
 				<actions>
 					<action function="set">tw_multirom_type=1</action>
@@ -4796,7 +4796,7 @@
 				<condition var1="tw_multirom_type" var2="1" op="!="/>
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Android/Ubuntu touch</text>
+				<text>Android</text>
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_multirom_type=1</action>
@@ -4807,7 +4807,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
-				<placement x="%col2_x%" y="%row2_text_y%" />
+				<placement x="200" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
 				<image resource="radio_true" />
@@ -4820,12 +4820,38 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" op="!="/>
-				<placement x="%col2_x%" y="%row2_text_y%" />
+				<placement x="200" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_multirom_type=2</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+			
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_type" var2="4" />
+				<placement x="500" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Ubuntu Touch</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_type=4</action>
+					<action function="page">multirom_add</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_type" var2="4" op="!="/>
+				<placement x="500" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Ubuntu Touch</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_type=4</action>
 					<action function="page">multirom_add</action>
 				</actions>
 			</object>
@@ -5078,11 +5104,72 @@
 				<selection name="tw_file" />
 			</object>
 
+			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
+				<conditions>
+					<condition var1="tw_multirom_type" var2="4" />
+					<condition var1="tw_multirom_touch_add_zip" var2="1" />
+				</conditions>
+				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Select Ubuntu file 1 (smaller):</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter extn=".zip" folders="1" files="1" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="tw_touch_filename_device" />
+				<selection name="tw_file" />
+			</object>
+
+			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
+				<conditions>
+					<condition var1="tw_multirom_type" var2="4" />
+					<condition var1="tw_multirom_touch_add_zip" var2="2" />
+				</conditions>
+				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Select Ubuntu file 2 (bigger):</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter extn=".zip" folders="1" files="1" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="tw_touch_filename_core" />
+				<selection name="tw_file" />
+			</object>
+
 			<object type="template" name="sort_options" />
 
 			<object type="action">
-				<condition var1="tw_filename" op="modified" />
+				<conditions>
+					<condition var1="tw_filename" op="modified" />
+					<condition var1="tw_multirom_type" var2="4" op="!=" />
+				</conditions>
 				<action function="multirom_add_file_selected" />
+			</object>
+
+			<object type="action">
+				<conditions>
+					<condition var1="tw_touch_filename_device" op="modified" />
+					<condition var1="tw_multirom_type" var2="4" />
+				</conditions>
+				<action function="page">multirom_add_touch</action>
+			</object>
+
+			<object type="action">
+				<conditions>
+					<condition var1="tw_touch_filename_core" op="modified" />
+					<condition var1="tw_multirom_type" var2="4" />
+				</conditions>
+				<action function="page">multirom_add_touch</action>
 			</object>
 
 			<object type="action">
@@ -5141,6 +5228,22 @@
 					<action function="set">tw_text3=?</action>
 					<action function="set">tw_action_text1=Installing ROM...</action>
 					<action function="set">tw_complete_text1=ROM installed</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="action">
+				<condition var1="tw_multirom_type" var2="4" />
+				<actions>
+					<action function="set">tw_back=multirom_add</action>
+					<action function="set">tw_action=multirom_add_rom</action>
+					<action function="set">tw_text1=Install Ubuntu touch files</action>
+					<action function="set">tw_text2=%tw_touch_filename_device%</action>
+					<action function="set">tw_text3=%tw_touch_filename_core%</action>
+					<action function="set">tw_action_text1=Installing Ubuntu Touch...</action>
+					<action function="set">tw_complete_text1=Ubuntu Touch installed</action>
 					<action function="set">tw_slider_text=Swipe to Confirm</action>
 					<action function="set">tw_show_reboot=0</action>
 					<action function="page">confirm_action</action>
@@ -5469,5 +5572,112 @@
 
 			<object type="template" name="footer" />
 		</page>
+
+		<page name="multirom_add_touch">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>MultiROM - Add ROM - source</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<text>Select Ubuntu touch ZIPs:</text>
+			</object>
+			
+			<object type="text" color="%text_success_color%">
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<text>*-armel+grouper.zip (smaller one)</text>
+			</object>
+			
+			<object type="text" color="%text_success_color%">
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row3_text_y%" />
+				<text>*-touch-armhf.zip (bigger one)</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col_center_x%" y="%row5_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>*-armel+grouper.zip</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_multirom_touch_add_zip=1</action>
+					<action function="page">multirom_add_select</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col_center_x%" y="%row10_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>*-touch-armhf.zip</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_multirom_touch_add_zip=2</action>
+					<action function="page">multirom_add_select</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row15_text_y%" />
+				<text>1: %tw_touch_filename_device%</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row16_text_y%" />
+				<text>2: %tw_touch_filename_core%</text>
+			</object>
+
+			<object type="text" color="%text_fail_color%">
+				<condition var1="tw_touch_filename_device" op="!="/>
+				<font resource="font" />
+				<placement x="%center_x%" y="%row17_text_y%" placement="5"/>
+				<text>Select both files to install!</text>
+			</object>
+
+			<object type="text" color="%text_fail_color%">
+				<condition var1="tw_touch_filename_core" op="!="/>
+				<font resource="font" />
+				<placement x="%center_x%" y="%row17_text_y%" placement="5"/>
+				<text>Select both files to install!</text>
+			</object>
+
+			<object type="button">
+				<conditions>
+					<condition var1="tw_touch_filename_device"/>
+					<condition var1="tw_touch_filename_core"/>
+				</conditions>
+				<highlight color="%highlight_color%" />
+				<placement x="%col_center_x%" y="%row17_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Install</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_filename=%tw_touch_filename_core%</action>
+					<action function="multirom_add_file_selected" />
+				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">multirom_add</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
 	</pages>
 </recovery>

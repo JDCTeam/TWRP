@@ -29,6 +29,9 @@ enum
 	ROM_INSTALLER_INTERNAL= 6,
 	ROM_INSTALLER_USB_DIR = 7,
 	ROM_INSTALLER_USB_IMG = 8,
+	ROM_UTOUCH_INTERNAL   = 9,
+	ROM_UTOUCH_USB_DIR    = 10,
+	ROM_UTOUCH_USB_IMG    = 11,
 
 	ROM_UNKNOWN,
 };
@@ -43,8 +46,8 @@ enum
 #define M(x) (1 << x)
 #define MASK_UBUNTU (M(ROM_UBUNTU_INTERNAL) | M(ROM_UBUNTU_USB_IMG)| M(ROM_UBUNTU_USB_DIR))
 #define MASK_ANDROID (M(ROM_ANDROID_USB_DIR) | M(ROM_ANDROID_USB_IMG) | M(ROM_ANDROID_INTERNAL))
-#define MASK_IMAGES (M(ROM_ANDROID_USB_IMG) | M(ROM_UBUNTU_USB_IMG) | M(ROM_INSTALLER_USB_IMG))
-#define MASK_INTERNAL (M(ROM_ANDROID_INTERNAL) | M(ROM_UBUNTU_INTERNAL) | M(ROM_INSTALLER_INTERNAL))
+#define MASK_IMAGES (M(ROM_ANDROID_USB_IMG) | M(ROM_UBUNTU_USB_IMG) | M(ROM_INSTALLER_USB_IMG) | M(ROM_UTOUCH_USB_IMG))
+#define MASK_INTERNAL (M(ROM_ANDROID_INTERNAL) | M(ROM_UBUNTU_INTERNAL) | M(ROM_INSTALLER_INTERNAL) | M(ROM_UTOUCH_INTERNAL))
 #define MASK_INSTALLER (M(ROM_INSTALLER_INTERNAL) | M(ROM_INSTALLER_USB_DIR) | M(ROM_INSTALLER_USB_IMG))
 
 #define INTERNAL_NAME "Internal"
@@ -151,7 +154,10 @@ private:
 	static bool createDirsFromBase(const std::string& base);
 	static bool mountBaseImages(std::string base, std::string& dest);
 	static void umountBaseImages(const std::string& base);
-	
+
+	static bool ubuntuTouchProcessBoot(const std::string& root, const std::string& zip_name);
+	static bool ubuntuTouchProcess(const std::string& root, const std::string& name);
+
 	static std::string m_path;
 	static std::vector<file_backup> m_mount_bak;
 	static std::string m_mount_rom_paths[2];
