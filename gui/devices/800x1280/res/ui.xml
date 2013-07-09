@@ -4488,10 +4488,7 @@
 
 			<object type="action">
 				<condition var1="tw_filename" op="modified" />
-				<actions>
-					<action function="queuezip"></action>
-					<action function="page">multirom_flash_confirm</action>
-				</actions>
+				<action function="page">multirom_flash_confirm</action>
 			</object>
 
 			<object type="action">
@@ -4694,7 +4691,7 @@
 				<image resource="medium_button" />
 				<actions>
 					<action function="addsubtract">tw_multirom_delay-1</action>
-					<action function="page">multirom_settings</action>
+					<action function="page">multirom_settings_autoboot</action>
 				</actions>
 			</object>
 
@@ -4714,7 +4711,7 @@
 				<image resource="medium_button" />
 				<actions>
 					<action function="addsubtract">tw_multirom_delay+1</action>
-					<action function="page">multirom_settings</action>
+					<action function="page">multirom_settings_autoboot</action>
 				</actions>
 			</object>
 
@@ -4739,7 +4736,7 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Save</text>
 				<image resource="main_button" />
-				<action function="multirom_settings"></action>
+				<action function="page">multirom_settings</action>
 			</object>
 
 			<object type="action">
