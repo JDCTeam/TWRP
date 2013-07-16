@@ -4635,9 +4635,51 @@
 				<data variable="tw_multirom_brightness" min="30" max="255" showrange="1" showcurr="0" changeondrag="1" />
 			</object>
 
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row12_text_y%" placement="5" />
+				<text>Rotation (degrees, clockwise): %tw_multirom_rotation%</text>
+			</object>
+
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%row15_text_y%" />
+				<placement x="%col1_medium_x%" y="%row13_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>0</text>
+				<image resource="medium_button" />
+				<action function="set">tw_multirom_rotation=0</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_medium_x%" y="%row13_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>90</text>
+				<image resource="medium_button" />
+				<action function="set">tw_multirom_rotation=90</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row13_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>180</text>
+				<image resource="medium_button" />
+				<action function="set">tw_multirom_rotation=180</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col4_medium_x%" y="%row13_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>270</text>
+				<image resource="medium_button" />
+				<action function="set">tw_multirom_rotation=270</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col_center_x%" y="%row16_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Save</text>
 				<image resource="main_button" />

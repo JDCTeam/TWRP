@@ -87,6 +87,7 @@ public:
 		int enable_adb;
 		int hide_internal;
 		std::string int_display_name;
+		int rotation;
 	};
 
 	struct file_backup {

@@ -44,6 +44,7 @@ MultiROM::config::config()
 	brightness = 40;
 	hide_internal = 0;
 	int_display_name = INTERNAL_NAME;
+	rotation = 0; // FIXME: should be device specific
 }
 
 bool MultiROM::folderExists()
@@ -330,6 +331,8 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.hide_internal = atoi(val.c_str());
 			else if(name == "int_display_name")
 				cfg.int_display_name = val;
+			else if(name == "rotation")
+				cfg.rotation = atoi(val.c_str());
 		}
 		fclose(f);
 	}
@@ -350,6 +353,7 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "enable_adb=%d\n", cfg.enable_adb);
 	fprintf(f, "hide_internal=%d\n", cfg.hide_internal);
 	fprintf(f, "int_display_name=%s\n", cfg.int_display_name.c_str());
+	fprintf(f, "rotation=%d\n", cfg.rotation);
 
 	fclose(f);
 }
