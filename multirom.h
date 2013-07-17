@@ -54,6 +54,7 @@ enum
 #define REALDATA "/realdata"
 #define MAX_ROM_NAME 26
 #define INTERNAL_MEM_LOC_TXT "Internal memory"
+#define BOOT_DEV "/dev/block/mmcblk0p2"
 
 // Not defined in android includes?
 #define MS_RELATIME (1<<21)
@@ -116,6 +117,7 @@ public:
 
 	static bool flashZip(std::string rom, std::string file);
 	static bool injectBoot(std::string img_path);
+	static bool extractBootForROM(std::string base);
 	static int copyBoot(std::string& orig, std::string rom);
 	static bool wipe(std::string name, std::string what);
 
@@ -128,6 +130,9 @@ public:
 	static void setRomsPath(std::string loc);
 	static bool patchInit(std::string name);
 	static bool disableFlashKernelAct(std::string name, std::string loc);
+	static bool fakeBootPartition(const char *fakeImg);
+	static void restoreBootPartition();
+	static bool compareFiles(const char *path1, const char *path2);
 
 private:
 	static void findPath();
@@ -137,10 +142,8 @@ private:
 	static bool skipLine(const char *line);
 	static std::string getNewRomName(std::string zip, std::string def);
 	static bool createDirs(std::string name, int type);
-	static bool androidExportBoot(std::string name, std::string zip, int type);
 	static bool compressRamdisk(const char *src, const char *dest, int cmpr);
 	static int decompressRamdisk(const char *src, const char *dest);
-	static bool extractBootForROM(std::string base);
 	static bool installFromBackup(std::string name, std::string path, int type);
 	static bool extractBackupFile(std::string path, std::string part);
 	static int getType(int os, std::string loc);
@@ -158,8 +161,14 @@ private:
 	static bool mountBaseImages(std::string base, std::string& dest);
 	static void umountBaseImages(const std::string& base);
 
-	static bool ubuntuTouchProcessBoot(const std::string& root, const std::string& zip_name);
+	static bool ubuntuTouchProcessBoot(const std::string& root);
 	static bool ubuntuTouchProcess(const std::string& root, const std::string& name);
+
+	static int system_args(const char *fmt, ...);
+	static void translateToRealdata(std::string& path);
+	static bool calculateMD5(const char *path, unsigned char *md5sum/*len: 16*/);
+	static void normalizeROMPath(std::string& path);
+	static void restoreROMPath();
 
 	static std::string m_path;
 	static std::vector<file_backup> m_mount_bak;

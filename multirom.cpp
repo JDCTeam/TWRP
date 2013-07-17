@@ -1,9 +1,13 @@
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "multirom.h"
 
 extern "C" {
 #include "twcommon.h"
+#include "digest/md5.h"
 }
 
 std::string MultiROM::m_path = "";
@@ -362,6 +366,7 @@ bool MultiROM::changeMounts(std::string name)
 {
 	int type = getType(name);
 	std::string base = getRomsPath() + name;
+	normalizeROMPath(base);
 
 	mkdir(REALDATA, 0777);
 	if(mount("/dev/block/platform/sdhci-tegra.3/by-name/UDA",
@@ -415,30 +420,6 @@ bool MultiROM::changeMounts(std::string name)
 	{
 		fclose(f_fstab);
 		return false;
-	}
-
-	// remove spaces from path
-	size_t idx = base.find(' ');
-	if(idx != std::string::npos)
-		m_mount_rom_paths[0] = base;
-	else
-		m_mount_rom_paths[0].clear();
-
-	while(idx != std::string::npos)
-	{
-		base.replace(idx, 1, "-");
-		idx = base.find(' ', idx);
-	}
-
-	struct stat info;
-	while(!m_mount_rom_paths[0].empty() && stat(base.c_str(), &info) >= 0)
-		base += "a";
-
-	if(!m_mount_rom_paths[0].empty())
-	{
-		m_mount_rom_paths[1] = base;
-		std::string cmd = "mv \"" + m_mount_rom_paths[0] + "\" \"" + base + "\"";
-		system(cmd.c_str());
 	}
 
 	fprintf(f_rec, "# mount point\tfstype\t\tdevice\n");
@@ -504,16 +485,65 @@ void MultiROM::restoreMounts()
 	}
 	m_mount_bak.clear();
 
-	if(!m_mount_rom_paths[0].empty())
-	{
-		std::string cmd = "mv \"" + m_mount_rom_paths[1] + "\" \"" + m_mount_rom_paths[0] + "\"";
-		system(cmd.c_str());
-		m_mount_rom_paths[0].clear();
-	}
-
 	system("umount "REALDATA);
 	//load_volume_table();
 	system("mount /data");
+
+	restoreROMPath();
+}
+
+void MultiROM::translateToRealdata(std::string& path)
+{
+	if(path.find("/sdcard/") != std::string::npos)
+	{
+		struct stat info;
+		if(stat(REALDATA"/media/0", &info) >= 0)
+			path.replace(0, strlen("/sdcard/"), REALDATA"/media/0/");
+		else
+			path.replace(0, strlen("/sdcard/"), REALDATA"/media/");
+	}
+	else if(path.find("/data/media/") != std::string::npos)
+		path.replace(0, strlen("/data/"), REALDATA"/");
+}
+
+void MultiROM::normalizeROMPath(std::string& path)
+{
+	if(!m_mount_rom_paths[0].empty())
+	{
+		path = m_mount_rom_paths[1];
+		return;
+	}
+
+	// remove spaces from path
+	size_t idx = path.find(' ');
+	if(idx == std::string::npos)
+	{
+		m_mount_rom_paths[0].clear();
+		return;
+	}
+
+	m_mount_rom_paths[0] = path;
+	while(idx != std::string::npos)
+	{
+		path.replace(idx, 1, "-");
+		idx = path.find(' ', idx);
+	}
+
+	struct stat info;
+	while(stat(path.c_str(), &info) >= 0)
+		path += "a";
+
+	m_mount_rom_paths[1] = path;
+	system_args("mv \"%s\" \"%s\"", m_mount_rom_paths[0].c_str(), path.c_str());
+}
+
+void MultiROM::restoreROMPath()
+{
+	if(m_mount_rom_paths[0].empty())
+		return;
+
+	system_args("mv \"%s\" \"%s\"", m_mount_rom_paths[1].c_str(), m_mount_rom_paths[0].c_str());
+	m_mount_rom_paths[0].clear();
 }
 
 #define MR_UPDATE_SCRIPT_PATH  "META-INF/com/google/android/"
@@ -535,16 +565,18 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		return false;
 	}
 
-	if(file.find("/sdcard/") != std::string::npos)
+	std::string boot = getRomsPath() + rom;
+	normalizeROMPath(boot);
+	boot += "/boot.img";
+
+	translateToRealdata(file);
+	translateToRealdata(boot);
+	
+	if(!fakeBootPartition(boot.c_str()))
 	{
-		struct stat info;
-		if(stat(REALDATA"/media/0", &info) >= 0)
-			file.replace(0, strlen("/sdcard/"), REALDATA"/media/0/");
-		else
-			file.replace(0, strlen("/sdcard/"), REALDATA"/media/");
+		restoreMounts();
+		return false;
 	}
-	else if(file.find("/data/media/") != std::string::npos)
-		file.replace(0, strlen("/data/"), REALDATA"/");
 
 	int wipe_cache = 0;
 	int status = TWinstall_zip(file.c_str(), &wipe_cache);
@@ -558,6 +590,7 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	else
 		gui_print("ZIP successfully installed\n");
 
+	restoreBootPartition();
 	restoreMounts();
 	return (status == INSTALL_SUCCESS);
 }
@@ -570,11 +603,13 @@ bool MultiROM::skipLine(const char *line)
 	if(strstr(line, "format"))
 		return true;
 
-	if(strstr(line, "/dev/block/platform/sdhci-tegra.3/"))
-		return true;
-
-	if (strstr(line, "boot.img") || strstr(line, "/dev/block/mmcblk0p2") ||
+	if (strstr(line, "boot.img") || strstr(line, BOOT_DEV) ||
 		strstr(line, "/dev/block/platform/sdhci-tegra.3/by-name/LNX"))
+	{
+		return false;
+	}
+
+	if(strstr(line, "/dev/block/platform/sdhci-tegra.3/"))
 		return true;
 
 	return false;
@@ -657,7 +692,7 @@ bool MultiROM::prepareZIP(std::string& file)
 			return false;
 	}
 	else
-		gui_print("No need to change ZIP.");
+		gui_print("No need to change ZIP.\n");
 
 	return true;
 
@@ -743,8 +778,8 @@ bool MultiROM::injectBoot(std::string img_path)
 		return false;
 	}
 	system("rm -r /tmp/boot");
-	if(img_path == "/dev/block/mmcblk0p2")
-		system("dd bs=4096 if=/tmp/newboot.img of=/dev/block/mmcblk0p2");
+	if(img_path == BOOT_DEV)
+		system("dd bs=4096 if=/tmp/newboot.img of="BOOT_DEV);
 	else
 	{
 		sprintf(cmd, "cp /tmp/newboot.img \"%s\"", img_path.c_str());;
@@ -1021,93 +1056,16 @@ bool MultiROM::createDirs(std::string name, int type)
 	return true;
 }
 
-bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int type)
-{
-	gui_print("Processing boot.img of ROM %s...\n", name.c_str());
-
-	std::string base = getRomsPath() + "/" + name;
-	char cmd[256];
-
-	FILE *img = fopen((base + "/boot.img").c_str(), "w");
-	if(!img)
-	{
-		gui_print("Failed to create boot.img!\n");
-		return false;
-	}
-
-	gui_print("Extracting boot.img from ZIP file...\n");
-
-	const ZipEntry *script_entry;
-	int img_len;
-	char* img_data = NULL;
-	ZipArchive zip;
-
-	if (mzOpenZipArchive(zip_path.c_str(), &zip) != 0)
-	{
-		gui_print("Failed to open zip file %s!\n", name.c_str());
-		goto fail;
-	}
-
-	script_entry = mzFindZipEntry(&zip, "boot.img");
-	if(script_entry)
-	{
-		if (read_data(&zip, script_entry, &img_data, &img_len) < 0)
-		{
-			gui_print("Failed to read boot.img from ZIP!\n");
-			goto fail;
-		}
-
-		fwrite(img_data, 1, img_len, img);
-	}
-	else
-	{
-		gui_print("boot.img not found in the root of ZIP file!\n");
-		gui_print("WARNING: Using current boot sector as boot.img!!\n");
-
-		FILE *b = fopen("/dev/block/platform/sdhci-tegra.3/by-name/LNX", "r");
-		if(!b)
-		{
-			gui_print("Failed to open boot sector!\n");
-			goto fail;
-		}
-
-		img_data = (char*)malloc(16*1024);
-		while(!feof(b))
-		{
-			img_len = fread(img_data, 1, 16*1024, b);
-			fwrite(img_data, 1, img_len, img);
-		}
-		fclose(b);
-	}
-
-	fclose(img);
-
-	mzCloseZipArchive(&zip);
-	free(img_data);
-
-	if(!extractBootForROM(base))
-		return false;
-
-	return true;
-
-fail:
-	mzCloseZipArchive(&zip);
-	free(img_data);
-	fclose(img);
-	return false;
-}
-
 bool MultiROM::extractBootForROM(std::string base)
 {
 	char cmd[256];
-	struct stat info;
 
 	gui_print("Extracting contents of boot.img...\n");
-	sprintf(cmd, "unpackbootimg -i \"%s/boot.img\" -o \"%s/boot/\"", base.c_str(), base.c_str());
-	system(cmd);
+	system_args("rm -r \"%s/boot/\"*", base.c_str());
+	system_args("unpackbootimg -i \"%s/boot.img\" -o \"%s/boot/\"", base.c_str(), base.c_str());
 
 	sprintf(cmd, "%s/boot/boot.img-zImage", base.c_str());
-	if(stat(cmd, &info) < 0)
+	if(access(cmd, F_OK) < 0)
 	{
 		gui_print("Failed to unpack boot.img!\n");
 		return false;
@@ -1115,20 +1073,16 @@ bool MultiROM::extractBootForROM(std::string base)
 
 	static const char *keep[] = { "zImage", "ramdisk.gz", "cmdline", NULL };
 	for(int i = 0; keep[i]; ++i)
-	{
-		sprintf(cmd, "mv \"%s/boot/boot.img-%s\" \"%s/boot/%s\"", base.c_str(), keep[i], base.c_str(), keep[i]);
-		system(cmd);
-	}
+		system_args("mv \"%s/boot/boot.img-%s\" \"%s/boot/%s\"", base.c_str(), keep[i], base.c_str(), keep[i]);
 
-	sprintf(cmd, "rm \"%s/boot/boot.img-\"*", base.c_str());
-	system(cmd);
+	system_args("rm \"%s/boot/boot.img-\"*", base.c_str());
 
 	system("rm -r /tmp/boot");
 	system("mkdir /tmp/boot");
 
 	sprintf(cmd, "%s/boot/ramdisk.gz", base.c_str());
 	int rd_cmpr = decompressRamdisk(cmd, "/tmp/boot");
-	if(rd_cmpr == -1 || stat("/tmp/boot/init", &info) < 0)
+	if(rd_cmpr == -1 || access("/tmp/boot/init", F_OK) < 0)
 	{
 		gui_print("Failed to extract ramdisk!\n");
 		return false;
@@ -1137,18 +1091,12 @@ bool MultiROM::extractBootForROM(std::string base)
 	// copy rc files
 	static const char *cp_f[] = { "*.rc", "default.prop", "init", "main_init", NULL };
 	for(int i = 0; cp_f[i]; ++i)
-	{
-		sprintf(cmd, "cp -a /tmp/boot/%s \"%s/boot/\"", cp_f[i], base.c_str());
-		system(cmd);
-	}
+		system_args("cp -a /tmp/boot/%s \"%s/boot/\"", cp_f[i], base.c_str());
 
 	// check if main_init exists
 	sprintf(cmd, "%s/boot/main_init", base.c_str());
-	if(stat(cmd, &info) < 0)
-	{
-		sprintf(cmd, "mv \"%s/boot/init\" \"%s/boot/main_init\"", base.c_str(), base.c_str());
-		system(cmd);
-	}
+	if(access(cmd, F_OK) < 0)
+		system_args("mv \"%s/boot/init\" \"%s/boot/main_init\"", base.c_str(), base.c_str());
 
 	system("rm -r /tmp/boot");
 
@@ -1159,10 +1107,7 @@ bool MultiROM::extractBootForROM(std::string base)
 			return false;
 	}
 	else
-	{
-		sprintf(cmd, "rm \"%s/boot.img\"", base.c_str());
-		system(cmd);
-	}
+		system_args(cmd, "rm \"%s/boot.img\"", base.c_str());
 	return true;
 }
 
@@ -1410,9 +1355,10 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 			std::string src = DataManager::GetStrValue("tw_multirom_add_source");
 			if(src == "zip")
 			{
-				if(!androidExportBoot(name, zip, type))
-					break;
 				if(!flashZip(name, zip))
+					break;
+
+				if(!extractBootForROM(root))
 					break;
 			}
 			else if(src == "backup")
@@ -1513,7 +1459,7 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 			if(!flash_res)
 				break;
 
-			if(!ubuntuTouchProcessBoot(root, device_zip))
+			if(!ubuntuTouchProcessBoot(root))
 				break;
 
 			if(!ubuntuTouchProcess(root, name))
@@ -1786,56 +1732,25 @@ void MultiROM::umountBaseImages(const std::string& base)
 	rmdir(base.c_str());
 }
 
-bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const std::string& zip_name)
+bool MultiROM::ubuntuTouchProcessBoot(const std::string& root)
 {
-	gui_print("Processing boot.img for Ubuntu Touch\n");
-	FILE *img = fopen("/tmp/boot.img", "w");
-	if(!img)
-	{
-		gui_print("Failed to create boot.img!\n");
-		return false;
-	}
-
-	gui_print("Extracting boot.img from ZIP file...\n");
-
-	const ZipEntry *script_entry;
-	int img_len;
-	char* img_data = NULL;
-	ZipArchive zip;
-	char cmd[256];
-	struct stat info;
 	int rd_cmpr;
 
-	if (mzOpenZipArchive(zip_name.c_str(), &zip) != 0)
+	gui_print("Processing boot.img for Ubuntu Touch\n");
+	system("rm /tmp/boot.img");
+	system_args("mv %s/boot.img /tmp/boot.img", root.c_str());
+
+	if(access("/tmp/boot.img", F_OK) < 0)
 	{
-		gui_print("Failed to open zip file %s!\n", zip_name.c_str());
-		goto fail_zip;
+		gui_print("boot.img was not found!\b");
+		return false;
 	}
-
-	script_entry = mzFindZipEntry(&zip, "boot.img");
-	if(!script_entry)
-	{
-		gui_print("Failed to find boot.img in the ZIP!\n");
-		goto fail_zip;
-	}
-
-	if (read_data(&zip, script_entry, &img_data, &img_len) < 0)
-	{
-		gui_print("Failed to read boot.img from ZIP!\n");
-		goto fail_zip;
-	}
-
-	fwrite(img_data, 1, img_len, img);
-	fclose(img);
-
-	mzCloseZipArchive(&zip);
-	free(img_data);
 
 	// EXTRACT BOOTIMG
 	gui_print("Extracting boot image...\n");
 	system("rm -r /tmp/boot; mkdir /tmp/boot");
 	system("unpackbootimg -i /tmp/boot.img -o /tmp/boot/");
-	if(stat("/tmp/boot/boot.img-zImage", &info) < 0)
+	if(access("/tmp/boot/boot.img-zImage", F_OK) < 0)
 	{
 		gui_print("Failed to unpack boot img!\n");
 		goto fail_inject;
@@ -1845,15 +1760,14 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const std::string
 	gui_print("Decompressing ramdisk...\n");
 	system("mkdir /tmp/boot/rd");
 	rd_cmpr = decompressRamdisk("/tmp/boot/boot.img-ramdisk.gz", "/tmp/boot/rd/");
-	if(rd_cmpr == -1 || stat("/tmp/boot/rd/init", &info) < 0)
+	if(rd_cmpr == -1 || access("/tmp/boot/rd/init", F_OK) < 0)
 	{
 		gui_print("Failed to decompress ramdisk!\n");
 		goto fail_inject;
 	}
 
 	// COPY INIT FILES
-	sprintf(cmd, "cp -ra %s/ubuntu-touch-init/* /tmp/boot/rd/", m_path.c_str());
-	system(cmd);
+	system_args("cp -ra %s/ubuntu-touch-init/* /tmp/boot/rd/", m_path.c_str());
 
 	// COMPRESS RAMDISK
 	gui_print("Compressing ramdisk...\n");
@@ -1861,20 +1775,12 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const std::string
 		return false;
 
 	// DEPLOY
-	sprintf(cmd, "cp /tmp/boot/boot.img-ramdisk.gz %s/initrd.img", root.c_str());
-	system(cmd);
-	sprintf(cmd, "cp /tmp/boot/boot.img-zImage %s/zImage", root.c_str());
-	system(cmd);
+	system_args("cp /tmp/boot/boot.img-ramdisk.gz %s/initrd.img", root.c_str());
+	system_args("cp /tmp/boot/boot.img-zImage %s/zImage", root.c_str());
 
 	system("rm /tmp/boot.img");
 	system("rm -r /tmp/boot");
 	return true;
-
-fail_zip:
-	mzCloseZipArchive(&zip);
-	free(img_data);
-	fclose(img);
-	return false;
 
 fail_inject:
 	system("rm /tmp/boot.img");
@@ -1885,9 +1791,7 @@ fail_inject:
 bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& name)
 {
 	// rom_info.txt
-	char cmd[256];
-	sprintf(cmd, "cp %s/infos/ubuntu_touch.txt %s/rom_info.txt", m_path.c_str(), root.c_str());
-	system(cmd);
+	system_args("cp %s/infos/ubuntu_touch.txt %s/rom_info.txt", m_path.c_str(), root.c_str());
 
 	gui_print("Changing mountpoints\n");
 	if(!changeMounts(name))
@@ -1916,5 +1820,94 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 
 	gui_print("Restoring mounts\n");
 	restoreMounts();
+	return true;
+}
+
+int MultiROM::system_args(const char *fmt, ...)
+{
+	char cmd[256];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(cmd, sizeof(cmd), fmt, ap);
+	va_end(ap);
+
+	return system(cmd);
+}
+
+bool MultiROM::fakeBootPartition(const char *fakeImg)
+{
+	if(access(BOOT_DEV"-orig", F_OK) >= 0)
+	{
+		gui_print("Failed to fake boot partition, "BOOT_DEV"-orig already exists!\n");
+		return false;
+	}
+
+	if(access(fakeImg, F_OK) < 0)
+	{
+		int fd = creat(fakeImg, 0644);
+		if(fd < 0)
+		{
+			gui_print("Failed to create fake boot image file %s (%s)!\n", fakeImg, strerror(errno));
+			return false;
+		}
+		close(fd);
+
+		// Copy current boot.img as base
+		system_args("dd if="BOOT_DEV" of=\"%s\"", fakeImg);
+		gui_print("Current boot sector was used as base for fake boot.img!\n");
+	}
+
+	system("mv "BOOT_DEV" "BOOT_DEV"-orig");
+	system_args("ln -s \"%s\" "BOOT_DEV, fakeImg);
+	return true;
+}
+
+void MultiROM::restoreBootPartition()
+{
+	if(access(BOOT_DEV"-orig", F_OK) < 0)
+	{
+		gui_print("Failed to restore boot partition, "BOOT_DEV"-orig does not exist!\n");
+		return;
+	}
+
+	system("rm "BOOT_DEV);
+	system("mv "BOOT_DEV"-orig "BOOT_DEV);
+}
+
+bool MultiROM::calculateMD5(const char *path, unsigned char *md5sum/*len: 16*/)
+{
+	FILE *f = fopen(path, "rb");
+	if(!f)
+	{
+		gui_print("Failed to open file %s to calculate MD5 sum!\n", path);
+		return false;
+	}
+
+	struct MD5Context md5c;
+	int len;
+	unsigned char buff[1024];
+
+	MD5Init(&md5c);
+	while((len = fread(buff, 1, sizeof(buff), f)) > 0)
+		MD5Update(&md5c, buff, len);
+
+	MD5Final(md5sum ,&md5c);
+	fclose(f);
+	return true;
+}
+
+bool MultiROM::compareFiles(const char *path1, const char *path2)
+{
+	unsigned char md5sum1[MD5LENGTH];
+	unsigned char md5sum2[MD5LENGTH];
+
+	if(!calculateMD5(path1, md5sum1) || !calculateMD5(path2, md5sum2))
+		return false;
+
+	int i;
+	for(i = 0; i < MD5LENGTH; ++i)
+		if(md5sum1[i] != md5sum2[i])
+			return false;
+
 	return true;
 }

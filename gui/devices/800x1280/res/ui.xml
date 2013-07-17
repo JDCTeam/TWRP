@@ -4546,7 +4546,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%center_x%" y="%row10_text_y%" placement="5" />
-				<text>Do NOT flash ROMs, kernels and OTAs via this menu!</text>
+				<text>Do NOT flash ROMs or OTAs via this menu!</text>
 			</object>
 
 			<object type="slider">
