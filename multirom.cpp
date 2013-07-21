@@ -409,7 +409,7 @@ bool MultiROM::changeMounts(std::string name)
 
 		m_mount_bak.push_back(b);
 	}
-	system("umount -d /system /data /cache");
+	system("sync; umount -d /system /data /cache");
 
 	FILE *f_fstab = fopen("/etc/fstab", "w");
 	if(!f_fstab)
@@ -1107,7 +1107,7 @@ bool MultiROM::extractBootForROM(std::string base)
 			return false;
 	}
 	else
-		system_args(cmd, "rm \"%s/boot.img\"", base.c_str());
+		system_args("rm \"%s/boot.img\"", base.c_str());
 	return true;
 }
 
