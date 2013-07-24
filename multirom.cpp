@@ -554,8 +554,10 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	gui_print("Flashing ZIP file %s\n", file.c_str());
 	gui_print("ROM: %s\n", rom.c_str());
 
+	bool format_system = false;
+
 	gui_print("Preparing ZIP file...\n");
-	if(!prepareZIP(file))
+	if(!prepareZIP(file, format_system))
 		return false;
 
 	gui_print("Changing mountpoints\n");
@@ -576,6 +578,12 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	{
 		restoreMounts();
 		return false;
+	}
+
+	if(format_system)
+	{
+		gui_print("Clearing ROM's /system dir");
+		system("rm -rf /system/*");
 	}
 
 	int wipe_cache = 0;
@@ -615,7 +623,7 @@ bool MultiROM::skipLine(const char *line)
 	return false;
 }
 
-bool MultiROM::prepareZIP(std::string& file)
+bool MultiROM::prepareZIP(std::string& file, bool& format_system)
 {
 	bool res = false;
 
@@ -678,7 +686,15 @@ bool MultiROM::prepareZIP(std::string& file)
 			fputc('\n', new_script);
 		}
 		else
+		{
 			changed = true;
+
+			if (strstr(token, "format") == token &&
+				(strstr(token, "/system") || strstr(token, "/dev/block/platform/sdhci-tegra.3/by-name/APP")))
+			{
+				format_system = true;
+			}
+		}
 		token = strtok(NULL, "\n");
 	}
 
