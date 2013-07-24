@@ -764,6 +764,7 @@ bool MultiROM::injectBoot(std::string img_path)
 	system(cmd);
 	system("chmod 750 /tmp/boot/rd/init");
 	system("ln -sf ../main_init /tmp/boot/rd/sbin/ueventd");
+	system("ln -sf ../main_init /tmp/boot/rd/sbin/watchdogd");
 
 	// COMPRESS RAMDISK
 	gui_print("Compressing ramdisk...\n");
@@ -1104,8 +1105,13 @@ bool MultiROM::extractBootForROM(std::string base)
 		return false;
 	}
 
-	// copy rc files
-	static const char *cp_f[] = { "*.rc", "default.prop", "init", "main_init", NULL };
+	// copy needed files
+	static const char *cp_f[] = {
+		"*.rc", "default.prop", "init", "main_init",
+		// Since Android 4.3 - for SELinux
+		"file_contexts", "property_contexts", "seapp_contexts", "sepolicy",
+		NULL
+	};
 	for(int i = 0; cp_f[i]; ++i)
 		system_args("cp -a /tmp/boot/%s \"%s/boot/\"", cp_f[i], base.c_str());
 
@@ -1115,6 +1121,7 @@ bool MultiROM::extractBootForROM(std::string base)
 		system_args("mv \"%s/boot/init\" \"%s/boot/main_init\"", base.c_str(), base.c_str());
 
 	system("rm -r /tmp/boot");
+	system_args("cd \"%s/boot\" && rm cmdline ramdisk.gz zImage", base.c_str());
 
 	if (DataManager::GetIntValue("tw_multirom_share_kernel") == 0)
 	{
