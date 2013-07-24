@@ -724,8 +724,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 	if (function == "multirom_manage")
 	{
-		int type = MultiROM::getType(DataManager::GetStrValue("tw_multirom_rom_name"));
+		std::string name = DataManager::GetStrValue("tw_multirom_rom_name");
+		int type = MultiROM::getType(name);
 		DataManager::SetValue("tw_multirom_is_android", (M(type) & MASK_ANDROID) != 0);
+		if((M(type) & MASK_ANDROID) != 0)
+		{
+			std::string path = MultiROM::getRomsPath() + "/" + name + "/boot.img";
+			DataManager::SetValue("tw_multirom_has_bootimg", access(path.c_str(), F_OK) >= 0);
+		}
 		return gui_changePage("multirom_manage");
 	}
 
@@ -1025,6 +1031,15 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_start("working");
 			int op_status = !MultiROM::disableFlashKernelAct(DataManager::GetStrValue("tw_multirom_rom_name"),
 															 DataManager::GetStrValue("tw_multirom_install_loc"));
+			operation_end(op_status, simulate);
+			return 0;
+		}
+
+		if(function == "multirom_rm_bootimg")
+		{
+			operation_start("working");
+			std::string cmd = "rm \"" + MultiROM::getRomsPath() + "/" + DataManager::GetStrValue("tw_multirom_rom_name") + "/boot.img\"";
+			int op_status = (system(cmd.c_str()) != 0);
 			operation_end(op_status, simulate);
 			return 0;
 		}

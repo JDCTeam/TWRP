@@ -4265,18 +4265,44 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_android" var2="1" />
+				<conditions>
+					<condition var1="tw_multirom_is_android" var2="1" />
+					<condition var1="tw_multirom_has_bootimg" var2="0" />
+				</conditions>
 				<placement x="%col3_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
-				<text>Add/replace boot.img</text>
+				<text>Add boot.img</text>
 				<image resource="main_button" />
 				<actions>
 					<action function="set">tw_multirom_add_bootimg=1</action>
-					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_back=multirom_list</action>
 					<action function="set">tw_action=multirom_inject</action>
 					<action function="set">tw_text1=Add/replace boot.img</action>
 					<action function="set">tw_text3=to rom %tw_multirom_rom%?</action>
 					<action function="page">multirom_inject_select</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<conditions>
+					<condition var1="tw_multirom_is_android" var2="1" />
+					<condition var1="tw_multirom_has_bootimg" var2="1" />
+				</conditions>
+				<placement x="%col3_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Remove boot.img</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_list</action>
+					<action function="set">tw_action=multirom_rm_bootimg</action>
+					<action function="set">tw_text1=Remove boot.img from ROM:</action>
+					<action function="set">tw_text2=%tw_multirom_rom_name%</action>
+					<action function="set">tw_action_text1=Removing...</action>
+					<action function="set">tw_complete_text1=boot.img was removed!</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
 				</actions>
 			</object>
 
