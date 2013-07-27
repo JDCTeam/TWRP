@@ -176,8 +176,16 @@ bool MultiROM::erase(std::string name)
 	std::string path = getRomsPath() + "/" + name;
 
 	gui_print("Erasing ROM \"%s\"...\n", name.c_str());
-	std::string cmd = "rm -rf \"" + path + "\"";
-	return system(cmd.c_str()) == 0;
+
+	int res = system_args("chattr -R -i \"%s\"", path.c_str());
+	if(res != 0)
+	{
+		gui_print("Failed to remove immutable attribute from that folder!\n");
+		return false;
+	}
+	res = system_args("rm -rf \"%s\"", path.c_str());
+	sync();
+	return res == 0;
 }
 
 bool MultiROM::wipe(std::string name, std::string what)
@@ -583,7 +591,7 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	if(format_system)
 	{
 		gui_print("Clearing ROM's /system dir");
-		system("rm -rf /system/*");
+		system("chattr -R -i /system/*; rm -rf /system/*");
 	}
 
 	int wipe_cache = 0;
