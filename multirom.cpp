@@ -613,8 +613,14 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 
 bool MultiROM::skipLine(const char *line)
 {
-	if(strstr(line, "mount") && (!strstr(line, "bin/mount") || strstr(line, "run_program")))
-		return true;
+	if(strstr(line, "mount"))
+	{
+		if (strstr(line, "run_program") ||
+			(!strstr(line, "bin/mount") && !strstr(line, "symlink(")))
+		{
+			return true;
+		}
+	}
 
 	if(strstr(line, "format"))
 		return true;
