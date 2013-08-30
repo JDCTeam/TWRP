@@ -46,6 +46,11 @@ extern "C" {
 #include "openrecoveryscript.hpp"
 #include "variables.h"
 
+#ifdef HAVE_SELINUX
+#include "selinux/label.h"
+struct selabel_handle *selinux_handle;
+#endif
+
 TWPartitionManager PartitionManager;
 int Log_Offset;
 
@@ -81,6 +86,14 @@ int main(int argc, char **argv) {
 	gui_init();
 	printf("=> Linking mtab\n");
 	symlink("/proc/mounts", "/etc/mtab");
+	if (TWFunc::Path_Exists("/etc/twrp.fstab")) {
+		if (TWFunc::Path_Exists("/etc/recovery.fstab")) {
+			printf("Renaming regular /etc/recovery.fstab -> /etc/recovery.fstab.bak\n");
+			rename("/etc/recovery.fstab", "/etc/recovery.fstab.bak");
+		}
+		printf("Moving /etc/twrp.fstab -> /etc/recovery.fstab\n");
+		rename("/etc/twrp.fstab", "/etc/recovery.fstab");
+	}
 	printf("=> Processing recovery.fstab\n");
 	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", 1)) {
 		LOGERR("Failing out of recovery due to problem with recovery.fstab.\n");
@@ -89,6 +102,17 @@ int main(int argc, char **argv) {
 	PartitionManager.Output_Partition_Logging();
 	// Load up all the resources
 	gui_loadResources();
+
+#ifdef HAVE_SELINUX
+	struct selinux_opt selinux_options[] = {
+		{ SELABEL_OPT_PATH, "/file_contexts" }
+	};
+    selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
+	if (!selinux_handle)
+		printf("No file contexts for SELinux\n");
+	else
+		printf("SELinux contexts loaded from /file_contexts\n");
+#endif
 
 	PartitionManager.Mount_By_Path("/cache", true);
 
@@ -136,7 +160,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-    char twrp_booted[PROPERTY_VALUE_MAX];
+	char twrp_booted[PROPERTY_VALUE_MAX];
 	property_get("ro.twrp.boot", twrp_booted, "0");
 	if (strcmp(twrp_booted, "0") == 0) {
 		property_list(Print_Prop, NULL);
@@ -229,10 +253,10 @@ int main(int argc, char **argv) {
 		PartitionManager.UnMount_By_Path("/system", false);
 	}
 
-    // Reboot
+	// Reboot
 	TWFunc::Update_Intent_File(Reboot_Value);
-    TWFunc::Update_Log_File();
-    gui_print("Rebooting...\n");
+	TWFunc::Update_Log_File();
+	gui_print("Rebooting...\n");
 	string Reboot_Arg;
 	DataManager::GetValue("tw_reboot_arg", Reboot_Arg);
 	if (Reboot_Arg == "recovery")
@@ -247,9 +271,9 @@ int main(int argc, char **argv) {
 		TWFunc::tw_reboot(rb_system);
 
 #ifdef ANDROID_RB_RESTART
-    android_reboot(ANDROID_RB_RESTART, 0, 0);
+	android_reboot(ANDROID_RB_RESTART, 0, 0);
 #else
 	reboot(RB_AUTOBOOT);
 #endif
-    return 0;
+	return 0;
 }

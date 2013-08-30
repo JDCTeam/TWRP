@@ -174,7 +174,7 @@
 		<variable name="button_fill_main_height" value="324" />
 		<variable name="button_fill_half_height" value="162" />
 		<variable name="button_fill_quarter_height" value="81" />
-		<variable name="backup_list_height" value="855" />
+		<variable name="backup_list_height" value="780" />
 		<variable name="backup_button_row1" value="1118" />
 		<variable name="backup_button_row2" value="1220" />
 		<variable name="mount_list_height" value="1035" />
@@ -2598,6 +2598,7 @@
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<condition var1="tw_screen_timeout_secs" op="=" var2="0" />
+				<condition var1="tw_no_screen_timeout" op="!=" var2="1" />
 				<text>Enable screen timeout.</text>
 				<image resource="checkbox_false" />
 				<action function="set">tw_screen_timeout_secs=60</action>
@@ -2607,6 +2608,7 @@
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<condition var1="tw_screen_timeout_secs" op="!=" var2="0" />
+				<condition var1="tw_no_screen_timeout" op="!=" var2="1" />
 				<text>Enable screen timeout.</text>
 				<image resource="checkbox_true" />
 				<action function="set">tw_screen_timeout_secs=0</action>
@@ -2614,6 +2616,7 @@
 
 			<object type="slidervalue">
 				<condition var1="tw_screen_timeout_secs" op="!=" var2="0" />
+				<condition var1="tw_no_screen_timeout" op="!=" var2="1" />
 				<placement x="col1_x" y="%row4_text_y%" w="%slidervalue_w%" />
 				<font resource="font" color="%text_color%" />
 				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />

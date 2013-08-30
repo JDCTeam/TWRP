@@ -611,6 +611,8 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part, string Backup_Folde
 				if ((*subpart)->Can_Be_Backed_Up && (*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == Part->Mount_Point) {
 					if (!(*subpart)->Backup(Backup_Folder))
 						return false;
+					sync();
+					sync();
 					if (!Make_MD5(generate_md5, Backup_Folder, (*subpart)->Backup_FileName))
 						return false;
 					if (Part->Backup_Method == 1) {
@@ -1102,14 +1104,14 @@ int TWPartitionManager::Wipe_Dalvik_Cache(void) {
 		}
 	}
 	TWPartition* sdext = Find_Partition_By_Path("/sd-ext");
-	if (sdext != NULL) {
-		if (sdext->Is_Present && sdext->Mount(false)) {
-			if (stat("/sd-ext/dalvik-cache", &st) == 0) {
-				TWFunc::removeDir("/sd-ext/dalvik-cache", false);
-        	    		gui_print("Cleaned: /sd-ext/dalvik-cache...\n");
-			}
+	if (sdext && sdext->Is_Present && sdext->Mount(false))
+	{
+		if (stat("/sd-ext/dalvik-cache", &st) == 0)
+		{
+			TWFunc::removeDir("/sd-ext/dalvik-cache", false);
+	   	    gui_print("Cleaned: /sd-ext/dalvik-cache...\n");
 		}
-        }
+	}
 	gui_print("-- Dalvik Cache Directories Wipe Complete!\n\n");
 	return true;
 }
@@ -1451,6 +1453,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 					sdcard->Mount(false);
 				}
 			} else {
+				LOGINFO("External storage '%s' is not encrypted.\n", sdcard->Mount_Point.c_str());
 				sdcard->Is_Decrypted = false;
 				sdcard->Decrypted_Block_Device = "";
 			}

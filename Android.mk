@@ -60,7 +60,7 @@ LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
 LOCAL_STATIC_LIBRARIES += libcrecovery libguitwrp
-LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libext4_utils libtar libblkid libminuitwrp libminadbd libmtdutils libminzip libaosprecovery
+LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libminzip libaosprecovery
 
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
 LOCAL_SHARED_LIBRARIES += libsparse
@@ -69,14 +69,24 @@ endif
 ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
     LOCAL_CFLAGS += -DUSE_EXT4
     LOCAL_C_INCLUDES += system/extras/ext4_utils
-    #LOCAL_STATIC_LIBRARIES += libext4_utils
+    LOCAL_SHARED_LIBRARIES += libext4_utils
 endif
-
+LOCAL_C_INCLUDES += external/libselinux/include
 ifeq ($(HAVE_SELINUX), true)
   #LOCAL_C_INCLUDES += external/libselinux/include
   #LOCAL_STATIC_LIBRARIES += libselinux
   #LOCAL_CFLAGS += -DHAVE_SELINUX -g
 endif # HAVE_SELINUX
+ifeq ($(HAVE_SELINUX), true)
+    LOCAL_C_INCLUDES += external/libselinux/include
+    LOCAL_SHARED_LIBRARIES += libselinux
+    LOCAL_CFLAGS += -DHAVE_SELINUX -g
+    ifneq ($(TARGET_USERIMAGES_USE_EXT4), true)
+        LOCAL_CFLAGS += -DUSE_EXT4
+        LOCAL_C_INCLUDES += system/extras/ext4_utils
+        LOCAL_SHARED_LIBRARIES += libext4_utils
+    endif
+endif
 
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
 # It gets copied there in config/Makefile.  LOCAL_MODULE_TAGS suppresses
@@ -93,6 +103,9 @@ endif
 LOCAL_C_INCLUDES += system/extras/ext4_utils
 
 #TWRP Build Flags
+ifneq ($(TW_NO_SCREEN_TIMEOUT),)
+    LOCAL_CFLAGS += -DTW_NO_SCREEN_TIMEOUT
+endif
 ifeq ($(BOARD_HAS_NO_REAL_SDCARD), true)
     LOCAL_CFLAGS += -DBOARD_HAS_NO_REAL_SDCARD
 endif
@@ -303,8 +316,7 @@ include $(LOCAL_PATH)/minui/Android.mk \
     $(LOCAL_PATH)/applypatch/Android.mk
 
 #includes for TWRP
-include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
-    $(commands_recovery_local_path)/injecttwrp/Android.mk \
+include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/htcdumlock/Android.mk \
     $(commands_recovery_local_path)/gui/Android.mk \
     $(commands_recovery_local_path)/mmcutils/Android.mk \

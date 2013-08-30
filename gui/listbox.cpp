@@ -191,12 +191,12 @@ GUIListBox::GUIListBox(xml_node<>* node) : Conditional(node)
 
 		attr = child->first_attribute("highlightcolor");
 		memset(&mFontHighlightColor, 0, sizeof(COLOR));
-        if (attr)
-        {
-            std::string color = attr->value();
+		if (attr)
+		{
+			std::string color = attr->value();
 			ConvertStrToColor(color, &mFontHighlightColor);
 			hasFontHighlightColor = true;
-        }
+		}
 	}
 
 	// Load the separator if it exists
@@ -323,13 +323,16 @@ GUIListBox::GUIListBox(xml_node<>* node) : Conditional(node)
 
 	// Get the data for the list
 	child = node->first_node("listitem");
+	if (!child)
+		return;
+
 	while (child)
-    {
-        ListData data;
+	{
+		ListData data;
 
 		attr = child->first_attribute("name");
-        if (!attr) return;
-        data.displayName = attr->value();
+		if (!attr) return;
+		data.displayName = attr->value();
 
 		data.variableValue = child->value();
 		if (child->value() == currentValue) {
@@ -338,10 +341,10 @@ GUIListBox::GUIListBox(xml_node<>* node) : Conditional(node)
 			data.selected = 0;
 		}
 
-        mList.push_back(data);
+		mList.push_back(data);
 
-        child = child->next_sibling("listitem");
-    }
+		child = child->next_sibling("listitem");
+	}
 
 	// Load dynamic data
 	child = node->first_node("items");
@@ -440,21 +443,21 @@ int GUIListBox::Render(void)
 		}
 
 		if (mList.at(line + mStart).selected != 0)
-        {
-            icon = mIconSelected;
+		{
+			icon = mIconSelected;
 			currentIconHeight = mSelectedIconHeight;
 			currentIconWidth = mSelectedIconWidth;
 			currentIconOffsetY = SelectedIconOffsetY;
 			currentIconOffsetX = SelectedIconOffsetX;
-        }
-        else
-        {
-            icon = mIconUnselected;
+		}
+		else
+		{
+			icon = mIconUnselected;
 			currentIconHeight = mSelectedIconHeight;
 			currentIconWidth = mSelectedIconWidth;
 			currentIconOffsetY = SelectedIconOffsetY;
 			currentIconOffsetX = SelectedIconOffsetX;
-        }
+		}
 
 		if (icon && icon->GetResource())
 		{
@@ -805,7 +808,7 @@ int GUIListBox::NotifyVarChange(std::string varName, std::string value)
 		if(mList.empty())
 			return 0;
 
-        int i, listSize = mList.size(), selected_index = 0;
+		int i, listSize = mList.size(), selected_index = 0;
 
 		currentValue = value;
 
@@ -832,8 +835,8 @@ int GUIListBox::NotifyVarChange(std::string varName, std::string value)
 			mStart = 0;
 
 		mUpdate = 1;
-        return 0;
-    }
+		return 0;
+	}
 	return 0;
 }
 

@@ -49,9 +49,14 @@ extern "C" {
 #ifdef TW_INCLUDE_CRYPTO_SAMSUNG
 	#include "crypto/libcrypt_samsung/include/libcrypt_samsung.h"
 #endif
+#ifdef USE_EXT4
+	#include "make_ext4fs.h"
+#endif
 }
 
 using namespace std;
+
+extern struct selabel_handle *selinux_handle;
 
 TWPartition::TWPartition(void) {
 	Can_Be_Mounted = false;
@@ -495,6 +500,7 @@ bool TWPartition::Is_File_System(string File_System) {
 		File_System == "ntfs" ||
 		File_System == "yaffs2" ||
 		File_System == "exfat" ||
+		File_System == "f2fs" ||
 		File_System == "auto")
 		return true;
 	else
@@ -902,7 +908,9 @@ bool TWPartition::Mount(bool Display_Error) {
 			LOGINFO("Successfully mounted ecryptfs for '%s'\n", Mount_Point.c_str());
 			Is_Decrypted = true;
 		}
-	} else {
+	} else if (Mount_Point == EXPAND(TW_EXTERNAL_STORAGE_PATH)) {
+		if (Is_Decrypted)
+			LOGINFO("Mounting external storage, '%s' is not encrypted\n", Mount_Point.c_str());
 		Is_Decrypted = false;
 	}
 #endif
@@ -998,6 +1006,8 @@ bool TWPartition::Wipe(string New_File_System) {
 			wiped = Wipe_EXFAT();
 		else if (New_File_System == "yaffs2")
 			wiped = Wipe_MTD();
+		else if (New_File_System == "f2fs")
+			wiped = Wipe_F2FS();
 		else {
 			LOGERR("Unable to wipe '%s' -- unknown file system '%s'\n", Mount_Point.c_str(), New_File_System.c_str());
 			unlink("/.layout_version");
@@ -1055,7 +1065,7 @@ bool TWPartition::Wipe_AndSec(void) {
 
 	gui_print("Wiping %s\n", Backup_Display_Name.c_str());
 	TWFunc::removeDir(Mount_Point + "/.android_secure/", true);
-    return true;
+	return true;
 }
 
 bool TWPartition::Backup(string backup_folder) {
@@ -1255,6 +1265,15 @@ bool TWPartition::Wipe_EXT4() {
 	if (!UnMount(true))
 		return false;
 
+#if defined(HAVE_SELINUX) && defined(USE_EXT4)
+	gui_print("Formatting %s using make_ext4fs function.\n", Display_Name.c_str());
+	if (make_ext4fs(Actual_Block_Device.c_str(), Length, Mount_Point.c_str(), selinux_handle) != 0) {
+		LOGERR("Unable to wipe '%s' using function call.\n", Mount_Point.c_str());
+		return false;
+	} else {
+		return true;
+	}
+#else
 	if (TWFunc::Path_Exists("/sbin/make_ext4fs")) {
 		string Command, result;
 
@@ -1281,7 +1300,7 @@ bool TWPartition::Wipe_EXT4() {
 		}
 	} else
 		return Wipe_EXT23("ext4");
-
+#endif
 	return false;
 }
 
@@ -1341,31 +1360,31 @@ bool TWPartition::Wipe_MTD() {
 
 	gui_print("MTD Formatting \"%s\"\n", MTD_Name.c_str());
 
-    mtd_scan_partitions();
-    const MtdPartition* mtd = mtd_find_partition_by_name(MTD_Name.c_str());
-    if (mtd == NULL) {
-        LOGERR("No mtd partition named '%s'", MTD_Name.c_str());
-        return false;
-    }
+	mtd_scan_partitions();
+	const MtdPartition* mtd = mtd_find_partition_by_name(MTD_Name.c_str());
+	if (mtd == NULL) {
+		LOGERR("No mtd partition named '%s'", MTD_Name.c_str());
+		return false;
+	}
 
-    MtdWriteContext* ctx = mtd_write_partition(mtd);
-    if (ctx == NULL) {
-        LOGERR("Can't write '%s', failed to format.", MTD_Name.c_str());
-        return false;
-    }
-    if (mtd_erase_blocks(ctx, -1) == -1) {
-        mtd_write_close(ctx);
-        LOGERR("Failed to format '%s'", MTD_Name.c_str());
-        return false;
-    }
-    if (mtd_write_close(ctx) != 0) {
-        LOGERR("Failed to close '%s'", MTD_Name.c_str());
-        return false;
-    }
+	MtdWriteContext* ctx = mtd_write_partition(mtd);
+	if (ctx == NULL) {
+		LOGERR("Can't write '%s', failed to format.", MTD_Name.c_str());
+		return false;
+	}
+	if (mtd_erase_blocks(ctx, -1) == -1) {
+		mtd_write_close(ctx);
+		LOGERR("Failed to format '%s'", MTD_Name.c_str());
+		return false;
+	}
+	if (mtd_write_close(ctx) != 0) {
+		LOGERR("Failed to close '%s'", MTD_Name.c_str());
+		return false;
+	}
 	Current_File_System = "yaffs2";
 	Recreate_AndSec_Folder();
 	gui_print("Done.\n");
-    return true;
+	return true;
 }
 
 bool TWPartition::Wipe_RMRF() {
@@ -1376,6 +1395,32 @@ bool TWPartition::Wipe_RMRF() {
 	TWFunc::removeDir(Mount_Point, true);
 	Recreate_AndSec_Folder();
 	return true;
+}
+
+bool TWPartition::Wipe_F2FS() {
+	string command, result;
+
+	if (TWFunc::Path_Exists("/sbin/mkfs.f2fs")) {
+		if (!UnMount(true))
+			return false;
+
+		gui_print("Formatting %s using mkfs.f2fs...\n", Display_Name.c_str());
+		Find_Actual_Block_Device();
+		command = "mkfs.f2fs " + Actual_Block_Device;
+		if (TWFunc::Exec_Cmd(command, result) == 0) {
+			Recreate_AndSec_Folder();
+			gui_print("Done.\n");
+			return true;
+		} else {
+			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
+			return false;
+		}
+		return true;
+	} else {
+		gui_print("mkfs.f2fs binary not found, using rm -rf to wipe.\n");
+		return Wipe_RMRF();
+	}
+	return false;
 }
 
 bool TWPartition::Wipe_Data_Without_Wiping_Media() {
@@ -1395,7 +1440,7 @@ bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 			if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)   continue;
 			// The media folder is the "internal sdcard"
 			// The .layout_version file is responsible for determining whether 4.2 decides up upgrade
-			//    the media folder for multi-user.
+			// the media folder for multi-user.
 			if (strcmp(de->d_name, "media") == 0 || strcmp(de->d_name, ".layout_version") == 0)   continue;
 			
 			dir = "/data/";
@@ -1432,6 +1477,8 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
 	tar.use_compression = use_compression;
+	//exclude Google Music Cache
+	tar.setexcl("/data/data/com.google.android.music/files");
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	DataManager::GetValue("tw_encrypt_backup", use_encryption);
 	if (use_encryption && Can_Encrypt_Backup) {
@@ -1540,7 +1587,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	} else {
 		gui_print("Wiping %s...\n", Display_Name.c_str());
 		if (!Wipe(Restore_File_System))
-		    return false;
+			return false;
 	}
 	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Backup_Display_Name, "Restoring");
 	gui_print("Restoring %s...\n", Backup_Display_Name.c_str());
