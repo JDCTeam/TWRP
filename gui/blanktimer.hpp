@@ -31,6 +31,7 @@ public:
 
 	int setTimerThread(void);
 	void resetTimerAndUnblank(void);
+	void blankScreen(void);
 	void setTime(int newtime);
 	bool IsScreenOff();
 
