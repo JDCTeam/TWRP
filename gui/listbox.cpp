@@ -323,9 +323,6 @@ GUIListBox::GUIListBox(xml_node<>* node) : Conditional(node)
 
 	// Get the data for the list
 	child = node->first_node("listitem");
-	if (!child)
-		return;
-
 	while (child)
 	{
 		ListData data;
