@@ -806,11 +806,15 @@ bool MultiROM::injectBoot(std::string img_path)
 		return false;
 	}
 	std::string base_cmd = "mkbootimg --kernel /tmp/boot/%s-zImage --ramdisk /tmp/boot/%s-ramdisk.gz "
-		"--cmdline \"$(cat /tmp/boot/%s-cmdline)\" --base $(cat /tmp/boot/%s-base) --output /tmp/newboot.img\n";
+		"--cmdline \"$(cat /tmp/boot/%s-cmdline)\" --base $(cat /tmp/boot/%s-base) --output /tmp/newboot.img";
 	for(size_t idx = base_cmd.find("%s", 0); idx != std::string::npos; idx = base_cmd.find("%s", idx))
 		base_cmd.replace(idx, 2, p);
 
 	fputs(base_cmd.c_str(), script);
+#ifdef MR_RD_ADDR
+	fprintf(script, " --ramdiskaddr 0x%X", MR_RD_ADDR);
+#endif
+	fputc('\n', script);
 	fclose(script);
 
 	system("chmod 777 /tmp/boot/create.sh && /tmp/boot/create.sh");

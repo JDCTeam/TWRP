@@ -272,6 +272,9 @@ endif
 ifneq ($(TW_DEFAULT_ROTATION),)
     LOCAL_CFLAGS += -DTW_DEFAULT_ROTATION=$(TW_DEFAULT_ROTATION)
 endif
+ifneq ($(MR_RD_ADDR),)
+    LOCAL_CFLAGS += -DMR_RD_ADDR=$(MR_RD_ADDR)
+endif
 
 include $(BUILD_EXECUTABLE)
 
