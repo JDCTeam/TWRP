@@ -4,6 +4,7 @@
 #include <fcntl.h>
 
 #include "multirom.h"
+#include "partitions.hpp"
 
 extern "C" {
 #include "twcommon.h"
@@ -11,6 +12,7 @@ extern "C" {
 }
 
 std::string MultiROM::m_path = "";
+std::string MultiROM::m_boot_dev = "";
 std::string MultiROM::m_mount_rom_paths[2] = { "", "" };
 std::vector<MultiROM::file_backup> MultiROM::m_mount_bak;
 std::string MultiROM::m_curr_roms_path = "";
@@ -40,7 +42,6 @@ base_folder::base_folder()
 
 MultiROM::config::config()
 {
-
 	current_rom = INTERNAL_NAME;
 	auto_boot_seconds = 5;
 	auto_boot_rom = INTERNAL_NAME;
@@ -69,6 +70,16 @@ std::string MultiROM::getPath()
 
 void MultiROM::findPath()
 {
+	TWPartition *part = PartitionManager.Find_Partition_By_Path("/boot");
+	if(!part)
+	{
+		gui_print("Failed to find boot device!\n");
+		m_path.clear();
+		return;
+	}
+
+	m_boot_dev = part->Actual_Block_Device;
+
 	static const char *paths[] = {
 		"/data/media/multirom",
 		"/data/media/0/multirom",
@@ -625,7 +636,7 @@ bool MultiROM::skipLine(const char *line)
 	if(strstr(line, "format"))
 		return true;
 
-	if (strstr(line, "boot.img") || strstr(line, BOOT_DEV) ||
+	if (strstr(line, "boot.img") || strstr(line, m_boot_dev.c_str()) ||
 		strstr(line, "/dev/block/platform/sdhci-tegra.3/by-name/LNX"))
 	{
 		return false;
@@ -809,8 +820,8 @@ bool MultiROM::injectBoot(std::string img_path)
 		return false;
 	}
 	system("rm -r /tmp/boot");
-	if(img_path == BOOT_DEV)
-		system("dd bs=4096 if=/tmp/newboot.img of="BOOT_DEV);
+	if(img_path == m_boot_dev)
+		system_args("dd bs=4096 if=/tmp/newboot.img of=\"%s\"", m_boot_dev.c_str());
 	else
 	{
 		sprintf(cmd, "cp /tmp/newboot.img \"%s\"", img_path.c_str());;
@@ -1874,9 +1885,9 @@ int MultiROM::system_args(const char *fmt, ...)
 
 bool MultiROM::fakeBootPartition(const char *fakeImg)
 {
-	if(access(BOOT_DEV"-orig", F_OK) >= 0)
+	if(access((m_boot_dev + "-orig").c_str(), F_OK) >= 0)
 	{
-		gui_print("Failed to fake boot partition, "BOOT_DEV"-orig already exists!\n");
+		gui_print("Failed to fake boot partition, %s-orig already exists!\n", m_boot_dev.c_str());
 		return false;
 	}
 
@@ -1891,25 +1902,25 @@ bool MultiROM::fakeBootPartition(const char *fakeImg)
 		close(fd);
 
 		// Copy current boot.img as base
-		system_args("dd if="BOOT_DEV" of=\"%s\"", fakeImg);
+		system_args("dd if=\"%s\" of=\"%s\"", m_boot_dev.c_str(), fakeImg);
 		gui_print("Current boot sector was used as base for fake boot.img!\n");
 	}
 
-	system("mv "BOOT_DEV" "BOOT_DEV"-orig");
-	system_args("ln -s \"%s\" "BOOT_DEV, fakeImg);
+	system_args("mv \"%s\" \"%s\"-orig", m_boot_dev.c_str(), m_boot_dev.c_str());
+	system_args("ln -s \"%s\" \"%s\"", fakeImg, m_boot_dev.c_str());
 	return true;
 }
 
 void MultiROM::restoreBootPartition()
 {
-	if(access(BOOT_DEV"-orig", F_OK) < 0)
+	if(access((m_boot_dev + "-orig").c_str(), F_OK) < 0)
 	{
-		gui_print("Failed to restore boot partition, "BOOT_DEV"-orig does not exist!\n");
+		gui_print("Failed to restore boot partition, %s-orig does not exist!\n", m_boot_dev.c_str());
 		return;
 	}
 
-	system("rm "BOOT_DEV);
-	system("mv "BOOT_DEV"-orig "BOOT_DEV);
+	system_args("rm \"%s\"", m_boot_dev.c_str());
+	system_args("mv \"%s\"-orig \"%s\"", m_boot_dev.c_str());
 }
 
 bool MultiROM::calculateMD5(const char *path, unsigned char *md5sum/*len: 16*/)

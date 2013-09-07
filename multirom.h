@@ -54,7 +54,6 @@ enum
 #define REALDATA "/realdata"
 #define MAX_ROM_NAME 26
 #define INTERNAL_MEM_LOC_TXT "Internal memory"
-#define BOOT_DEV "/dev/block/mmcblk0p2"
 
 // Not defined in android includes?
 #define MS_RELATIME (1<<21)
@@ -104,6 +103,7 @@ public:
 	static std::string listRoms();
 	static void setInstaller(MROMInstaller *i);
 	static MROMInstaller *getInstaller(MROMInstaller *i);
+	static std::string getBootDev() { return m_boot_dev; }
 
 	static void clearBaseFolders();
 	static const base_folder& addBaseFolder(const std::string& name, int min, int def);
@@ -177,6 +177,7 @@ private:
 	static MROMInstaller *m_installer;
 	static baseFolders m_base_folders;
 	static int m_base_folder_cnt;
+	static std::string m_boot_dev;
 };
 
 

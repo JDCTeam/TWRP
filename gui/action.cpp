@@ -981,7 +981,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			if (!MultiROM::flashZip(name, DataManager::GetStrValue("tw_filename")))
 				op_status = 1;
 
-			if(!had_boot && MultiROM::compareFiles(BOOT_DEV, boot.c_str()))
+			if(!had_boot && MultiROM::compareFiles(MultiROM::getBootDev().c_str(), boot.c_str()))
 				unlink(boot.c_str());
 			else if(op_status == 0)
 			{
@@ -1016,7 +1016,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			if(op_status)
 				gui_print("MultiROM is not installed!\n");
 			else
-				op_status = !MultiROM::injectBoot("/dev/block/mmcblk0p2");
+				op_status = !MultiROM::injectBoot(MultiROM::getBootDev());
 			operation_end(op_status, simulate);
 			return 0;
 		}
