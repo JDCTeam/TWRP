@@ -4656,7 +4656,7 @@
 			</object>
 
 			<object type="slidervalue">
-				<placement x="0" y="%row10_text_y%" w="800" />
+				<placement x="0" y="%row10_text_y%" w="%console_width%" />
 				<font resource="font" color="%text_color%" />
 				<colors line="#FFFFFF" slider="#33B5E5" />
 				<dimensions lineh="2" linepadding="20" sliderw="10" sliderh="60" />
@@ -4793,7 +4793,7 @@
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select ROM to auto-boot:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
-				<placement x="20" y="%row5_text_y%" w="760" h="500" />
+				<placement x="%listbox_x%" y="%row5_text_y%" w="%listbox_width%" h="500" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -5143,7 +5143,7 @@
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Install to:</text>
-				<placement x="20" y="%row7_text_y%" w="760" h="460" />
+				<placement x="%listbox_x%" y="%row7_text_y%" w="%listbox_width%" h="460" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -5659,7 +5659,7 @@
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select location to list:</text>
-				<placement x="20" y="%row1_text_y%" w="760" h="660" />
+				<placement x="%listbox_x%" y="%row1_text_y%" w="%listbox_width%" h="660" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
