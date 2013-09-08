@@ -5,6 +5,7 @@
 
 #include "multirom.h"
 #include "partitions.hpp"
+#include "twrp-functions.hpp"
 
 extern "C" {
 #include "twcommon.h"
@@ -824,10 +825,12 @@ bool MultiROM::injectBoot(std::string img_path)
 		return false;
 	}
 	system("rm -r /tmp/boot");
+
 	if(img_path == m_boot_dev)
 		system_args("dd bs=4096 if=/tmp/newboot.img of=\"%s\"", m_boot_dev.c_str());
 	else
 	{
+		addTrampolineVerToBoot("/tmp/newboot.img");
 		sprintf(cmd, "cp /tmp/newboot.img \"%s\"", img_path.c_str());;
 		system(cmd);
 	}
@@ -1963,4 +1966,39 @@ bool MultiROM::compareFiles(const char *path1, const char *path2)
 			return false;
 
 	return true;
+}
+
+void MultiROM::addTrampolineVerToBoot(const char *path)
+{
+	struct boot_img_hdr hdr;
+
+	FILE *f = fopen(path, "r+");
+	if(!f)
+		return;
+
+	fread(&hdr, sizeof(struct boot_img_hdr), 1, f);
+	fseek(f, 0, SEEK_SET);
+
+	int ver = getTrampolineVersion();
+	if(ver == -1)
+	{
+		fclose(f);
+		return;
+	}
+
+	snprintf((char*)hdr.name, BOOT_NAME_SIZE, "tr_ver%d", ver);
+
+	fwrite(&hdr, sizeof(struct boot_img_hdr), 1, f);
+	fclose(f);
+}
+
+int MultiROM::getTrampolineVersion()
+{
+	std::string result = "";
+	if(TWFunc::Exec_Cmd(m_path + "/trampoline -v", result) != 0)
+	{
+		gui_print("Failed to get trampoline version!\n");
+		return -1;
+	}
+	return atoi(result.c_str());
 }

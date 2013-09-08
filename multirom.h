@@ -147,6 +147,8 @@ private:
 	static bool installFromBackup(std::string name, std::string path, int type);
 	static bool extractBackupFile(std::string path, std::string part);
 	static int getType(int os, std::string loc);
+	static void addTrampolineVerToBoot(const char *path);
+	static int getTrampolineVersion();
 
 	static bool ubuntuExtractImage(std::string name, std::string img_path, std::string dest);
 	static bool patchUbuntuInit(std::string rootDir);
