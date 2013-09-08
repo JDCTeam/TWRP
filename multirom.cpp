@@ -1927,7 +1927,7 @@ void MultiROM::restoreBootPartition()
 	}
 
 	system_args("rm \"%s\"", m_boot_dev.c_str());
-	system_args("mv \"%s\"-orig \"%s\"", m_boot_dev.c_str());
+	system_args("mv \"%s\"-orig \"%s\"", m_boot_dev.c_str(), m_boot_dev.c_str());
 }
 
 bool MultiROM::calculateMD5(const char *path, unsigned char *md5sum/*len: 16*/)
