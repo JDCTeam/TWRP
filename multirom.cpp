@@ -1157,7 +1157,7 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 	if(img_path.find("img.gz") != std::string::npos)
 	{
 		gui_print("Decompressing the image (may take a while)...\n");
-		sprintf(cmd, "gzip -d \"%s\"", img_path.c_str());
+		sprintf(cmd, "busybox gzip -d \"%s\"", img_path.c_str());
 		system(cmd);
 
 		img_path.erase(img_path.size()-3);
