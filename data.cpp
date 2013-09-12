@@ -556,8 +556,7 @@ void DataManager::SetBackupFolder()
 		if (zip_path.size() < storage_path.size()) {
 			SetValue(TW_ZIP_LOCATION_VAR, storage_path);
 		} else {
-			zip_root= zip_path;
-			zip_root.resize(storage_path.size());
+			zip_root = TWFunc::Get_Root_Path(zip_path);
 			if (zip_root != storage_path) {
 				LOGINFO("DataManager::SetBackupFolder zip path was %s changing to %s, %s\n", zip_path.c_str(), storage_path.c_str(), zip_root.c_str());
 				SetValue(TW_ZIP_LOCATION_VAR, storage_path);
@@ -854,7 +853,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_backup_list", make_pair("/system;/data;/boot;", 1)));
 #endif
 	mConstValues.insert(make_pair(TW_MIN_SYSTEM_VAR, TW_MIN_SYSTEM_SIZE));
-	mValues.insert(make_pair(TW_BACKUP_NAME, make_pair("(Current Date)", 0)));
+	mValues.insert(make_pair(TW_BACKUP_NAME, make_pair("(Auto Generate)", 0)));
 	mValues.insert(make_pair(TW_BACKUP_SYSTEM_VAR, make_pair("1", 1)));
 	mValues.insert(make_pair(TW_BACKUP_DATA_VAR, make_pair("1", 1)));
 	mValues.insert(make_pair(TW_BACKUP_BOOT_VAR, make_pair("1", 1)));

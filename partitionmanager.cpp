@@ -670,10 +670,11 @@ int TWPartitionManager::Run_Backup(void) {
 
 	DataManager::GetValue(TW_BACKUPS_FOLDER_VAR, Backup_Folder);
 	DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
-	if (Backup_Name == "(Current Date)" || Backup_Name == "0" || Backup_Name.empty()) {
-		char timestamp[255];
-		sprintf(timestamp,"%04d-%02d-%02d--%02d-%02d-%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
-		Backup_Name = timestamp;
+	if (Backup_Name == "(Current Date)") {
+		Backup_Name = TWFunc::Get_Current_Date();
+	} else if (Backup_Name == "(Auto Generate)" || Backup_Name == "0" || Backup_Name.empty()) {
+		TWFunc::Auto_Generate_Backup_Name();
+		DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
 	}
 	LOGINFO("Backup Name is: '%s'\n", Backup_Name.c_str());
 	Full_Backup_Path = Backup_Folder + "/" + Backup_Name + "/";
@@ -1634,8 +1635,8 @@ int TWPartitionManager::Partition_SDCard(void) {
 		if (!SDext->UnMount(true))
 			return false;
 	}
-	string result;
-	TWFunc::Exec_Cmd("umount \"$SWAPPATH\"", result);
+
+	TWFunc::Exec_Cmd("umount \"$SWAPPATH\"");
 	Device = SDCard->Actual_Block_Device;
 	// Just use the root block device
 	Device.resize(strlen("/dev/block/mmcblkX"));
@@ -1687,7 +1688,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 	gui_print("Removing partition table...\n");
 	Command = "parted -s " + Device + " mklabel msdos";
 	LOGINFO("Command is: '%s'\n", Command.c_str());
-	if (TWFunc::Exec_Cmd(Command, result) != 0) {
+	if (TWFunc::Exec_Cmd(Command) != 0) {
 		LOGERR("Unable to remove partition table.\n");
 		Update_System_Details();
 		return false;
@@ -1695,7 +1696,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 	gui_print("Creating FAT32 partition...\n");
 	Command = "parted " + Device + " mkpartfs primary fat32 0 " + fat_str + "MB";
 	LOGINFO("Command is: '%s'\n", Command.c_str());
-	if (TWFunc::Exec_Cmd(Command, result) != 0) {
+	if (TWFunc::Exec_Cmd(Command) != 0) {
 		LOGERR("Unable to create FAT32 partition.\n");
 		return false;
 	}
@@ -1703,7 +1704,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		gui_print("Creating EXT partition...\n");
 		Command = "parted " + Device + " mkpartfs primary ext2 " + fat_str + "MB " + ext_str + "MB";
 		LOGINFO("Command is: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0) {
+		if (TWFunc::Exec_Cmd(Command) != 0) {
 			LOGERR("Unable to create EXT partition.\n");
 			Update_System_Details();
 			return false;
@@ -1713,7 +1714,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		gui_print("Creating swap partition...\n");
 		Command = "parted " + Device + " mkpartfs primary linux-swap " + ext_str + "MB " + swap_str + "MB";
 		LOGINFO("Command is: '%s'\n", Command.c_str());
-		if (TWFunc::Exec_Cmd(Command, result) != 0) {
+		if (TWFunc::Exec_Cmd(Command) != 0) {
 			LOGERR("Unable to create swap partition.\n");
 			Update_System_Details();
 			return false;
@@ -1748,7 +1749,7 @@ int TWPartitionManager::Partition_SDCard(void) {
 		Command = "mke2fs -t " + ext_format + " -m 0 " + SDext->Actual_Block_Device;
 		gui_print("Formatting sd-ext as %s...\n", ext_format.c_str());
 		LOGINFO("Formatting sd-ext after partitioning, command: '%s'\n", Command.c_str());
-		TWFunc::Exec_Cmd(Command, result);
+		TWFunc::Exec_Cmd(Command);
 	}
 
 	Update_System_Details();
