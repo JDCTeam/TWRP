@@ -52,6 +52,7 @@ MultiROM::config::config()
 	hide_internal = 0;
 	int_display_name = INTERNAL_NAME;
 	rotation = TW_DEFAULT_ROTATION;
+	enable_adb = 0;
 }
 
 bool MultiROM::folderExists()
