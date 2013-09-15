@@ -4258,7 +4258,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="100" y="%row4_y%" />
+				<placement x="189" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe /data</text>
 				<image resource="medium_button" />
@@ -4279,7 +4279,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="306" y="%row4_y%" />
+				<placement x="463" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe dalvik</text>
 				<image resource="medium_button" />
@@ -4300,7 +4300,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="512" y="%row4_y%" />
+				<placement x="737" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe /cache</text>
 				<image resource="medium_button" />
@@ -5390,14 +5390,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image1"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="400" />
+				<placement x="%col1_x%" y="600" />
 				<text>%tw_mrom_image1%: %tw_mrom_image1_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image1"/>
-				<placement x="%col3_medium_x%" y="350" />
+				<placement x="%col3_medium_x%" y="525" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5416,7 +5416,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image2"/>
-				<placement x="%col3_medium_x%" y="470" />
+				<placement x="%col3_medium_x%" y="705" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5428,14 +5428,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image3"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="640" />
+				<placement x="%col1_x%" y="960" />
 				<text>%tw_mrom_image3%: %tw_mrom_image3_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image3"/>
-				<placement x="%col3_medium_x%" y="590" />
+				<placement x="%col3_medium_x%" y="885" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5447,14 +5447,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image4"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="760" />
+				<placement x="%col1_x%" y="1140" />
 				<text>%tw_mrom_image4%: %tw_mrom_image4_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image4"/>
-				<placement x="%col3_medium_x%" y="710" />
+				<placement x="%col3_medium_x%" y="1065" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5466,14 +5466,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image5"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="880" />
+				<placement x="%col1_x%" y="1320" />
 				<text>%tw_mrom_image5%: %tw_mrom_image5_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image5"/>
-				<placement x="%col3_medium_x%" y="830" />
+				<placement x="%col3_medium_x%" y="1245" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
