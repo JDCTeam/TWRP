@@ -388,10 +388,17 @@ bool MultiROM::changeMounts(std::string name)
 	std::string base = getRomsPath() + name;
 	normalizeROMPath(base);
 
+	system("sync; umount -d /system /data /cache");
+	TWPartition *part = PartitionManager.Find_Partition_By_Path("/data");
+	if(!part)
+	{
+		gui_print("Failed to find data device!\n");
+		m_path.clear();
+		return false;
+	}
+
 	mkdir(REALDATA, 0777);
-	if(mount("/dev/block/platform/sdhci-tegra.3/by-name/UDA",
-	    REALDATA, "ext4", MS_RELATIME | MS_NOATIME,
-		"user_xattr,acl,barrier=1,data=ordered,discard") < 0)
+	if(mount(part->Actual_Block_Device.c_str(), REALDATA, part->Current_File_System.c_str(), 0, NULL) < 0)
 	{
 		gui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
 		return false;
@@ -429,7 +436,6 @@ bool MultiROM::changeMounts(std::string name)
 
 		m_mount_bak.push_back(b);
 	}
-	system("sync; umount -d /system /data /cache");
 
 	FILE *f_fstab = fopen("/etc/fstab", "w");
 	if(!f_fstab)
@@ -455,11 +461,16 @@ bool MultiROM::changeMounts(std::string name)
 		fprintf(f_rec, "/cache\t\text4\t\t%s/cache.img\n", base.c_str());
 		fprintf(f_rec, "/data\t\text4\t\t%s/data.img\n", base.c_str());
 	}
-	fprintf(f_rec, "/misc\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/MSC\n");
-	fprintf(f_rec, "/boot\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/LNX\n");
-	fprintf(f_rec, "/recovery\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/SOS\n");
-	fprintf(f_rec, "/staging\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/USP\n");
-	fprintf(f_rec, "/usb-otg\t\tvfat\t\t/dev/block/sda1\n");
+
+	TWPartition *p;
+	const std::vector<TWPartition*>& parts = PartitionManager.getPartitions();
+	for(size_t i = 0; i < parts.size(); ++i)
+	{
+		p = parts[i];
+		if(p->Mount_Point == "/system" || p->Mount_Point == "/data" || p->Mount_Point == "/cache")
+			continue;
+		fprintf(f_rec, "%s\t\t%s\t\t%s\n", p->Mount_Point.c_str(), p->Current_File_System.c_str(), p->Actual_Block_Device.c_str());
+	}
 	fclose(f_rec);
 
 	if(!(M(type) & MASK_IMAGES))
@@ -483,7 +494,6 @@ bool MultiROM::changeMounts(std::string name)
 
 	system("mv /sbin/umount /sbin/umount.bak");
 
-	//load_volume_table();
 	return true;
 }
 
@@ -637,13 +647,13 @@ bool MultiROM::skipLine(const char *line)
 	if(strstr(line, "format"))
 		return true;
 
-	if (strstr(line, "boot.img") || strstr(line, m_boot_dev.c_str()) ||
-		strstr(line, "/dev/block/platform/sdhci-tegra.3/by-name/LNX"))
-	{
+	if (strstr(line, "boot.img") || strstr(line, m_boot_dev.c_str()))
 		return false;
-	}
 
-	if(strstr(line, "/dev/block/platform/sdhci-tegra.3/"))
+	if(strstr(line, "/dev/block/platform/"))
+		return true;
+
+	if(strstr(line, "\"dd\"") && strstr(line, "run_program"))
 		return true;
 
 	return false;
@@ -715,11 +725,12 @@ bool MultiROM::prepareZIP(std::string& file, bool& format_system)
 		{
 			changed = true;
 
-			if (strstr(token, "format") == token &&
-				(strstr(token, "/system") || strstr(token, "/dev/block/platform/sdhci-tegra.3/by-name/APP")))
-			{
+			while(isspace(*token))
+				++token;
+
+			if (strstr(token, "format") == token && strstr(token, "/system"))
 				format_system = true;
-			}
+
 		}
 		token = strtok(NULL, "\n");
 	}
@@ -1849,6 +1860,13 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 	// rom_info.txt
 	system_args("cp %s/infos/ubuntu_touch.txt %s/rom_info.txt", m_path.c_str(), root.c_str());
 
+	TWPartition *p = PartitionManager.Find_Partition_By_Path("/system");
+	if(!p)
+	{
+		gui_print("Couldn't find /system partiton in PartitionManager!\n");
+		return false;
+	}
+
 	gui_print("Changing mountpoints\n");
 	if(!changeMounts(name))
 	{
@@ -1856,9 +1874,14 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 		return false;
 	}
 
+	std::string sys_block = p->Actual_Block_Device;
+	size_t idx = sys_block.find("/block");
+	if(idx != std::string::npos)
+		sys_block.erase(idx, sizeof("/block")-1);
+
 	// fstab
 	system("mkdir -p /data/ubuntu/systemorig");
-	system("echo \"/dev/mmcblk0p3\t/systemorig\text4\tro\t0\t0\" >> /data/ubuntu/etc/fstab");
+	system_args("echo \"%s\t/systemorig\text4\tro\t0\t0\" >> /data/ubuntu/etc/fstab", );
 	system("echo \"/system/vendor\t/vendor\tauto\tro,bind\t0\t0\" >> /data/ubuntu/etc/fstab");
 
 	// change the way android lxc is initiated
