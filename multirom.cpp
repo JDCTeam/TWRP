@@ -1015,7 +1015,11 @@ bool MultiROM::createImage(const std::string& base, const char *img, int size)
 
 	char cmd[256];
 	sprintf(cmd, "dd if=/dev/zero of=\"%s/%s.img\" bs=1M count=%d", base.c_str(), img, size);
-	system(cmd);
+	if(system(cmd) != 0)
+	{
+		gui_print("Failed to create %s image, probably not enough space.\n", img);
+		return false;
+	}
 
 	struct stat info;
 	sprintf(cmd, "%s/%s.img", base.c_str(), img);
