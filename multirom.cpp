@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #include "multirom.h"
 #include "partitions.hpp"
@@ -1881,7 +1882,7 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 
 	// fstab
 	system("mkdir -p /data/ubuntu/systemorig");
-	system_args("echo \"%s\t/systemorig\text4\tro\t0\t0\" >> /data/ubuntu/etc/fstab", );
+	system_args("echo \"%s\t/systemorig\text4\tro\t0\t0\" >> /data/ubuntu/etc/fstab", sys_block.c_str());
 	system("echo \"/system/vendor\t/vendor\tauto\tro,bind\t0\t0\" >> /data/ubuntu/etc/fstab");
 
 	// change the way android lxc is initiated
