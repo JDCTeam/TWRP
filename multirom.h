@@ -60,6 +60,25 @@ enum
 
 #define MAX_BASE_FOLDER_CNT 5
 
+// default image sizes
+#ifndef BOARD_SYSTEMIMAGE_PARTITION_SIZE
+#define SYS_IMG_DEFSIZE 640
+#else
+#define SYS_IMG_DEFSIZE (BOARD_SYSTEMIMAGE_PARTITION_SIZE/1024/1024)
+#endif
+#define DATA_IMG_DEFSIZE 1024
+#define CACHE_IMG_DEFSIZE 436
+
+#define SYS_IMG_MINSIZE 450
+#define DATA_IMG_MINSIZE 150
+#define CACHE_IMG_MINSIZE 50
+
+#define TOUCH_DATA_IMG_MINSIZE 1024
+#define TOUCH_DATA_IMG_DEFSIZE 2048
+
+#define UB_DATA_IMG_MINSIZE 2048
+#define UB_DATA_IMG_DEFSIZE 4095
+
 struct base_folder
 {
 	base_folder(const std::string& name, int min_size, int size);

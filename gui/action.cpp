@@ -856,17 +856,17 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			switch(type)
 			{
 				case 1: // Android
-					MultiROM::addBaseFolder("data", 150, 1024);
-					MultiROM::addBaseFolder("system", 450, 640);
-					MultiROM::addBaseFolder("cache", 50, 436);
+					MultiROM::addBaseFolder("data", DATA_IMG_MINSIZE, DATA_IMG_DEFSIZE);
+					MultiROM::addBaseFolder("system", SYS_IMG_MINSIZE, SYS_IMG_DEFSIZE);
+					MultiROM::addBaseFolder("cache", CACHE_IMG_MINSIZE, CACHE_IMG_DEFSIZE);
 					break;
 				case 2: // Ubuntu dekstop
-					MultiROM::addBaseFolder("root", 2000, 4095);
+					MultiROM::addBaseFolder("root", UB_DATA_IMG_MINSIZE, UB_DATA_IMG_DEFSIZE);
 					break;
 				case 4: // Ubuntu touch
-					MultiROM::addBaseFolder("data", 1024, 2048);
-					MultiROM::addBaseFolder("system", 450, 640);
-					MultiROM::addBaseFolder("cache", 50, 436);
+					MultiROM::addBaseFolder("data", TOUCH_DATA_IMG_MINSIZE,  TOUCH_DATA_IMG_DEFSIZE);
+					MultiROM::addBaseFolder("system", SYS_IMG_MINSIZE, SYS_IMG_DEFSIZE);
+					MultiROM::addBaseFolder("cache", CACHE_IMG_MINSIZE, CACHE_IMG_DEFSIZE);
 					break;
 			}
 
