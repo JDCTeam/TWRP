@@ -50,7 +50,7 @@ MultiROM::config::config()
 	brightness = 40;
 	hide_internal = 0;
 	int_display_name = INTERNAL_NAME;
-	rotation = 0; // FIXME: should be device specific
+	rotation = TW_DEFAULT_ROTATION;
 }
 
 bool MultiROM::folderExists()
