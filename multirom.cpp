@@ -127,8 +127,8 @@ void MultiROM::setRomsPath(std::string loc)
 		sprintf(cmd, "%s/ntfs-3g %s /mnt", m_path.c_str(), dev.c_str());
 	system(cmd);
 
-	m_curr_roms_path = "/mnt/multirom/";
-	mkdir("/mnt/multirom/", 0777);
+	m_curr_roms_path = "/mnt/multirom-"TARGET_DEVICE"/";
+	mkdir("/mnt/multirom-"TARGET_DEVICE"/", 0777);
 }
 
 std::string MultiROM::listInstallLocations()

@@ -279,6 +279,7 @@ endif
 ifneq ($(MR_RD_ADDR),)
     LOCAL_CFLAGS += -DMR_RD_ADDR=$(MR_RD_ADDR)
 endif
+LOCAL_CFLAGS += -DTARGET_DEVICE="\"$(TARGET_DEVICE)\""
 
 include $(BUILD_EXECUTABLE)
 
