@@ -187,20 +187,19 @@ int main(int argc, char **argv) {
 #ifdef TW_INCLUDE_INJECTTWRP
 	// Back up TWRP Ramdisk if needed:
 	TWPartition* Boot = PartitionManager.Find_Partition_By_Path("/boot");
-	string result;
 	LOGINFO("Backing up TWRP ramdisk...\n");
 	if (Boot == NULL || Boot->Current_File_System != "emmc")
-		TWFunc::Exec_Cmd("injecttwrp --backup /tmp/backup_recovery_ramdisk.img", result);
+		TWFunc::Exec_Cmd("injecttwrp --backup /tmp/backup_recovery_ramdisk.img");
 	else {
 		string injectcmd = "injecttwrp --backup /tmp/backup_recovery_ramdisk.img bd=" + Boot->Actual_Block_Device;
-		TWFunc::Exec_Cmd(injectcmd, result);
+		TWFunc::Exec_Cmd(injectcmd);
 	}
 	LOGINFO("Backup of TWRP ramdisk done.\n");
 #endif
 
 	bool Keep_Going = true;
 	if (Perform_Backup) {
-		DataManager::SetValue(TW_BACKUP_NAME, "(Current Date)");
+		DataManager::SetValue(TW_BACKUP_NAME, "(Auto Generate)");
 		if (!OpenRecoveryScript::Insert_ORS_Command("backup BSDCAE\n"))
 			Keep_Going = false;
 	}
@@ -252,14 +251,12 @@ int main(int argc, char **argv) {
 			// Device doesn't have su installed
 			DataManager::SetValue("tw_busy", 1);
 			if (gui_startPage("installsu") != 0) {
-				LOGERR("Failed to start decrypt GUI page.\n");
+				LOGERR("Failed to start SuperSU install page.\n");
 			}
 		} else if (TWFunc::Check_su_Perms() > 0) {
 			// su perms are set incorrectly
-			DataManager::SetValue("tw_busy", 1);
-			if (gui_startPage("fixsu") != 0) {
-				LOGERR("Failed to start decrypt GUI page.\n");
-			}
+			LOGINFO("Root permissions appear to be lost... fixing. (This will always happen on 4.3+ ROMs with SELinux.\n");
+			TWFunc::Fix_su_Perms();
 		}
 		sync();
 		PartitionManager.UnMount_By_Path("/system", false);

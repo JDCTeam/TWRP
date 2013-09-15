@@ -236,9 +236,7 @@ install_package(const char* path, int* wipe_cache, const char* install_file)
     } else {
         LOGE("failed to open last_install: %s\n", strerror(errno));
     }
-    ui_print("3");
     int result = really_install_package(path, wipe_cache);
-	ui_print("4");
     if (install_log) {
         fputc(result == INSTALL_SUCCESS ? '1' : '0', install_log);
         fputc('\n', install_log);

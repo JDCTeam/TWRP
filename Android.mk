@@ -83,13 +83,15 @@ ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
     LOCAL_C_INCLUDES += system/extras/ext4_utils
     LOCAL_SHARED_LIBRARIES += libext4_utils
 endif
-
-ifeq ($(HAVE_SELINUX), true)
+ifneq ($(wildcard external/libselinux/Android.mk),)
+    TWHAVE_SELINUX := true
+endif
+ifeq ($(TWHAVE_SELINUX), true)
   #LOCAL_C_INCLUDES += external/libselinux/include
   #LOCAL_STATIC_LIBRARIES += libselinux
   #LOCAL_CFLAGS += -DHAVE_SELINUX -g
 endif # HAVE_SELINUX
-ifeq ($(HAVE_SELINUX), true)
+ifeq ($(TWHAVE_SELINUX), true)
     LOCAL_C_INCLUDES += external/libselinux/include
     LOCAL_SHARED_LIBRARIES += libselinux
     LOCAL_CFLAGS += -DHAVE_SELINUX -g
@@ -326,7 +328,6 @@ include $(BUILD_SHARED_LIBRARY)
 commands_recovery_local_path := $(LOCAL_PATH)
 include $(LOCAL_PATH)/minui/Android.mk \
     $(LOCAL_PATH)/minelf/Android.mk \
-    $(LOCAL_PATH)/minzip/Android.mk \
     $(LOCAL_PATH)/minadbd/Android.mk \
     $(LOCAL_PATH)/tools/Android.mk \
     $(LOCAL_PATH)/edify/Android.mk \
@@ -359,6 +360,11 @@ endif
 ifeq ($(TW_INCLUDE_JB_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/jb/Android.mk
     include $(commands_recovery_local_path)/crypto/fs_mgr/Android.mk
+endif
+ifeq ($(HAVE_SELINUX), true)
+    include $(commands_recovery_local_path)/minzip/Android.mk
+else
+    include $(commands_recovery_local_path)/minzipold/Android.mk
 endif
 ifeq ($(BUILD_ID), GINGERBREAD)
     TW_NO_EXFAT := true
