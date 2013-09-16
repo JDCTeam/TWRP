@@ -185,6 +185,30 @@
 		<variable name="slidervalue_padding" value="20" />
 		<variable name="slidervalue_sliderw" value="10" />
 		<variable name="slidervalue_sliderh" value="60" />
+
+		<variable name="mrom_inject_txt_x" value="612" />
+		<variable name="mrom_inject_txt_y" value="725" />
+		<variable name="mrom_wipe_col1_x" value="100" />
+		<variable name="mrom_wipe_col2_x" value="306" />
+		<variable name="mrom_wipe_col3_x" value="512" />
+		<variable name="mrom_boot_delay_sec_x" value="420" />
+		<variable name="mrom_boot_delay_add_x" value="470" />
+		<variable name="mrom_boot_rom_h" value="500" />
+		<variable name="mrom_ubuntu_desktop_x" value="200" />
+		<variable name="mrom_ubuntu_touch_x" value="500" />
+		<variable name="mrom_install_loc_h" value="460" />
+		<variable name="mrom_install_refresh_y" value="940" />
+		<variable name="mrom_img1_text_y" value="400" />
+		<variable name="mrom_img2_text_y" value="520" />
+		<variable name="mrom_img3_text_y" value="640" />
+		<variable name="mrom_img4_text_y" value="760" />
+		<variable name="mrom_img5_text_y" value="880" />
+		<variable name="mrom_img1_btn_y" value="350" />
+		<variable name="mrom_img2_btn_y" value="470" />
+		<variable name="mrom_img3_btn_y" value="590" />
+		<variable name="mrom_img4_btn_y" value="710" />
+		<variable name="mrom_img5_btn_y" value="830" />
+		<variable name="mrom_rom_loc_list_h" value="660" />
 	</variables>
 
 	<templates>
@@ -777,7 +801,7 @@
 
 			<object type="text" color="%button_text_color%">
 				<font resource="font" />
-				<placement x="612" y="725" placement="5" />
+				<placement x="%mrom_inject_txt_x%" y="%mrom_inject_txt_y%" placement="5" />
 				<text>MultiROM:</text>
 			</object>
 
@@ -4287,7 +4311,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="100" y="%row4_y%" />
+				<placement x="%mrom_wipe_col1_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe /data</text>
 				<image resource="medium_button" />
@@ -4308,7 +4332,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="306" y="%row4_y%" />
+				<placement x="%mrom_wipe_col2_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe dalvik</text>
 				<image resource="medium_button" />
@@ -4329,7 +4353,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="512" y="%row4_y%" />
+				<placement x="%mrom_wipe_col3_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe /cache</text>
 				<image resource="medium_button" />
@@ -4611,10 +4635,10 @@
 			</object>
 
 			<object type="slidervalue">
-				<placement x="0" y="%row10_text_y%" w="%console_width%" />
+				<placement x="%col1_x%" y="%row10_text_y%" w="%slidervalue_w%" />
 				<font resource="font" color="%text_color%" />
 				<colors line="#FFFFFF" slider="#33B5E5" />
-				<dimensions lineh="2" linepadding="20" sliderw="10" sliderh="60" />
+				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
 				<text>Screen brightness: %tw_multirom_brightness%</text>
 				<data variable="tw_multirom_brightness" min="30" max="255" showrange="1" showcurr="0" changeondrag="1" />
 			</object>
@@ -4682,7 +4706,7 @@
 
 			<object type="template" name="footer" />
 		</page>
-		
+
 		<page name="multirom_settings_autoboot">
 			<object type="template" name="header" />
 
@@ -4723,7 +4747,7 @@
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<placement x="420" y="%row3_text_y%" />
+				<placement x="%mrom_boot_delay_sec_x%" y="%row3_text_y%" />
 				<font resource="font"/>
 				<text>%tw_multirom_delay%s</text>
 			</object>
@@ -4731,7 +4755,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<placement x="470" y="%row2_medium_y%" />
+				<placement x="%mrom_boot_delay_add_x%" y="%row2_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>+</text>
 				<image resource="medium_button" />
@@ -4748,7 +4772,7 @@
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select ROM to auto-boot:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
-				<placement x="%listbox_x%" y="%row5_text_y%" w="%listbox_width%" h="500" />
+				<placement x="%listbox_x%" y="%row5_text_y%" w="%listbox_width%" h="%mrom_boot_rom_h%" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -4939,7 +4963,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
-				<placement x="200" y="%row2_text_y%" />
+				<placement x="%mrom_ubuntu_desktop_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
 				<image resource="radio_true" />
@@ -4952,7 +4976,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" op="!="/>
-				<placement x="200" y="%row2_text_y%" />
+				<placement x="%mrom_ubuntu_desktop_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
 				<image resource="radio_false" />
@@ -4961,11 +4985,11 @@
 					<action function="page">multirom_add</action>
 				</actions>
 			</object>
-			
+
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="4" />
-				<placement x="500" y="%row2_text_y%" />
+				<placement x="%mrom_ubuntu_touch_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu Touch</text>
 				<image resource="radio_true" />
@@ -4978,7 +5002,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="4" op="!="/>
-				<placement x="500" y="%row2_text_y%" />
+				<placement x="%mrom_ubuntu_touch_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu Touch</text>
 				<image resource="radio_false" />
@@ -5098,7 +5122,7 @@
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Install to:</text>
-				<placement x="%listbox_x%" y="%row7_text_y%" w="%listbox_width%" h="460" />
+				<placement x="%listbox_x%" y="%row7_text_y%" w="%listbox_width%" h="%mrom_install_loc_h%" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -5117,7 +5141,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_medium_x%" y="940" />
+				<placement x="%col1_medium_x%" y="%mrom_install_refresh_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Refresh</text>
 				<image resource="medium_button" />
@@ -5419,14 +5443,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image1"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="400" />
+				<placement x="%col1_x%" y="%mrom_img1_text_y%" />
 				<text>%tw_mrom_image1%: %tw_mrom_image1_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image1"/>
-				<placement x="%col3_medium_x%" y="350" />
+				<placement x="%col3_medium_x%" y="%mrom_img1_btn_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5438,14 +5462,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image2"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row8_text_y%" />
+				<placement x="%col1_x%" y="%mrom_img2_text_y%" />
 				<text>%tw_mrom_image2%: %tw_mrom_image2_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image2"/>
-				<placement x="%col3_medium_x%" y="470" />
+				<placement x="%col3_medium_x%" y="%mrom_img2_btn_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5457,14 +5481,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image3"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="640" />
+				<placement x="%col1_x%" y="%mrom_img3_text_y%" />
 				<text>%tw_mrom_image3%: %tw_mrom_image3_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image3"/>
-				<placement x="%col3_medium_x%" y="590" />
+				<placement x="%col3_medium_x%" y="%mrom_img3_btn_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5476,14 +5500,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image4"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="760" />
+				<placement x="%col1_x%" y="%mrom_img4_text_y%" />
 				<text>%tw_mrom_image4%: %tw_mrom_image4_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image4"/>
-				<placement x="%col3_medium_x%" y="710" />
+				<placement x="%col3_medium_x%" y="%mrom_img4_btn_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5495,14 +5519,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image5"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="880" />
+				<placement x="%col1_x%" y="%mrom_img5_text_y%" />
 				<text>%tw_mrom_image5%: %tw_mrom_image5_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image5"/>
-				<placement x="%col3_medium_x%" y="830" />
+				<placement x="%col3_medium_x%" y="%mrom_img5_btn_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -5614,7 +5638,7 @@
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select location to list:</text>
-				<placement x="%listbox_x%" y="%row1_text_y%" w="%listbox_width%" h="660" />
+				<placement x="%listbox_x%" y="%row1_text_y%" w="%listbox_width%" h="%mrom_rom_loc_list_h%" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -5719,13 +5743,13 @@
 				<placement x="%col1_x%" y="%row1_text_y%" />
 				<text>Select Ubuntu touch ZIPs:</text>
 			</object>
-			
+
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<text>*-armel+grouper.zip (smaller one)</text>
 			</object>
-			
+
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row3_text_y%" />
