@@ -676,7 +676,13 @@ bool MultiROM::prepareZIP(std::string& file, bool& format_system)
 	system("rm /tmp/mr_update.zip");
 
 	struct stat info;
-	if(stat(file.c_str(), &info) >= 0 && info.st_size < 450*1024*1024)
+	if(stat(file.c_str(), &info) < 0)
+	{
+		gui_print("Failed to open file %s!\n!", file.c_str());
+		return false;
+	}
+
+	if(info.st_size < 450*1024*1024)
 	{
 		gui_print("Copying ZIP to /tmp...\n");
 		sprintf(cmd, "cp \"%s\" /tmp/mr_update.zip", file.c_str());
@@ -704,14 +710,23 @@ bool MultiROM::prepareZIP(std::string& file, bool& format_system)
 
 	ZipArchive zip;
 	if (mzOpenZipArchive(file.c_str(), &zip) != 0)
+	{
+		gui_print("Failed to open ZIP archive %s!\n", file.c_str());
 		goto exit;
+	}
 
 	script_entry = mzFindZipEntry(&zip, MR_UPDATE_SCRIPT_NAME);
 	if(!script_entry)
+	{
+		gui_print("Failed to find entry "MR_UPDATE_SCRIPT_NAME" in ZIP file %s!\n", file.c_str());
 		goto exit;
+	}
 
 	if (read_data(&zip, script_entry, &script_data, &script_len) < 0)
+	{
+		gui_print("Failed to read updater-script entry from %s!", file.c_str());
 		goto exit;
+	}
 
 	mzCloseZipArchive(&zip);
 
