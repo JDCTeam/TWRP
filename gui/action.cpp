@@ -393,27 +393,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	}
 
 	if (function == "reload") {
-		int check = 0, ret_val = 0;
-		std::string theme_path;
-
 		operation_start("Reload Theme");
-		theme_path = DataManager::GetSettingsStoragePath();
-		if (PartitionManager.Mount_By_Path(theme_path.c_str(), 1) < 0) {
-			LOGERR("Unable to mount %s during reload function startup.\n", theme_path.c_str());
-			check = 1;
-		}
-
-		theme_path += "/TWRP/theme/ui.zip";
-		if (check != 0 || PageManager::ReloadPackage("TWRP", theme_path) != 0)
-		{
-			// Loading the custom theme failed - try loading the stock theme
-			LOGINFO("Attempting to reload stock theme...\n");
-			if (PageManager::ReloadPackage("TWRP", "/res/ui.xml"))
-			{
-				LOGERR("Failed to load base packages.\n");
-				ret_val = 1;
-			}
-		}
+		int ret_val = !TWFunc::reloadTheme();
 		operation_end(ret_val, simulate);
 		return 0;
 	}
