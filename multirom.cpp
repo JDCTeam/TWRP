@@ -16,7 +16,6 @@ extern "C" {
 std::string MultiROM::m_path = "";
 std::string MultiROM::m_boot_dev = "";
 std::string MultiROM::m_mount_rom_paths[2] = { "", "" };
-std::vector<MultiROM::file_backup> MultiROM::m_mount_bak;
 std::string MultiROM::m_curr_roms_path = "";
 MROMInstaller *MultiROM::m_installer = NULL;
 MultiROM::baseFolders MultiROM::m_base_folders;
@@ -390,110 +389,78 @@ bool MultiROM::changeMounts(std::string name)
 	std::string base = getRomsPath() + name;
 	normalizeROMPath(base);
 
-	system("sync; umount -d /system /data /cache");
-	TWPartition *part = PartitionManager.Find_Partition_By_Path("/data");
-	if(!part)
-	{
-		gui_print("Failed to find data device!\n");
-		m_path.clear();
-		return false;
-	}
-
-	mkdir(REALDATA, 0777);
-	if(mount(part->Actual_Block_Device.c_str(), REALDATA, part->Current_File_System.c_str(), 0, NULL) < 0)
-	{
-		gui_print("Failed to mount realdata: %d (%s)", errno, strerror(errno));
-		return false;
-	}
-
 	if(M(type) & MASK_INTERNAL)
 		base.replace(0, 5, REALDATA);
 
-	static const char *files[] = {
-		"/etc/fstab",
-		"/etc/recovery.fstab",
-		NULL
-	};
+	system("sync; umount -d /system /data /cache /sdcard");
+	mkdir(REALDATA, 0777);
 
-	for(size_t i = 0; i < m_mount_bak.size(); ++i)
-		delete[] m_mount_bak[i].content;
-	m_mount_bak.clear();
+	PartitionManager.Copy_And_Push_Context();
 
-	for(int i = 0; files[i]; ++i)
+	TWPartition *data, *sys, *cache;
+	data = PartitionManager.Find_Partition_By_Path("/data");
+	if(!data)
 	{
-		FILE *f = fopen(files[i], "r");
-		if(!f)
-			return false;
-
-		fseek(f, 0, SEEK_END);
-		int size = ftell(f);
-		rewind(f);
-
-		file_backup b;
-		b.name = files[i];
-		b.size = size;
-		b.content = new char[size]();
-		fread(b.content, 1, size, f);
-		fclose(f);
-
-		m_mount_bak.push_back(b);
-	}
-
-	FILE *f_fstab = fopen("/etc/fstab", "w");
-	if(!f_fstab)
-		return false;
-
-	FILE *f_rec = fopen("/etc/recovery.fstab", "w");
-	if(!f_rec)
-	{
-		fclose(f_fstab);
+		gui_print("Failed to find data or boot device!\n");
+		m_path.clear();
+		PartitionManager.Pop_Context();
+		PartitionManager.Update_System_Details();
 		return false;
 	}
 
-	fprintf(f_rec, "# mount point\tfstype\t\tdevice\n");
-	if(!(M(type) & MASK_IMAGES))
-	{
-		fprintf(f_rec, "/system\t\text4\t\t%s/system\n", base.c_str());
-		fprintf(f_rec, "/cache\t\text4\t\t%s/cache\n", base.c_str());
-		fprintf(f_rec, "/data\t\text4\t\t%s/data\n", base.c_str());
-	}
-	else
-	{
-		fprintf(f_rec, "/system\t\text4\t\t%s/system.img\n", base.c_str());
-		fprintf(f_rec, "/cache\t\text4\t\t%s/cache.img\n", base.c_str());
-		fprintf(f_rec, "/data\t\text4\t\t%s/data.img\n", base.c_str());
-	}
+	data->Display_Name = "Realdata";
+	data->Mount_Point = REALDATA;
+	data->Symlink_Path.replace(0, sizeof("/data")-1, REALDATA);
+	data->Storage_Path.replace(0, sizeof("/data")-1, REALDATA);
+	data->Can_Be_Backed_Up = false;
 
-	TWPartition *p;
-	const std::vector<TWPartition*>& parts = PartitionManager.getPartitions();
-	for(size_t i = 0; i < parts.size(); ++i)
+	if(!data->Mount(true))
 	{
-		p = parts[i];
-		if(p->Mount_Point == "/system" || p->Mount_Point == "/data" || p->Mount_Point == "/cache")
-			continue;
-		fprintf(f_rec, "%s\t\t%s\t\t%s\n", p->Mount_Point.c_str(), p->Current_File_System.c_str(), p->Actual_Block_Device.c_str());
+		gui_print("Failed to mount realdata, canceling!\n");
+		PartitionManager.Pop_Context();
+		PartitionManager.Update_System_Details();
+		return false;
 	}
-	fclose(f_rec);
 
 	if(!(M(type) & MASK_IMAGES))
 	{
-		fprintf(f_fstab, "%s/system /system ext4 rw,bind\n", base.c_str());
-		fprintf(f_fstab, "%s/cache /cache ext4 rw,bind\n", base.c_str());
-		fprintf(f_fstab, "%s/data /data ext4 rw,bind\n", base.c_str());
+		data = new TWPartition(std::string("/data_t auto ") + base + "/data flags=bindof=/realdata\n");
+		sys = new TWPartition(std::string("/system auto ") + base + "/system flags=bindof=/realdata\n");
+		cache = new TWPartition(std::string("/cache auto ") + base + "/cache flags=bindof=/realdata\n");
 	}
 	else
 	{
-		fprintf(f_fstab, "%s/system.img /system ext4 loop 0 0\n", base.c_str());
-		fprintf(f_fstab, "%s/cache.img /cache ext4 loop 0 0\n", base.c_str());
-		fprintf(f_fstab, "%s/data.img /data ext4 loop 0 0\n", base.c_str());
+		data = new TWPartition(std::string("/data_t auto ") + base + "/data.img flags=imagemount\n");
+		sys = new TWPartition(std::string("/system auto ") + base + "/system.img flags=imagemount\n");
+		cache = new TWPartition(std::string("/cache auto ") + base + "/cache.img flags=imagemount\n");
 	}
-	fprintf(f_fstab, "/usb-otg vfat rw\n");
-	fclose(f_fstab);
 
-	system("mount /system");
-	system("mount /data");
-	system("mount /cache");
+	// Workaround TWRP̈́'s datamedia code
+	data->Backup_Display_Name = data->Display_Name = "Data";
+	data->Backup_Name = "data";
+	data->Backup_Path = data->Mount_Point = "/data";
+	data->Can_Be_Backed_Up = true;
 
+	std::vector<TWPartition*>& parts = PartitionManager.getPartitions();
+	parts.push_back(data);
+	parts.push_back(sys);
+	parts.push_back(cache);
+
+	PartitionManager.Output_Partition_Logging();
+	PartitionManager.Update_System_Details();
+
+	if(!data->Mount(true) || !sys->Mount(true) || !cache->Mount(true))
+	{
+		gui_print("Failed to mount fake partitions, canceling!\n");
+		data->UnMount(false);
+		sys->UnMount(false);
+		cache->UnMount(false);
+		PartitionManager.Pop_Context();
+		PartitionManager.Update_System_Details();
+		return false;
+	}
+
+	// We really don't want scripts to be able to write to real partitions
 	system("mv /sbin/umount /sbin/umount.bak");
 
 	return true;
@@ -502,24 +469,13 @@ bool MultiROM::changeMounts(std::string name)
 void MultiROM::restoreMounts()
 {
 	system("mv /sbin/umount.bak /sbin/umount");
-	system("umount -d /system /data /cache");
+	system("sync; umount -d /system /data /cache /sdcard");
 
-	for(size_t i = 0; i < m_mount_bak.size(); ++i)
-	{
-		file_backup &b = m_mount_bak[i];
-		FILE *f = fopen(b.name.c_str(), "w");
-		if(f)
-		{
-			fwrite(b.content, 1, b.size, f);
-			fclose(f);
-		}
-		delete[] b.content;
-	}
-	m_mount_bak.clear();
+	PartitionManager.Pop_Context();
+	PartitionManager.Update_System_Details();
 
-	system("umount "REALDATA);
-	//load_volume_table();
-	system("mount /data");
+	PartitionManager.Mount_By_Path("/data", true);
+	PartitionManager.Mount_By_Path("/cache", true);
 
 	restoreROMPath();
 }

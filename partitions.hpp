@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <string>
+#include <list>
 
 #define MAX_FSTAB_LINE_LENGTH 2048
 
@@ -48,7 +49,8 @@ public:
 	};
 
 public:
-	TWPartition();
+	TWPartition(const string& fstab_line = std::string());
+	TWPartition(const TWPartition& p);
 	virtual ~TWPartition();
 
 public:
@@ -160,6 +162,7 @@ private:
 friend class TWPartitionManager;
 friend class DataManager;
 friend class GUIPartitionList;
+friend class MultiROM;
 };
 
 class TWPartitionManager
@@ -216,6 +219,9 @@ public:
 
 	const std::vector<TWPartition*>& getPartitions() const { return Partitions; }
 	std::vector<TWPartition*>& getPartitions() { return Partitions; }
+	bool Push_Context();
+	void Copy_And_Push_Context();
+	bool Pop_Context();
 
 private:
 	bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename); // Generates an MD5 after a backup is made
@@ -226,6 +232,7 @@ private:
 
 private:
 	std::vector<TWPartition*> Partitions;                                     // Vector list of all partitions
+	std::list< std::vector<TWPartition*> > Contexts;
 };
 
 extern TWPartitionManager PartitionManager;

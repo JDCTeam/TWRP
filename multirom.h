@@ -109,12 +109,6 @@ public:
 		int rotation;
 	};
 
-	struct file_backup {
-		std::string name;
-		char *content;
-		int size;
-	};
-
 	static bool folderExists();
 	static std::string getRomsPath();
 	static std::string getPath();
@@ -192,7 +186,6 @@ private:
 	static void restoreROMPath();
 
 	static std::string m_path;
-	static std::vector<file_backup> m_mount_bak;
 	static std::string m_mount_rom_paths[2];
 	static std::string m_curr_roms_path;
 	static MROMInstaller *m_installer;

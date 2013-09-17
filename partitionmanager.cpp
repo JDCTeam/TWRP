@@ -126,7 +126,7 @@ int TWPartitionManager::Write_Fstab(void) {
 	}
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if (!(*iter)->Bind_Of.empty()) {
-			Line = (*iter)->Actual_Block_Device + " " + (*iter)->Mount_Point + " bind bind\n";
+			Line = (*iter)->Primary_Block_Device + " " + (*iter)->Mount_Point + " bind bind\n";
 			fputs(Line.c_str(), fp);
 		} else if ((*iter)->Can_Be_Mounted) {
 			Line = (*iter)->Actual_Block_Device + " " + (*iter)->Mount_Point + " " + (*iter)->Current_File_System + " rw\n";
@@ -1901,4 +1901,53 @@ void TWPartitionManager::Output_Storage_Fstab(void) {
 		}
 	}
 	fclose(fp);
+}
+
+bool TWPartitionManager::Push_Context()
+{
+	sync();
+
+	for(size_t i = 0; i < Partitions.size(); ++i)
+	{
+		if(Partitions[i]->Is_Mounted() && !Partitions[i]->UnMount(false))
+		{
+			LOGERR("Failed to unmount %s during context push!\n", Partitions[i]->Mount_Point.c_str());
+			return false;
+		}
+	}
+
+	std::vector<TWPartition*> parts;
+	Partitions.swap(parts);
+
+	Contexts.push_back(parts);
+	return true;
+}
+
+void TWPartitionManager::Copy_And_Push_Context()
+{
+	std::vector<TWPartition*> parts;
+	for(size_t i = 0; i < Partitions.size(); ++i)
+		parts.push_back(new TWPartition(*Partitions[i]));
+
+	Partitions.swap(parts);
+	Contexts.push_back(parts);
+}
+
+bool TWPartitionManager::Pop_Context()
+{
+	if(Contexts.empty())
+		return false;
+
+	sync();
+
+	for(size_t i = 0; i < Partitions.size(); ++i)
+	{
+		if(Partitions[i]->Is_Mounted() && !Partitions[i]->UnMount(false))
+			LOGERR("Failed to unmount %s during context pop!\n", Partitions[i]->Mount_Point.c_str());
+		delete Partitions[i];
+	}
+
+	Partitions = Contexts.back();
+	Contexts.pop_back();
+	return true;
 }

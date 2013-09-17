@@ -58,7 +58,7 @@ using namespace std;
 
 extern struct selabel_handle *selinux_handle;
 
-TWPartition::TWPartition(void) {
+TWPartition::TWPartition(const string& fstab_line) {
 	Can_Be_Mounted = false;
 	Can_Be_Wiped = false;
 	Can_Be_Backed_Up = false;
@@ -108,6 +108,17 @@ TWPartition::TWPartition(void) {
 #ifdef TW_INCLUDE_CRYPTO_SAMSUNG
 	EcryptFS_Password = "";
 #endif
+	Is_ImageMount = false;
+
+	if(!fstab_line.empty())
+		Process_Fstab_Line(fstab_line, true);
+}
+
+TWPartition::TWPartition(const TWPartition& p)
+{
+	// Use default copy constructor, as this class has no pointers
+	// and strings are handled fine by this
+	*this = p;
 }
 
 TWPartition::~TWPartition(void) {
@@ -853,8 +864,7 @@ bool TWPartition::Mount(bool Display_Error) {
 	}
 	else if(Is_ImageMount)
 	{
-		if(!PartitionManager.Mount_By_Path(Primary_Block_Device, Display_Error))
-			return false;
+		PartitionManager.Mount_By_Path(Primary_Block_Device, false);
 
 		std::string cmd = "mount -o loop -t ";
 		cmd += Fstab_File_System + " " + Primary_Block_Device + " " + Mount_Point.c_str();
@@ -1761,8 +1771,8 @@ bool TWPartition::Update_Size(bool Display_Error) {
 	if (Has_Data_Media) {
 		if (Mount(Display_Error)) {
 			unsigned long long data_media_used, actual_data;
-			Used = TWFunc::Get_Folder_Size("/data", Display_Error);
-			data_media_used = TWFunc::Get_Folder_Size("/data/media", Display_Error);
+			Used = TWFunc::Get_Folder_Size(Mount_Point, Display_Error);
+			data_media_used = TWFunc::Get_Folder_Size(Mount_Point + "/media", Display_Error);
 			actual_data = Used - data_media_used;
 			Backup_Size = actual_data;
 			int bak = (int)(Backup_Size / 1048576LLU);

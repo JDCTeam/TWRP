@@ -992,7 +992,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					op_status = 1;
 			}
 
-			PartitionManager.Update_System_Details();
 			operation_end(op_status, simulate);
 			return 0;
 		}
@@ -1030,7 +1029,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			int op_status = !MultiROM::addROM(DataManager::GetStrValue("tw_filename"),
 											  DataManager::GetIntValue("tw_multirom_type"),
 											  DataManager::GetStrValue("tw_multirom_install_loc"));
-			PartitionManager.Update_System_Details();
 			operation_end(op_status, simulate);
 			return 0;
 		}
