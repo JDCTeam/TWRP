@@ -57,7 +57,7 @@
 				<image resource="main_button" />
 				<actions>
 					<action function="set">tw_multirom_type=1</action>
-					<action function="set">tw_multirom_share_kernel=1</action>
+					<action function="set">tw_multirom_share_kernel=0</action>
 					<action function="multirom_add"/>
 				</actions>
 			</object>
@@ -1075,7 +1075,7 @@
 				</conditions>
 				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Share (recommended)</text>
+				<text>Share</text>
 				<image resource="radio_true" />
 				<actions>
 					<action function="set">tw_multirom_share_kernel=1</action>
@@ -1091,7 +1091,7 @@
 				</conditions>
 				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Share (recommended)</text>
+				<text>Share</text>
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_multirom_share_kernel=1</action>

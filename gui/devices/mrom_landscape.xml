@@ -57,7 +57,7 @@
 				<image resource="main_button" />
 				<actions>
 					<action function="set">tw_multirom_type=1</action>
-					<action function="set">tw_multirom_share_kernel=1</action>
+					<action function="set">tw_multirom_share_kernel=0</action>
 					<action function="multirom_add"/>
 				</actions>
 			</object>
