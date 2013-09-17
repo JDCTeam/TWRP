@@ -154,6 +154,7 @@ private:
 #ifdef TW_INCLUDE_CRYPTO_SAMSUNG
 	string EcryptFS_Password;                                                 // Have to store the encryption password to remount
 #endif
+	string Bind_Of;                                                           // Path to partition which is this partition bound to
 
 friend class TWPartitionManager;
 friend class DataManager;

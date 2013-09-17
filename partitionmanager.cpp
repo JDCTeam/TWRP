@@ -125,7 +125,10 @@ int TWPartitionManager::Write_Fstab(void) {
 		return false;
 	}
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
-		if ((*iter)->Can_Be_Mounted) {
+		if (!(*iter)->Bind_Of.empty()) {
+			Line = (*iter)->Actual_Block_Device + " " + (*iter)->Mount_Point + " bind bind\n";
+			fputs(Line.c_str(), fp);
+		} else if ((*iter)->Can_Be_Mounted) {
 			Line = (*iter)->Actual_Block_Device + " " + (*iter)->Mount_Point + " " + (*iter)->Current_File_System + " rw\n";
 			fputs(Line.c_str(), fp);
 		}
@@ -237,6 +240,8 @@ void TWPartitionManager::Output_Partition(TWPartition* Part) {
 		printf("   Format_Block_Size: %i\n", Part->Format_Block_Size);
 	if (!Part->MTD_Name.empty())
 		printf("   MTD_Name: %s\n", Part->MTD_Name.c_str());
+	if (!Part->Bind_Of.empty())
+		printf("   Bind_Of: %s\n", Part->Bind_Of.c_str());
 	string back_meth = Part->Backup_Method_By_Name();
 	printf("   Backup_Method: %s\n\n", back_meth.c_str());
 }

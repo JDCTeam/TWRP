@@ -475,6 +475,11 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 			} else {
 				Use_Userdata_Encryption = false;
 			}
+		} else if (ptr_len > (int)sizeof("bindof=") && strncmp(ptr, "bindof=", sizeof("bindof=")-1) == 0) {
+			ptr += sizeof("bindof=")-1;
+			Bind_Of = ptr;
+			Ignore_Blkid = true;
+			Use_Rm_Rf = true;
 		} else {
 			if (Display_Error)
 				LOGERR("Unhandled flag: '%s'\n", ptr);
@@ -817,9 +822,35 @@ bool TWPartition::Mount(bool Display_Error) {
 
 	Find_Actual_Block_Device();
 
+	if(!Bind_Of.empty())
+	{
+		TWPartition *p = PartitionManager.Find_Partition_By_Path(Bind_Of);
+		if(!p)
+		{
+			if(Display_Error)
+				LOGERR("Couldn't find bindof partition %s\n", Bind_Of.c_str());
+			else
+				LOGINFO("Couldn't find bindof partition %s\n", Bind_Of.c_str());
+			return false;
+		}
+
+		if(!p->Mount(Display_Error))
+			return false;
+
+		if(mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Fstab_File_System.c_str(), MS_BIND, NULL) < 0)
+		{
+			if(Display_Error)
+				LOGERR("Couldn't bind %s to %s\n", Actual_Block_Device.c_str(), Mount_Point.c_str());
+			else
+				LOGINFO("Couldn't bind %s to %s\n", Actual_Block_Device.c_str(), Mount_Point.c_str());
+			return false;
+		}
+	}
+
 	// Check the current file system before mounting
 	Check_FS_Type();
-	if (Current_File_System == "exfat" && TWFunc::Path_Exists("/sbin/exfat-fuse")) {
+
+	if (Current_File_System == "exfat" && TWFunc::Path_Exists("/sbin/exfat-fuse") && Bind_Of.empty()) {
 		string cmd = "/sbin/exfat-fuse -o big_writes,max_read=131072,max_write=131072 " + Actual_Block_Device + " " + Mount_Point;
 		LOGINFO("cmd: %s\n", cmd.c_str());
 		string result;
@@ -836,7 +867,7 @@ bool TWPartition::Mount(bool Display_Error) {
 #endif
 		}
 	}
-	if (Fstab_File_System == "yaffs2") {
+	if (Fstab_File_System == "yaffs2" && Bind_Of.empty()) {
 		// mount an MTD partition as a YAFFS2 filesystem.
 		const unsigned long flags = MS_NOATIME | MS_NODEV | MS_NODIRATIME;
 		if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Fstab_File_System.c_str(), flags, NULL) < 0) {
@@ -873,7 +904,7 @@ bool TWPartition::Mount(bool Display_Error) {
 			}
 			return true;
 		}
-	} else if (!exfat_mounted && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
+	} else if (!exfat_mounted && Bind_Of.empty() && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
 #ifdef TW_NO_EXFAT_FUSE
 		if (Current_File_System == "exfat") {
 			LOGINFO("Mounting exfat failed, trying vfat...\n");
@@ -1694,6 +1725,11 @@ bool TWPartition::Update_Size(bool Display_Error) {
 				UnMount(false);
 			return false;
 		}
+	}
+
+	if(!Bind_Of.empty()) {
+		Used = TWFunc::Get_Folder_Size(Actual_Block_Device, Display_Error);
+		Backup_Size = Used;
 	}
 
 	if (Has_Data_Media) {
