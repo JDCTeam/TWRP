@@ -155,6 +155,7 @@ private:
 	string EcryptFS_Password;                                                 // Have to store the encryption password to remount
 #endif
 	string Bind_Of;                                                           // Path to partition which is this partition bound to
+	bool Is_ImageMount;                                                       // This is true if the partition is on .img file
 
 friend class TWPartitionManager;
 friend class DataManager;

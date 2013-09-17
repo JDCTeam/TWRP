@@ -480,6 +480,10 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 			Bind_Of = ptr;
 			Ignore_Blkid = true;
 			Use_Rm_Rf = true;
+		} else if(strcmp(ptr, "imagemount") == 0) {
+			Ignore_Blkid = true;
+			Use_Rm_Rf = true;
+			Is_ImageMount = true;
 		} else {
 			if (Display_Error)
 				LOGERR("Unhandled flag: '%s'\n", ptr);
@@ -812,7 +816,7 @@ bool TWPartition::Is_Mounted(void) {
 }
 
 bool TWPartition::Mount(bool Display_Error) {
-	int exfat_mounted = 0;
+	int mounted = 0;
 
 	if (Is_Mounted()) {
 		return true;
@@ -837,20 +841,38 @@ bool TWPartition::Mount(bool Display_Error) {
 		if(!p->Mount(Display_Error))
 			return false;
 
-		if(mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Fstab_File_System.c_str(), MS_BIND, NULL) < 0)
+		if(mount(Primary_Block_Device.c_str(), Mount_Point.c_str(), Fstab_File_System.c_str(), MS_BIND, NULL) < 0)
 		{
 			if(Display_Error)
-				LOGERR("Couldn't bind %s to %s\n", Actual_Block_Device.c_str(), Mount_Point.c_str());
+				LOGERR("Couldn't bind %s to %s\n", Primary_Block_Device.c_str(), Mount_Point.c_str());
 			else
-				LOGINFO("Couldn't bind %s to %s\n", Actual_Block_Device.c_str(), Mount_Point.c_str());
+				LOGINFO("Couldn't bind %s to %s\n", Primary_Block_Device.c_str(), Mount_Point.c_str());
 			return false;
 		}
+		mounted = 1;
+	}
+	else if(Is_ImageMount)
+	{
+		if(!PartitionManager.Mount_By_Path(Primary_Block_Device, Display_Error))
+			return false;
+
+		std::string cmd = "mount -o loop -t ";
+		cmd += Fstab_File_System + " " + Primary_Block_Device + " " + Mount_Point.c_str();
+		if(TWFunc::Exec_Cmd(cmd) != 0)
+		{
+			if(Display_Error)
+				LOGERR("Failed to mount image %s!\n", Primary_Block_Device.c_str());
+			else
+				LOGINFO("Failed to mount image %s!\n", Primary_Block_Device.c_str());
+			return false;
+		}
+		mounted = 1;
 	}
 
 	// Check the current file system before mounting
 	Check_FS_Type();
 
-	if (Current_File_System == "exfat" && TWFunc::Path_Exists("/sbin/exfat-fuse") && Bind_Of.empty()) {
+	if (Current_File_System == "exfat" && TWFunc::Path_Exists("/sbin/exfat-fuse") && !mounted) {
 		string cmd = "/sbin/exfat-fuse -o big_writes,max_read=131072,max_write=131072 " + Actual_Block_Device + " " + Mount_Point;
 		LOGINFO("cmd: %s\n", cmd.c_str());
 		string result;
@@ -863,11 +885,11 @@ bool TWPartition::Mount(bool Display_Error) {
 			// We'll let the kernel handle it but using exfat-fuse to detect if the file system is actually exfat
 			// Some kernels let us mount vfat as exfat which doesn't work out too well
 #else
-			exfat_mounted = 1;
+			mounted = 1;
 #endif
 		}
 	}
-	if (Fstab_File_System == "yaffs2" && Bind_Of.empty()) {
+	if (Fstab_File_System == "yaffs2" && !mounted) {
 		// mount an MTD partition as a YAFFS2 filesystem.
 		const unsigned long flags = MS_NOATIME | MS_NODEV | MS_NODIRATIME;
 		if (mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Fstab_File_System.c_str(), flags, NULL) < 0) {
@@ -904,7 +926,7 @@ bool TWPartition::Mount(bool Display_Error) {
 			}
 			return true;
 		}
-	} else if (!exfat_mounted && Bind_Of.empty() && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
+	} else if (!mounted && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), 0, NULL) != 0) {
 #ifdef TW_NO_EXFAT_FUSE
 		if (Current_File_System == "exfat") {
 			LOGINFO("Mounting exfat failed, trying vfat...\n");
@@ -981,7 +1003,11 @@ bool TWPartition::UnMount(bool Display_Error) {
 		if (!Symlink_Mount_Point.empty())
 			umount(Symlink_Mount_Point.c_str());
 
-		umount(Mount_Point.c_str());
+		if(!Is_ImageMount)
+			umount(Mount_Point.c_str());
+		else
+			TWFunc::Exec_Cmd(string("umount -d ") + Mount_Point);
+
 		if (Is_Mounted()) {
 			if (Display_Error)
 				LOGERR("Unable to unmount '%s'\n", Mount_Point.c_str());
