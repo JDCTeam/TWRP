@@ -224,13 +224,12 @@ unsigned long long TWFunc::Get_Folder_Size(const string& Path, bool Display_Erro
 	return dusize;
 }
 
-uint64_t TWFunc::Get_DataMedia_Size(const string& Path, uint64_t& media_size, bool Display_Error)
+uint64_t TWFunc::Get_DataExceptMedia_Size(const string& Path, bool Display_Error)
 {
 	DIR* d;
 	struct dirent* de;
 	struct stat st;
 	uint64_t dusize = 0;
-	uint64_t dutemp = 0;
 
 	d = opendir(Path.c_str());
 	if (d == NULL)
@@ -242,15 +241,10 @@ uint64_t TWFunc::Get_DataMedia_Size(const string& Path, uint64_t& media_size, bo
 
 	while ((de = readdir(d)) != NULL)
 	{
-		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0 && strcmp(de->d_name, "lost+found") != 0)
+		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0 &&
+			strcmp(de->d_name, "lost+found") != 0 && strcmp(de->d_name, "media") != 0)
 		{
-			dutemp = Get_Folder_Size((Path + "/" + de->d_name), Display_Error);
-			dusize += dutemp;
-
-			if(strcmp(de->d_name, "media") == 0)
-				media_size = dutemp;
-
-			dutemp = 0;
+			dusize += Get_Folder_Size((Path + "/" + de->d_name), Display_Error);
 		}
 		else if (de->d_type == DT_REG)
 		{

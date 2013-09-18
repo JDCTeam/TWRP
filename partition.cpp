@@ -1781,16 +1781,12 @@ bool TWPartition::Update_Size(bool Display_Error) {
 
 	if (Has_Data_Media) {
 		if (Mount(Display_Error)) {
-			uint64_t data_media_used = 0, actual_data;
-			Used = TWFunc::Get_DataMedia_Size(Mount_Point, data_media_used, Display_Error);
-			actual_data = Used - data_media_used;
-			Backup_Size = actual_data;
+			Backup_Size = TWFunc::Get_DataExceptMedia_Size(Mount_Point, Display_Error);
 			int bak = (int)(Backup_Size / 1048576LLU);
 			int total = (int)(Size / 1048576LLU);
 			int us = (int)(Used / 1048576LLU);
 			int fre = (int)(Free / 1048576LLU);
-			int datmed = (int)(data_media_used / 1048576LLU);
-			LOGINFO("Data backup size is %iMB, size: %iMB, used: %iMB, free: %iMB, in data/media: %iMB.\n", bak, total, us, fre, datmed);
+			LOGINFO("Data backup size is %iMB, size: %iMB, used: %iMB, free: %iMB.\n", bak, total, us, fre);
 		} else {
 			if (!Was_Already_Mounted)
 				UnMount(false);
