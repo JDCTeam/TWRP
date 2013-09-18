@@ -263,6 +263,8 @@ bool MultiROM::initBackup(const std::string& name)
 		return false;
 	}
 
+	PartitionManager.Update_System_Details();
+
 	if(hadInternalStorage)
 	{
 		TWPartition *realdata = PartitionManager.Find_Partition_By_Path("/realdata");
@@ -533,7 +535,7 @@ bool MultiROM::changeMounts(std::string name)
 	parts.push_back(cache);
 
 	PartitionManager.Output_Partition_Logging();
-	PartitionManager.Update_System_Details();
+	PartitionManager.Write_Fstab();
 
 	if(!data->Mount(true) || !sys->Mount(true) || !cache->Mount(true))
 	{
