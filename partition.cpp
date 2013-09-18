@@ -125,6 +125,17 @@ TWPartition::~TWPartition(void) {
 	// Do nothing
 }
 
+TWPartition *TWPartition::makePartFromFstab(const char *fmt, ...)
+{
+	char line[MAX_FSTAB_LINE_LENGTH];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(line, sizeof(line), fmt, ap);
+	va_end(ap);
+
+	return new TWPartition(line);
+}
+
 bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 	char full_line[MAX_FSTAB_LINE_LENGTH], item[MAX_FSTAB_LINE_LENGTH];
 	int line_len = Line.size(), index = 0, item_index = 0;

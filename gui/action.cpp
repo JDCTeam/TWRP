@@ -952,8 +952,22 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return gui_changePage("multirom_list");
 	}
 
-    if (isThreaded)
-    {
+	if(function == "multirom_exit_backup")
+	{
+		if(DataManager::GetIntValue("multirom_do_backup") == 1)
+		{
+			operation_start("Restoring default backup settings");
+			MultiROM::deinitBackup();
+			operation_end(0, simulate);
+		}
+		else if(arg == "multirom_manage")
+			arg = "main";
+
+		return gui_changePage(arg);
+	}
+
+	if (isThreaded)
+	{
 		if (function == "timeout")
 		{
 			blankTimer.blankScreen();
@@ -1066,6 +1080,23 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			int op_status = (system(cmd.c_str()) != 0);
 			operation_end(op_status, simulate);
 			return 0;
+		}
+
+		if (function == "multirom_backup_rom")
+		{
+			operation_start("Changing mountpoints for backup");
+			int op_status = !MultiROM::initBackup(DataManager::GetStrValue("tw_multirom_rom_name"));
+			operation_end(op_status, simulate);
+			if(op_status == 0)
+				return gui_changePage("backup");
+			else
+			{
+				DataManager::SetValue("tw_mrom_title", "Failed to prepare ROM for backup!");
+				DataManager::SetValue("tw_mrom_text1", "See /tmp/recovery.log for more details.");
+				DataManager::SetValue("tw_mrom_text2", "");
+				DataManager::SetValue("tw_mrom_back", "multirom_manage");
+				return gui_changePage("multirom_msg");
+			}
 		}
 
 		if (function == "fileexists")

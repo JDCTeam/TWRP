@@ -53,6 +53,8 @@ public:
 	TWPartition(const TWPartition& p);
 	virtual ~TWPartition();
 
+	static TWPartition *makePartFromFstab(const char *fmt, ...);
+
 public:
 	bool Is_Mounted();                                                        // Checks mount to see if the partition is currently mounted
 	bool Mount(bool Display_Error);                                           // Mounts the partition if it is not mounted

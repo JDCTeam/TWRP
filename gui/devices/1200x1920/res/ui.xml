@@ -257,6 +257,13 @@
 				<text>Battery: %tw_battery%</text>
 			</object>
 
+			<object type="text" color="%text_fail_color%">
+				<font resource="font" />
+				<placement x="180" y="60" />
+				<condition var1="multirom_do_backup" var2="1" />
+				<text>Using ROM: %tw_multirom_rom_name%</text>
+			</object>
+
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<placement x="%home_button_x%" y="%home_button_y%" />
@@ -1093,8 +1100,7 @@
 			<object type="action">
 				<touch key="home" />
 				<actions>
-					<action function="set">tw_clear_destination=main2</action>
-					<action function="page">clear_vars</action>
+					<action function="multirom_exit_backup">main</action>
 				</actions>
 			</object>
 
@@ -1502,12 +1508,12 @@
 
 			<object type="action">
 				<touch key="home" />
-				<action function="page">main</action>
+				<action function="multirom_exit_backup">main</action>
 			</object>
 
 			<object type="action">
 				<touch key="back" />
-				<action function="page">main</action>
+				<action function="multirom_exit_backup">multirom_manage</action>
 			</object>
 
 			<object type="template" name="footer" />
@@ -1583,7 +1589,7 @@
 				<touch key="home" />
 				<actions>
 					<action function="set">tw_backup_name=(Auto Generate)</action>
-					<action function="page">main</action>
+					<action function="multirom_exit_backup">main</action>
 				</actions>
 			</object>
 
@@ -1651,7 +1657,7 @@
 
 			<object type="action">
 				<touch key="home" />
-				<action function="page">main</action>
+				<action function="multirom_exit_backup">main</action>
 			</object>
 
 			<object type="action">
@@ -1710,7 +1716,7 @@
 
 			<object type="action">
 				<touch key="home" />
-				<action function="page">main</action>
+				<action function="multirom_exit_backup">main</action>
 			</object>
 
 			<object type="action">
@@ -2176,7 +2182,7 @@
 
 			<object type="action">
 				<touch key="home" />
-				<action function="page">main</action>
+				<action function="multirom_exit_backup">main</action>
 			</object>
 
 			<object type="action">

@@ -244,6 +244,71 @@ bool MultiROM::wipe(std::string name, std::string what)
 	return res;
 }
 
+bool MultiROM::initBackup(const std::string& name)
+{
+	bool hadInternalStorage = (DataManager::GetStrValue("tw_storage_path").find("/data") == 0);
+
+	if(!changeMounts(name))
+		return false;
+
+	std::string boot = getRomsPath() + name;
+	normalizeROMPath(boot);
+	boot += "/boot.img";
+
+	translateToRealdata(boot);
+
+	if(!fakeBootPartition(boot.c_str()))
+	{
+		restoreMounts();
+		return false;
+	}
+
+	if(hadInternalStorage)
+	{
+		TWPartition *realdata = PartitionManager.Find_Partition_By_Path("/realdata");
+		if(!realdata)
+		{
+			LOGERR("Couldn't find /realdata!\n");
+			restoreBootPartition();
+			restoreMounts();
+			return false;
+		}
+
+		DataManager::SetValue("tw_settings_path", realdata->Storage_Path);
+		DataManager::SetValue("tw_storage_path", realdata->Storage_Path);
+
+		DataManager::SetBackupFolder();
+	}
+
+	DataManager::SetValue("multirom_do_backup", 1);
+	return true;
+}
+
+void MultiROM::deinitBackup()
+{
+	DataManager::SetValue("multirom_do_backup", 0);
+
+	bool hadInternalStorage = (DataManager::GetStrValue("tw_storage_path").find(REALDATA) == 0);
+
+	restoreBootPartition();
+	restoreMounts();
+
+	if(hadInternalStorage)
+	{
+		TWPartition *data = PartitionManager.Find_Partition_By_Path("/data");
+		if(!data)
+		{
+			LOGERR("Couldn't find /realdata!\n");
+			return;
+		}
+
+		DataManager::SetValue("tw_settings_path", data->Storage_Path);
+		DataManager::SetValue("tw_storage_path", data->Storage_Path);
+
+		DataManager::SetBackupFolder();
+	}
+}
+
 int MultiROM::getType(std::string name)
 {
 	std::string path = getRomsPath() + "/" + name + "/";
@@ -385,6 +450,8 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 
 bool MultiROM::changeMounts(std::string name)
 {
+	gui_print("Changing mounts to ROM %s...\n", name.c_str());
+
 	int type = getType(name);
 	std::string base = getRomsPath() + name;
 	normalizeROMPath(base);
@@ -397,7 +464,7 @@ bool MultiROM::changeMounts(std::string name)
 
 	PartitionManager.Copy_And_Push_Context();
 
-	TWPartition *data, *sys, *cache;
+	TWPartition *realdata, *data, *sys, *cache;
 	std::vector<TWPartition*>& parts = PartitionManager.getPartitions();
 	for(std::vector<TWPartition*>::iterator itr = parts.begin(); itr != parts.end();)
 	{
@@ -426,11 +493,12 @@ bool MultiROM::changeMounts(std::string name)
 
 	data->UnMount(true);
 
-	data->Display_Name = "Realdata";
-	data->Mount_Point = REALDATA;
-	data->Symlink_Path.replace(0, sizeof("/data")-1, REALDATA);
-	data->Storage_Path.replace(0, sizeof("/data")-1, REALDATA);
-	data->Can_Be_Backed_Up = false;
+	realdata = data;
+	realdata->Display_Name = "Realdata";
+	realdata->Mount_Point = REALDATA;
+	realdata->Symlink_Path.replace(0, sizeof("/data")-1, REALDATA);
+	realdata->Storage_Path.replace(0, sizeof("/data")-1, REALDATA);
+	realdata->Can_Be_Backed_Up = false;
 
 	if(!data->Mount(true))
 	{
@@ -440,17 +508,18 @@ bool MultiROM::changeMounts(std::string name)
 		return false;
 	}
 
+	const char *fs = realdata->Fstab_File_System.c_str();
 	if(!(M(type) & MASK_IMAGES))
 	{
-		data = new TWPartition(std::string("/data_t auto ") + base + "/data flags=bindof=/realdata\n");
-		sys = new TWPartition(std::string("/system auto ") + base + "/system flags=bindof=/realdata\n");
-		cache = new TWPartition(std::string("/cache auto ") + base + "/cache flags=bindof=/realdata\n");
+		data = TWPartition::makePartFromFstab("/data_t %s %s/data flags=bindof=/realdata\n", fs, base.c_str());
+		sys = TWPartition::makePartFromFstab("/system %s %s/system flags=bindof=/realdata\n", fs, base.c_str());
+		cache = TWPartition::makePartFromFstab("/cache %s %s/cache flags=bindof=/realdata\n", fs, base.c_str());
 	}
 	else
 	{
-		data = new TWPartition(std::string("/data_t auto ") + base + "/data.img flags=imagemount\n");
-		sys = new TWPartition(std::string("/system auto ") + base + "/system.img flags=imagemount\n");
-		cache = new TWPartition(std::string("/cache auto ") + base + "/cache.img flags=imagemount\n");
+		data = TWPartition::makePartFromFstab("/data_t %s %s/data.img flags=imagemount\n", fs, base.c_str());
+		sys = TWPartition::makePartFromFstab("/system %s %s/system.img flags=imagemount\n", fs, base.c_str());
+		cache = TWPartition::makePartFromFstab("/cache %s %s/cache.img flags=imagemount\n", fs, base.c_str());
 	}
 
 	// Workaround TWRP̈́'s datamedia code
@@ -485,6 +554,8 @@ bool MultiROM::changeMounts(std::string name)
 
 void MultiROM::restoreMounts()
 {
+	gui_print("Restoring mounts...\n");
+
 	system("mv /sbin/umount.bak /sbin/umount");
 	system("sync; umount -d /system /data /cache /sdcard");
 

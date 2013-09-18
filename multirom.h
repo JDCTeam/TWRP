@@ -133,6 +133,8 @@ public:
 	static bool extractBootForROM(std::string base);
 	static int copyBoot(std::string& orig, std::string rom);
 	static bool wipe(std::string name, std::string what);
+	static bool initBackup(const std::string& name);
+	static void deinitBackup();
 
 	static config loadConfig();
 	static void saveConfig(const config& cfg);
