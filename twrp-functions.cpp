@@ -224,6 +224,44 @@ unsigned long long TWFunc::Get_Folder_Size(const string& Path, bool Display_Erro
 	return dusize;
 }
 
+uint64_t TWFunc::Get_DataMedia_Size(const string& Path, uint64_t& media_size, bool Display_Error)
+{
+	DIR* d;
+	struct dirent* de;
+	struct stat st;
+	uint64_t dusize = 0;
+	uint64_t dutemp = 0;
+
+	d = opendir(Path.c_str());
+	if (d == NULL)
+	{
+		LOGERR("error opening '%s'\n", Path.c_str());
+		LOGERR("error: %s\n", strerror(errno));
+		return 0;
+	}
+
+	while ((de = readdir(d)) != NULL)
+	{
+		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0 && strcmp(de->d_name, "lost+found") != 0)
+		{
+			dutemp = Get_Folder_Size((Path + "/" + de->d_name), Display_Error);
+			dusize += dutemp;
+
+			if(strcmp(de->d_name, "media") == 0)
+				media_size = dutemp;
+
+			dutemp = 0;
+		}
+		else if (de->d_type == DT_REG)
+		{
+			stat((Path + "/" + de->d_name).c_str(), &st);
+			dusize += (uint64_t)(st.st_size);
+		}
+	}
+	closedir(d);
+	return dusize;
+}
+
 bool TWFunc::Path_Exists(string Path) {
 	// Check to see if the Path exists
 	struct stat st;

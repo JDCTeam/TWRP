@@ -1781,9 +1781,8 @@ bool TWPartition::Update_Size(bool Display_Error) {
 
 	if (Has_Data_Media) {
 		if (Mount(Display_Error)) {
-			unsigned long long data_media_used, actual_data;
-			Used = TWFunc::Get_Folder_Size(Mount_Point, Display_Error);
-			data_media_used = TWFunc::Get_Folder_Size(Mount_Point + "/media", Display_Error);
+			uint64_t data_media_used = 0, actual_data;
+			Used = TWFunc::Get_DataMedia_Size(Mount_Point, data_media_used, Display_Error);
 			actual_data = Used - data_media_used;
 			Backup_Size = actual_data;
 			int bak = (int)(Backup_Size / 1048576LLU);
