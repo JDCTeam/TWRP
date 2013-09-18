@@ -392,13 +392,29 @@ bool MultiROM::changeMounts(std::string name)
 	if(M(type) & MASK_INTERNAL)
 		base.replace(0, 5, REALDATA);
 
-	system("sync; umount -d /system /data /cache /sdcard");
+	sync();
 	mkdir(REALDATA, 0777);
 
 	PartitionManager.Copy_And_Push_Context();
 
 	TWPartition *data, *sys, *cache;
-	data = PartitionManager.Find_Partition_By_Path("/data");
+	std::vector<TWPartition*>& parts = PartitionManager.getPartitions();
+	for(std::vector<TWPartition*>::iterator itr = parts.begin(); itr != parts.end();)
+	{
+		if((*itr)->Mount_Point == "/system" || (*itr)->Mount_Point == "/cache")
+		{
+			(*itr)->UnMount(true);
+			delete *itr;
+			itr = parts.erase(itr);
+		}
+		else
+		{
+			if((*itr)->Mount_Point == "/data")
+				data = *itr;
+			++itr;
+		}
+	}
+
 	if(!data)
 	{
 		gui_print("Failed to find data or boot device!\n");
@@ -407,6 +423,8 @@ bool MultiROM::changeMounts(std::string name)
 		PartitionManager.Update_System_Details();
 		return false;
 	}
+
+	data->UnMount(true);
 
 	data->Display_Name = "Realdata";
 	data->Mount_Point = REALDATA;
@@ -441,7 +459,6 @@ bool MultiROM::changeMounts(std::string name)
 	data->Backup_Path = data->Mount_Point = "/data";
 	data->Can_Be_Backed_Up = true;
 
-	std::vector<TWPartition*>& parts = PartitionManager.getPartitions();
 	parts.push_back(data);
 	parts.push_back(sys);
 	parts.push_back(cache);
