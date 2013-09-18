@@ -1069,8 +1069,7 @@
 				<text>Home</text>
 				<image resource="main_button" />
 				<actions>
-					<action function="set">tw_clear_destination=main2</action>
-					<action function="page">clear_vars</action>
+					<action function="multirom_exit_backup">main</action>
 				</actions>
 			</object>
 
