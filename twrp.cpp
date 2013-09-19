@@ -46,6 +46,8 @@ extern "C" {
 #include "openrecoveryscript.hpp"
 #include "variables.h"
 
+#include "multirom.h"
+
 #ifdef HAVE_SELINUX
 #include "selinux/label.h"
 struct selabel_handle *selinux_handle;
@@ -79,6 +81,10 @@ int main(int argc, char **argv) {
 
 	time_t StartupTime = time(NULL);
 	printf("Starting TWRP %s on %s", TW_VERSION_STR, ctime(&StartupTime));
+
+	// MultiROM _might_ have crashed the recovery while the boot device was redirected.
+	// It would be bad to let that as is.
+	MultiROM::failsafeCheckBootPartition();
 
 	// Load default values to set DataManager constants and handle ifdefs
 	DataManager::SetDefaultValues();

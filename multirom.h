@@ -147,6 +147,7 @@ public:
 	static bool disableFlashKernelAct(std::string name, std::string loc);
 	static bool fakeBootPartition(const char *fakeImg);
 	static void restoreBootPartition();
+	static void failsafeCheckBootPartition();
 	static bool compareFiles(const char *path1, const char *path2);
 
 private:

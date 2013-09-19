@@ -288,12 +288,12 @@ bool MultiROM::initBackup(const std::string& name)
 
 void MultiROM::deinitBackup()
 {
-	DataManager::SetValue("multirom_do_backup", 0);
-
 	bool hadInternalStorage = (DataManager::GetStrValue("tw_storage_path").find(REALDATA) == 0);
 
 	restoreBootPartition();
 	restoreMounts();
+
+	DataManager::SetValue("multirom_do_backup", 0);
 
 	if(hadInternalStorage)
 	{
@@ -2003,6 +2003,7 @@ bool MultiROM::fakeBootPartition(const char *fakeImg)
 		gui_print("Current boot sector was used as base for fake boot.img!\n");
 	}
 
+	system_args("echo '%s' > /tmp/mrom_fakebootpart", m_boot_dev.c_str());
 	system_args("mv \"%s\" \"%s\"-orig", m_boot_dev.c_str(), m_boot_dev.c_str());
 	system_args("ln -s \"%s\" \"%s\"", fakeImg, m_boot_dev.c_str());
 	return true;
@@ -2018,6 +2019,28 @@ void MultiROM::restoreBootPartition()
 
 	system_args("rm \"%s\"", m_boot_dev.c_str());
 	system_args("mv \"%s\"-orig \"%s\"", m_boot_dev.c_str(), m_boot_dev.c_str());
+	remove("/tmp/mrom_fakebootpart");
+}
+
+void MultiROM::failsafeCheckBootPartition()
+{
+	std::string dev;
+	if(access("/tmp/mrom_fakebootpart", F_OK) < 0 || TWFunc::read_file("/tmp/mrom_fakebootpart", dev) != 0)
+		return;
+
+	while(isspace(*(dev.end()-1)))
+		dev.erase(dev.end()-1, dev.end());
+
+	struct stat info;
+	int res = lstat(dev.c_str(), &info);
+	if(access((dev + "-orig").c_str(), F_OK) < 0 || (res >= 0 && !S_ISLNK(info.st_mode)))
+		return;
+
+	gui_print("Restoring original boot device!\nRecovery has probably crashed in the middle of MultiROM operation.\n");
+
+	system_args("rm \"%s\"", dev.c_str());
+	system_args("mv \"%s\"-orig \"%s\"", dev.c_str(), dev.c_str());
+	remove("/tmp/mrom_fakebootpart");
 }
 
 bool MultiROM::calculateMD5(const char *path, unsigned char *md5sum/*len: 16*/)
