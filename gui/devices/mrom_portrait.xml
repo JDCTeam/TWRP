@@ -314,7 +314,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_android" var2="0" />
+				<condition var1="tw_multirom_is_ubuntu" var2="1" />
 				<placement x="%col1_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Re-patch init</text>
@@ -333,7 +333,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_android" var2="0" />
+				<condition var1="tw_multirom_is_ubuntu" var2="1" />
 				<placement x="%col2_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Disable flash-kernel</text>

@@ -314,35 +314,47 @@ void MultiROM::deinitBackup()
 int MultiROM::getType(std::string name)
 {
 	std::string path = getRomsPath() + "/" + name + "/";
-	struct stat info;
-
 	if(getRomsPath().find("/mnt") != 0) // Internal memory
 	{
-		if (stat((path + "system").c_str(), &info) >= 0 &&
-			stat((path + "data").c_str(), &info) >= 0 &&
-			stat((path + "cache").c_str(), &info) >= 0)
-			return ROM_ANDROID_INTERNAL;
+		if (access((path + "system").c_str(), F_OK) >= 0 &&
+			access((path + "data").c_str(), F_OK) >= 0 &&
+			access((path + "cache").c_str(), F_OK) >= 0)
+		{
+			if(access((path + "boot").c_str(), F_OK) >= 0)
+				return ROM_ANDROID_INTERNAL;
+			else
+				return ROM_UTOUCH_INTERNAL;
+		}
 
-
-		if(stat((path + "root").c_str(), &info) >= 0)
+		if(access((path + "root").c_str(), F_OK) >= 0)
 			return ROM_UBUNTU_INTERNAL;
 	}
 	else // USB roms
 	{
-		if (stat((path + "system").c_str(), &info) >= 0 &&
-			stat((path + "data").c_str(), &info) >= 0 &&
-			stat((path + "cache").c_str(), &info) >= 0)
-			return ROM_ANDROID_USB_DIR;
+		if (access((path + "system").c_str(), F_OK) >= 0 &&
+			access((path + "data").c_str(), F_OK) >= 0 &&
+			access((path + "cache").c_str(), F_OK) >= 0)
+		{
+			if(access((path + "boot").c_str(), F_OK) >= 0)
+				return ROM_ANDROID_USB_DIR;
+			else
+				return ROM_UTOUCH_USB_DIR;
+		}
 
-		if (stat((path + "system.img").c_str(), &info) >= 0 &&
-			stat((path + "data.img").c_str(), &info) >= 0 &&
-			stat((path + "cache.img").c_str(), &info) >= 0)
-			return ROM_ANDROID_USB_IMG;
+		if (access((path + "system.img").c_str(), F_OK) >= 0 &&
+			access((path + "data.img").c_str(), F_OK) >= 0 &&
+			access((path + "cache.img").c_str(), F_OK) >= 0)
+		{
+			if(access((path + "boot").c_str(), F_OK) >= 0)
+				return ROM_ANDROID_USB_IMG;
+			else
+				return ROM_UTOUCH_USB_IMG;
+		}
 
-		if(stat((path + "root").c_str(), &info) >= 0)
+		if(access((path + "root").c_str(), F_OK) >= 0)
 			return ROM_UBUNTU_USB_DIR;
 
-		if(stat((path + "root.img").c_str(), &info) >= 0)
+		if(access((path + "root.img").c_str(), F_OK) >= 0)
 			return ROM_UBUNTU_USB_IMG;
 	}
 	return ROM_UNKNOWN;

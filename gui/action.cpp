@@ -753,6 +753,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		std::string name = DataManager::GetStrValue("tw_multirom_rom_name");
 		int type = MultiROM::getType(name);
 		DataManager::SetValue("tw_multirom_is_android", (M(type) & MASK_ANDROID) != 0);
+		DataManager::SetValue("tw_multirom_is_ubuntu", (M(type) & MASK_UBUNTU) != 0);
 		if((M(type) & MASK_ANDROID) != 0)
 		{
 			std::string path = MultiROM::getRomsPath() + "/" + name + "/boot.img";
