@@ -412,6 +412,26 @@
 				</actions>
 			</object>
 
+			<object type="text" color="%text_color%">
+				<conditions>
+					<condition var1="tw_multirom_is_android" var2="1" />
+					<condition var1="tw_multirom_has_bootimg" var2="0" />
+				</conditions>
+				<font resource="font" />
+				<placement x="%center_x%" y="%row16_text_y%" placement="5" />
+				<text>(Backup available only if ROM doesn't</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<conditions>
+					<condition var1="tw_multirom_is_android" var2="1" />
+					<condition var1="tw_multirom_has_bootimg" var2="0" />
+				</conditions>
+				<font resource="font" />
+				<placement x="%center_x%" y="%row17_text_y%" placement="5" />
+				<text>share kernel with Internal)</text>
+			</object>
+
 			<object type="action">
 				<touch key="home" />
 				<action function="page">main</action>
