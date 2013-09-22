@@ -1058,10 +1058,10 @@ bool TWFunc::loadTheme()
 	DataManager::SetValue(TW_ENABLE_ROTATION, 0);
 #endif
 
-    std::string base_xml = getDefaultThemePath(gr_get_rotation()) + "ui.xml";
+	std::string base_xml = getDefaultThemePath(gr_get_rotation()) + "ui.xml";
 
-    if (DataManager::GetIntValue(TW_IS_ENCRYPTED))
-    {
+	if (DataManager::GetIntValue(TW_IS_ENCRYPTED))
+	{
 		if(PageManager::LoadPackage ("TWRP", base_xml, "decrypt") != 0)
 		{
 			LOGERR("Failed to load base packages.\n");
@@ -1074,41 +1074,40 @@ bool TWFunc::loadTheme()
 #endif
 			return true;
 		}
-    }
+	}
 
-    // This is for kindle fire apparently.
-    // It is used to flash fire fire fire bootloader
-    if (PageManager::LoadPackage("TWRP", "/script/ui.xml", "main") == 0)
+	// This is for kindle fire apparently.
+	// It is used to flash fire fire fire bootloader
+	if (PageManager::LoadPackage("TWRP", "/script/ui.xml", "main") == 0)
 	{
 		DataManager::SetValue(TW_ENABLE_ROTATION, 0);
 		return true;
 	}
 
-    std::string theme_path = DataManager::GetSettingsStoragePath();
-    if (!PartitionManager.Mount_Settings_Storage(false))
-    {
-        int retry_count = 5;
-        while (retry_count > 0 && !PartitionManager.Mount_Settings_Storage(false))
-        {
-            usleep (500000);
-            retry_count--;
-        }
+	std::string theme_path = DataManager::GetSettingsStoragePath();
+	if (!PartitionManager.Mount_Settings_Storage(false))
+	{
+		int retry_count = 5;
+		while (retry_count > 0 && !PartitionManager.Mount_Settings_Storage(false))
+		{
+			usleep (500000);
+			retry_count--;
+		}
+	}
 
-        if (PartitionManager.Mount_Settings_Storage(false))
-        {
-			theme_path += "/TWRP/theme/ui.zip";
-			if(PageManager::LoadPackage("TWRP", theme_path, "main") == 0)
-			{
-				DataManager::SetValue(TW_ENABLE_ROTATION, 0);
-				return true;
-			}
-        }
-        else
-			LOGERR("Unable to mount %s during GUI startup.\n",
-                   theme_path.c_str ());
-    }
+	if (PartitionManager.Mount_Settings_Storage(false))
+	{
+		theme_path += "/TWRP/theme/ui.zip";
+		if(PageManager::LoadPackage("TWRP", theme_path, "main") == 0)
+		{
+			DataManager::SetValue(TW_ENABLE_ROTATION, 0);
+			return true;
+		}
+	}
+	else
+		LOGERR("Unable to mount %s during GUI startup.\n", theme_path.c_str());
 
-    if(PageManager::LoadPackage("TWRP", base_xml, "main") != 0)
+	if(PageManager::LoadPackage("TWRP", base_xml, "main") != 0)
 	{
 		LOGERR("Failed to load base packages.\n");
 		return false;
