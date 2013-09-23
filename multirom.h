@@ -12,7 +12,6 @@
 #include "twinstall.h"
 #include "minzip/Zip.h"
 #include "roots.h"
-#include "boot_img_hdr.h"
 #include "data.hpp"
 #include "mrominstaller.h"
 
@@ -163,7 +162,6 @@ private:
 	static bool installFromBackup(std::string name, std::string path, int type);
 	static bool extractBackupFile(std::string path, std::string part);
 	static int getType(int os, std::string loc);
-	static void addTrampolineVerToBoot(const char *path);
 	static int getTrampolineVersion();
 
 	static bool ubuntuExtractImage(std::string name, std::string img_path, std::string dest);

@@ -4,6 +4,10 @@
 #include <fcntl.h>
 #include <ctype.h>
 
+// clone libbootimg to /system/extras/ from
+// https://github.com/Tasssadar/libbootimg.git
+#include <libbootimg.h>
+
 #include "multirom.h"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
@@ -832,11 +836,11 @@ exit:
 
 bool MultiROM::injectBoot(std::string img_path)
 {
-	char cmd[256];
+	int rd_cmpr;
+	struct bootimg img;
 	std::string path_trampoline = m_path + "/trampoline";
-	struct stat info;
 
-	if (stat(path_trampoline.c_str(), &info) < 0)
+	if (access(path_trampoline.c_str(), F_OK) < 0)
 	{
 		gui_print("%s not found!\n", path_trampoline.c_str());
 		return false;
@@ -845,67 +849,57 @@ bool MultiROM::injectBoot(std::string img_path)
 	// EXTRACT BOOTIMG
 	gui_print("Extracting boot image...\n");
 	system("rm -r /tmp/boot; mkdir /tmp/boot");
-	sprintf(cmd, "unpackbootimg -i \"%s\" -o /tmp/boot/", img_path.c_str());
-	system(cmd);
 
-	std::string p = img_path.substr(img_path.find_last_of("/")+1);
-	sprintf(cmd, "/tmp/boot/%s-zImage", p.c_str());
-	if(stat(cmd, &info) < 0)
+	if (libbootimg_init_load(&img, img_path.c_str()) < 0 ||
+		libbootimg_dump_ramdisk(&img, "/tmp/boot/initrd.img") < 0)
 	{
 		gui_print("Failed to unpack boot img!\n");
-		return false;
+		goto fail;
 	}
 
 	// DECOMPRESS RAMDISK
 	gui_print("Decompressing ramdisk...\n");
 	system("mkdir /tmp/boot/rd");
-	sprintf(cmd, "/tmp/boot/%s-ramdisk.gz", p.c_str());
-	int rd_cmpr = decompressRamdisk(cmd, "/tmp/boot/rd/");
-	if(rd_cmpr == -1 || stat("/tmp/boot/rd/init", &info) < 0)
+
+	rd_cmpr = decompressRamdisk("/tmp/boot/initrd.img", "/tmp/boot/rd/");
+	if(rd_cmpr == -1 || access("/tmp/boot/rd/init", F_OK) < 0)
 	{
 		gui_print("Failed to decompress ramdisk!\n");
-		return false;
+		goto fail;
 	}
 
 	// COPY TRAMPOLINE
 	gui_print("Copying trampoline...\n");
-	if(stat("/tmp/boot/rd/main_init", &info) < 0)
+	if(access("/tmp/boot/rd/main_init", F_OK) < 0)
 		system("mv /tmp/boot/rd/init /tmp/boot/rd/main_init");
 
-	sprintf(cmd, "cp \"%s\" /tmp/boot/rd/init", path_trampoline.c_str());
-	system(cmd);
+	system_args("cp \"%s\" /tmp/boot/rd/init", path_trampoline.c_str());
 	system("chmod 750 /tmp/boot/rd/init");
 	system("ln -sf ../main_init /tmp/boot/rd/sbin/ueventd");
 	system("ln -sf ../main_init /tmp/boot/rd/sbin/watchdogd");
 
 	// COMPRESS RAMDISK
 	gui_print("Compressing ramdisk...\n");
-	sprintf(cmd, "/tmp/boot/%s-ramdisk.gz", p.c_str());
-	if(!compressRamdisk("/tmp/boot/rd", cmd, rd_cmpr))
-		return false;
+	if(!compressRamdisk("/tmp/boot/rd", "/tmp/boot/initrd.img", rd_cmpr))
+		goto fail;
 
 	// PACK BOOT IMG
 	gui_print("Packing boot image\n");
-	FILE *script = fopen("/tmp/boot/create.sh", "w");
-	if(!script)
+	if(libbootimg_load_ramdisk(&img, "/tmp/boot/initrd.img") < 0)
 	{
-		gui_print("Failed to open script file!\n");
-		return false;
+		gui_print("Failed to load modified ramdisk!\n");
+		goto fail;
 	}
-	std::string base_cmd = "mkbootimg --kernel /tmp/boot/%s-zImage --ramdisk /tmp/boot/%s-ramdisk.gz "
-		"--cmdline \"$(cat /tmp/boot/%s-cmdline)\" --base $(cat /tmp/boot/%s-base) --output /tmp/newboot.img";
-	for(size_t idx = base_cmd.find("%s", 0); idx != std::string::npos; idx = base_cmd.find("%s", idx))
-		base_cmd.replace(idx, 2, p);
 
-	fputs(base_cmd.c_str(), script);
+	img.size = 0; // any size
 #ifdef MR_RD_ADDR
-	fprintf(script, " --ramdiskaddr 0x%X", MR_RD_ADDR);
+	img.hdr.ramdisk_addr = MR_RD_ADDR;
 #endif
-	fputc('\n', script);
-	fclose(script);
 
-	system("chmod 777 /tmp/boot/create.sh && /tmp/boot/create.sh");
-	if(stat("/tmp/newboot.img", &info) < 0)
+	if(img_path != m_boot_dev)
+		snprintf((char*)img.hdr.name, BOOT_NAME_SIZE, "tr_ver%d", getTrampolineVersion());
+
+	if(libbootimg_write_img_and_destroy(&img, "/tmp/newboot.img") < 0)
 	{
 		gui_print("Failed to pack boot image!\n");
 		return false;
@@ -915,12 +909,12 @@ bool MultiROM::injectBoot(std::string img_path)
 	if(img_path == m_boot_dev)
 		system_args("dd bs=4096 if=/tmp/newboot.img of=\"%s\"", m_boot_dev.c_str());
 	else
-	{
-		addTrampolineVerToBoot("/tmp/newboot.img");
-		sprintf(cmd, "cp /tmp/newboot.img \"%s\"", img_path.c_str());;
-		system(cmd);
-	}
+		system_args("cp /tmp/newboot.img \"%s\"", img_path.c_str());
 	return true;
+
+fail:
+	libbootimg_destroy(&img);
+	return false;
 }
 
 int MultiROM::decompressRamdisk(const char *src, const char* dest)
@@ -1197,30 +1191,30 @@ bool MultiROM::createDirs(std::string name, int type)
 
 bool MultiROM::extractBootForROM(std::string base)
 {
-	char cmd[256];
+	char path[256];
+	struct bootimg img;
 
 	gui_print("Extracting contents of boot.img...\n");
-	system_args("rm -r \"%s/boot/\"*", base.c_str());
-	system_args("unpackbootimg -i \"%s/boot.img\" -o \"%s/boot/\"", base.c_str(), base.c_str());
-
-	sprintf(cmd, "%s/boot/boot.img-zImage", base.c_str());
-	if(access(cmd, F_OK) < 0)
+	if(libbootimg_init_load(&img, (base + "/boot.img").c_str()) < 0)
 	{
-		gui_print("Failed to unpack boot.img!\n");
+		gui_print("Failed to load bootimg!\n");
 		return false;
 	}
 
-	static const char *keep[] = { "zImage", "ramdisk.gz", "cmdline", NULL };
-	for(int i = 0; keep[i]; ++i)
-		system_args("mv \"%s/boot/boot.img-%s\" \"%s/boot/%s\"", base.c_str(), keep[i], base.c_str(), keep[i]);
+	system_args("rm -r \"%s/boot/\"*", base.c_str());
+	if(libbootimg_dump_ramdisk(&img, (base + "/boot/initrd.img").c_str()) < 0)
+	{
+		gui_print("Failed to dump ramdisk\n");
+		libbootimg_destroy(&img);
+		return false;
+	}
 
-	system_args("rm \"%s/boot/boot.img-\"*", base.c_str());
+	libbootimg_destroy(&img);
 
 	system("rm -r /tmp/boot");
 	system("mkdir /tmp/boot");
 
-	sprintf(cmd, "%s/boot/ramdisk.gz", base.c_str());
-	int rd_cmpr = decompressRamdisk(cmd, "/tmp/boot");
+	int rd_cmpr = decompressRamdisk((base + "/boot/initrd.img").c_str(), "/tmp/boot");
 	if(rd_cmpr == -1 || access("/tmp/boot/init", F_OK) < 0)
 	{
 		gui_print("Failed to extract ramdisk!\n");
@@ -1239,8 +1233,8 @@ bool MultiROM::extractBootForROM(std::string base)
 		system_args("cp -a /tmp/boot/%s \"%s/boot/\"", cp_f[i], base.c_str());
 
 	// check if main_init exists
-	sprintf(cmd, "%s/boot/main_init", base.c_str());
-	if(access(cmd, F_OK) < 0)
+	sprintf(path, "%s/boot/main_init", base.c_str());
+	if(access(path, F_OK) < 0)
 		system_args("mv \"%s/boot/init\" \"%s/boot/main_init\"", base.c_str(), base.c_str());
 
 	system("rm -r /tmp/boot");
@@ -1881,6 +1875,7 @@ void MultiROM::umountBaseImages(const std::string& base)
 bool MultiROM::ubuntuTouchProcessBoot(const std::string& root)
 {
 	int rd_cmpr;
+	struct bootimg img;
 
 	gui_print("Processing boot.img for Ubuntu Touch\n");
 	system("rm /tmp/boot.img");
@@ -1895,17 +1890,21 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root)
 	// EXTRACT BOOTIMG
 	gui_print("Extracting boot image...\n");
 	system("rm -r /tmp/boot; mkdir /tmp/boot");
-	system("unpackbootimg -i /tmp/boot.img -o /tmp/boot/");
-	if(access("/tmp/boot/boot.img-zImage", F_OK) < 0)
+
+	if (libbootimg_init_load(&img, "/tmp/boot.img") < 0 ||
+		libbootimg_dump_ramdisk(&img, "/tmp/boot/initrd.img") < 0 ||
+		libbootimg_dump_kernel(&img, "/tmp/boot/zImage") < 0)
 	{
 		gui_print("Failed to unpack boot img!\n");
 		goto fail_inject;
 	}
 
+	libbootimg_destroy(&img);
+
 	// DECOMPRESS RAMDISK
 	gui_print("Decompressing ramdisk...\n");
 	system("mkdir /tmp/boot/rd");
-	rd_cmpr = decompressRamdisk("/tmp/boot/boot.img-ramdisk.gz", "/tmp/boot/rd/");
+	rd_cmpr = decompressRamdisk("/tmp/boot/initrd.img", "/tmp/boot/rd/");
 	if(rd_cmpr == -1 || access("/tmp/boot/rd/init", F_OK) < 0)
 	{
 		gui_print("Failed to decompress ramdisk!\n");
@@ -1917,18 +1916,19 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root)
 
 	// COMPRESS RAMDISK
 	gui_print("Compressing ramdisk...\n");
-	if(!compressRamdisk("/tmp/boot/rd", "/tmp/boot/boot.img-ramdisk.gz", rd_cmpr))
+	if(!compressRamdisk("/tmp/boot/rd", "/tmp/boot/initrd.img", rd_cmpr))
 		return false;
 
 	// DEPLOY
-	system_args("cp /tmp/boot/boot.img-ramdisk.gz %s/initrd.img", root.c_str());
-	system_args("cp /tmp/boot/boot.img-zImage %s/zImage", root.c_str());
+	system_args("cp /tmp/boot/initrd.img %s/initrd.img", root.c_str());
+	system_args("cp /tmp/boot/zImage %s/zImage", root.c_str());
 
 	system("rm /tmp/boot.img");
 	system("rm -r /tmp/boot");
 	return true;
 
 fail_inject:
+	libbootimg_destroy(&img);
 	system("rm /tmp/boot.img");
 	system("rm -r /tmp/boot");
 	return false;
@@ -2091,30 +2091,6 @@ bool MultiROM::compareFiles(const char *path1, const char *path2)
 			return false;
 
 	return true;
-}
-
-void MultiROM::addTrampolineVerToBoot(const char *path)
-{
-	struct boot_img_hdr hdr;
-
-	FILE *f = fopen(path, "r+");
-	if(!f)
-		return;
-
-	fread(&hdr, sizeof(struct boot_img_hdr), 1, f);
-	fseek(f, 0, SEEK_SET);
-
-	int ver = getTrampolineVersion();
-	if(ver == -1)
-	{
-		fclose(f);
-		return;
-	}
-
-	snprintf((char*)hdr.name, BOOT_NAME_SIZE, "tr_ver%d", ver);
-
-	fwrite(&hdr, sizeof(struct boot_img_hdr), 1, f);
-	fclose(f);
 }
 
 int MultiROM::getTrampolineVersion()
