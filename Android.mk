@@ -77,7 +77,7 @@ LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libtar libblk
 # clone libbootimg to /system/extras/ from
 # https://github.com/Tasssadar/libbootimg.git
 LOCAL_STATIC_LIBRARIES += libbootimg
-LOCAL_C_INCLUDES += system/extras/libbootimg
+LOCAL_C_INCLUDES += system/extras/libbootimg/include
 
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
 LOCAL_SHARED_LIBRARIES += libsparse
