@@ -559,6 +559,7 @@ bool MultiROM::changeMounts(std::string name)
 		data->UnMount(false);
 		sys->UnMount(false);
 		cache->UnMount(false);
+		realdata->UnMount(false);
 		PartitionManager.Pop_Context();
 		PartitionManager.Update_System_Details();
 		return false;
@@ -575,7 +576,7 @@ void MultiROM::restoreMounts()
 	gui_print("Restoring mounts...\n");
 
 	system("mv /sbin/umount.bak /sbin/umount");
-	system("sync; umount -d /system /data /cache /sdcard");
+	system("sync; umount -d /system /data /cache /sdcard /realdata");
 
 	PartitionManager.Pop_Context();
 	PartitionManager.Update_System_Details();

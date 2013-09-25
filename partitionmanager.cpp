@@ -1908,13 +1908,8 @@ bool TWPartitionManager::Push_Context()
 	sync();
 
 	for(size_t i = 0; i < Partitions.size(); ++i)
-	{
-		if(Partitions[i]->Is_Mounted() && !Partitions[i]->UnMount(false))
-		{
-			LOGERR("Failed to unmount %s during context push!\n", Partitions[i]->Mount_Point.c_str());
-			return false;
-		}
-	}
+		if(Partitions[i]->Is_Mounted())
+			LOGINFO("Partition %s is mounted during TWPartitionManager::Push_Context()\n", Partitions[i]->Mount_Point.c_str());
 
 	std::vector<TWPartition*> parts;
 	Partitions.swap(parts);
@@ -1942,8 +1937,8 @@ bool TWPartitionManager::Pop_Context()
 
 	for(size_t i = 0; i < Partitions.size(); ++i)
 	{
-		if(Partitions[i]->Is_Mounted() && !Partitions[i]->UnMount(false))
-			LOGERR("Failed to unmount %s during context pop!\n", Partitions[i]->Mount_Point.c_str());
+		if(Partitions[i]->Is_Mounted())
+			LOGINFO("Partition %s is mounted during TWPartitionManager::Pop_Context()\n", Partitions[i]->Mount_Point.c_str());
 		delete Partitions[i];
 	}
 
