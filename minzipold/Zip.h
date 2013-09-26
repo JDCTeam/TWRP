@@ -222,6 +222,8 @@ bool mzExtractRecursive(const ZipArchive *pArchive,
         void (*callback)(const char *fn, void*), void *cookie,
         struct selabel_handle *sehnd);
 
+int read_data(ZipArchive *zip, const ZipEntry *entry, char** ppData, int* pLength);
+
 #ifdef __cplusplus
 }
 #endif
