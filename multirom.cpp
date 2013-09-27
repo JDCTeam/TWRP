@@ -879,6 +879,10 @@ bool MultiROM::injectBoot(std::string img_path)
 	system("ln -sf ../main_init /tmp/boot/rd/sbin/ueventd");
 	system("ln -sf ../main_init /tmp/boot/rd/sbin/watchdogd");
 
+#ifdef MR_USE_MROM_FSTAB
+	system_args("cp \"%s/mrom.fstab\" /tmp/boot/rd/mrom.fstab", m_path.c_str());
+#endif
+
 	// COMPRESS RAMDISK
 	gui_print("Compressing ramdisk...\n");
 	if(!compressRamdisk("/tmp/boot/rd", "/tmp/boot/initrd.img", rd_cmpr))
