@@ -97,6 +97,7 @@ ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
     RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/fsck.f2fs
     RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/fibmap.f2fs
 endif
+RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/bbootimg
 
 TWRP_AUTOGEN := $(intermediates)/teamwin
 
