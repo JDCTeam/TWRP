@@ -76,15 +76,23 @@ std::string MultiROM::getPath()
 
 void MultiROM::findPath()
 {
-	TWPartition *part = PartitionManager.Find_Partition_By_Path("/boot");
-	if(!part)
+	TWPartition *boot = PartitionManager.Find_Partition_By_Path("/boot");
+	TWPartition *data = PartitionManager.Find_Partition_By_Path("/data");
+	if(!boot || !data)
 	{
-		gui_print("Failed to find boot device!\n");
+		gui_print("Failed to find boot or data device!\n");
 		m_path.clear();
 		return;
 	}
 
-	m_boot_dev = part->Actual_Block_Device;
+	if(!data->Mount(true))
+	{
+		gui_print("Failed to mount /data partition!\n");
+		m_path.clear();
+		return;
+	}
+
+	m_boot_dev = boot->Actual_Block_Device;
 
 	static const char *paths[] = {
 		"/data/media/multirom",
