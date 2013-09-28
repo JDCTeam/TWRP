@@ -663,7 +663,6 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	if(!prepareZIP(file, format_system))
 		return false;
 
-	gui_print("Changing mountpoints\n");
 	if(!changeMounts(rom))
 	{
 		gui_print("Failed to change mountpoints!\n");
@@ -685,7 +684,7 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 
 	if(format_system)
 	{
-		gui_print("Clearing ROM's /system dir");
+		gui_print("Clearing ROM's /system dir\n");
 		system("chattr -R -i /system/*; rm -rf /system/*");
 	}
 
@@ -706,12 +705,49 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	return (status == INSTALL_SUCCESS);
 }
 
+static char *strstr_wildcard(const char *s, const char *find)
+{
+	size_t i,x;
+
+	if(*s == 0 || *find == 0)
+		return NULL;
+
+	while(*s)
+	{
+		i = 0;
+		x = 0;
+		while(s[i])
+		{
+			if(find[x] == '?')
+			{
+				if(find[x+1] != s[i+1])
+				{
+					if(find[x+1] == s[i])
+						++x;
+					else
+						break;
+				}
+			}
+			else if(find[x] != s[i])
+				break;
+
+			++i;
+			++x;
+
+			if(find[x] == 0)
+				return ((char*)s);
+		}
+		++s;
+	}
+	return NULL;
+}
+
 bool MultiROM::skipLine(const char *line)
 {
-	if(strstr(line, "mount"))
+	if(strstr(line, "mount") && !strstr(line, "ui_print"))
 	{
 		if (strstr(line, "run_program") ||
-			(!strstr(line, "bin/mount") && !strstr(line, "symlink(")))
+			(!strstr_wildcard(line, "/system/?bin/?mount") && !strstr(line, "symlink(")))
 		{
 			return true;
 		}
@@ -740,7 +776,7 @@ bool MultiROM::prepareZIP(std::string& file, bool& format_system)
 	int script_len;
 	char* script_data;
 	int itr = 0;
-	char *token;
+	char *token, *p;
 	bool changed = false;
 
 	char cmd[512];
@@ -804,7 +840,9 @@ bool MultiROM::prepareZIP(std::string& file, bool& format_system)
 	token = strtok(script_data, "\n");
 	while(token)
 	{
-		if(!skipLine(token))
+		for(p = token; isspace(*p); ++p);
+
+		if(*p == 0 || *p == '#' || !skipLine(p))
 		{
 			fputs(token, new_script);
 			fputc('\n', new_script);
@@ -813,10 +851,7 @@ bool MultiROM::prepareZIP(std::string& file, bool& format_system)
 		{
 			changed = true;
 
-			while(isspace(*token))
-				++token;
-
-			if (strstr(token, "format") == token && strstr(token, "/system"))
+			if (strstr(p, "format") == p && strstr(p, "/system"))
 				format_system = true;
 
 		}
