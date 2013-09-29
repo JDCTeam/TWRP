@@ -11,6 +11,8 @@
 #include "multirom.h"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
+#include "twinstall.h"
+#include "minzip/Zip.h"
 
 extern "C" {
 #include "twcommon.h"
@@ -1799,7 +1801,7 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 			gui_print("Restoring archive #%i...\n", ++index);
 
 			sprintf(cmd, "cd / && gnutar -xf \"%s\"", full_path.c_str());
-			LOGI("Restore cmd: %s\n", cmd);
+			LOGINFO("Restore cmd: %s\n", cmd);
 			system(cmd);
 
 			sprintf(split_index, "%03i", index);
@@ -1815,7 +1817,7 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 	else
 	{
 		sprintf(cmd, "cd /%s && gnutar -xf \"%s\"", part.c_str(), full_path.c_str());
-		LOGI("Restore cmd: %s\n", cmd);
+		LOGINFO("Restore cmd: %s\n", cmd);
 		system(cmd);
 	}
 	return true;
@@ -1865,7 +1867,7 @@ const base_folder& MultiROM::addBaseFolder(const std::string& name, int min, int
 
 const base_folder& MultiROM::addBaseFolder(const base_folder& b)
 {
-	LOGI("MROMInstaller: base folder: %s (min: %dMB def: %dMB)\n", b.name.c_str(), b.min_size, b.size);
+	LOGINFO("MROMInstaller: base folder: %s (min: %dMB def: %dMB)\n", b.name.c_str(), b.min_size, b.size);
 	return m_base_folders.insert(std::make_pair<std::string, base_folder>(b.name, b)).first->second;
 }
 

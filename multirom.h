@@ -9,9 +9,6 @@
 #include <errno.h>
 #include <sys/mount.h>
 
-#include "twinstall.h"
-#include "minzip/Zip.h"
-#include "roots.h"
 #include "data.hpp"
 #include "mrominstaller.h"
 
