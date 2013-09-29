@@ -758,8 +758,11 @@ bool MultiROM::skipLine(const char *line)
 	if(strstr(line, "format"))
 		return true;
 
-	if (strstr(line, "boot.img") || strstr(line, m_boot_dev.c_str()))
+	if (strstr(line, "boot.img") || strstr(line, m_boot_dev.c_str()) ||
+		strstr(line, "bbootimg") || strstr(line, "zImage"))
+	{
 		return false;
+	}
 
 	if(strstr(line, "/dev/block/platform/"))
 		return true;
