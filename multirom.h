@@ -113,6 +113,7 @@ public:
 	static void setInstaller(MROMInstaller *i);
 	static MROMInstaller *getInstaller(MROMInstaller *i);
 	static std::string getBootDev() { return m_boot_dev; }
+	static void updateSupportedSystems();
 
 	static void clearBaseFolders();
 	static const base_folder& addBaseFolder(const std::string& name, int min, int def);

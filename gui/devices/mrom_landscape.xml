@@ -1045,7 +1045,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="2" />
+				<conditions>
+					<condition var1="tw_multirom_ubuntu_supported" var2="1" />
+					<condition var1="tw_multirom_type" var2="2" />
+				</conditions>
 				<placement x="%mrom_ubuntu_desktop_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
@@ -1058,7 +1061,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="2" op="!="/>
+				<conditions>
+					<condition var1="tw_multirom_ubuntu_supported" var2="1" />
+					<condition var1="tw_multirom_type" var2="2" op="!="/>
+				</conditions>
 				<placement x="%mrom_ubuntu_desktop_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
@@ -1071,7 +1077,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="4" />
+				<conditions>
+					<condition var1="tw_multirom_touch_supported" var2="1" />
+					<condition var1="tw_multirom_type" var2="4" />
+				</conditions>
 				<placement x="%mrom_ubuntu_touch_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu Touch</text>
@@ -1084,7 +1093,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_type" var2="4" op="!="/>
+				<conditions>
+					<condition var1="tw_multirom_touch_supported" var2="1" />
+					<condition var1="tw_multirom_type" var2="4" op="!="/>
+				</conditions>
 				<placement x="%mrom_ubuntu_touch_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu Touch</text>

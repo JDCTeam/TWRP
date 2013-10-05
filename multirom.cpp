@@ -187,6 +187,17 @@ std::string MultiROM::listInstallLocations()
 	return res;
 }
 
+void MultiROM::updateSupportedSystems()
+{
+	char p[64];
+
+	snprintf(p, sizeof(p), "%s/infos/ubuntu.txt", m_path.c_str());
+	DataManager::SetValue("tw_multirom_ubuntu_supported", (access(p, F_OK) >= 0) ? 1 : 0);
+
+	snprintf(p, sizeof(p), "%s/infos/ubuntu_touch.txt", m_path.c_str());
+	DataManager::SetValue("tw_multirom_touch_supported", (access(p, F_OK) >= 0) ? 1 : 0);
+}
+
 bool MultiROM::move(std::string from, std::string to)
 {
 	std::string roms = getRomsPath();

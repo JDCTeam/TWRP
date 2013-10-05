@@ -807,6 +807,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	{
 		DataManager::SetValue("tw_multirom_install_loc_list", MultiROM::listInstallLocations());
 		DataManager::SetValue("tw_multirom_install_loc", INTERNAL_MEM_LOC_TXT);
+		MultiROM::updateSupportedSystems();
 		return gui_changePage("multirom_add");
 	}
 
