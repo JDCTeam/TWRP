@@ -1820,7 +1820,7 @@
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
-				<text>*-armel+grouper.zip (smaller one)</text>
+				<text>*-armel+%tw_device_name%.zip (smaller one)</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
@@ -1833,7 +1833,7 @@
 				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%row5_text_y%" />
 				<font resource="font" color="%button_text_color%" />
-				<text>*-armel+grouper.zip</text>
+				<text>*-armel+%tw_device_name%.zip</text>
 				<image resource="main_button" />
 				<actions>
 					<action function="set">tw_multirom_touch_add_zip=1</action>
