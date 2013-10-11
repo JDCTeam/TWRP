@@ -1097,10 +1097,10 @@ bool TWFunc::loadTheme()
 
 	if (PartitionManager.Mount_Settings_Storage(false))
 	{
-		theme_path += "/TWRP/theme/ui.zip";
+		theme_path += getZIPThemePath(gr_get_rotation());
 		if(PageManager::LoadPackage("TWRP", theme_path, "main") == 0)
 		{
-			DataManager::SetValue(TW_ENABLE_ROTATION, 0);
+			DataManager::SetValue(TW_ENABLE_ROTATION, 1);
 			return true;
 		}
 	}
@@ -1126,7 +1126,7 @@ bool TWFunc::reloadTheme()
 	std::string theme_path = DataManager::GetSettingsStoragePath();
 	if (PartitionManager.Mount_By_Path(theme_path.c_str(), 1))
 	{
-		theme_path += "/TWRP/theme/ui.zip";
+		theme_path += getZIPThemePath(gr_get_rotation());
 		if(PageManager::ReloadPackage("TWRP", theme_path) == 0)
 		{
 			DataManager::SetValue(TW_ENABLE_ROTATION, 0);
@@ -1156,5 +1156,17 @@ std::string TWFunc::getDefaultThemePath(int rotation)
 		return "/res/";
 	else
 		return "/res/landscape/";
+#endif
+}
+
+std::string TWFunc::getZIPThemePath(int rotation)
+{
+#ifndef TW_HAS_LANDSCAPE
+	return "/TWRP/theme/ui.zip";
+#else
+	if(rotation%180 == 0)
+		return "/TWRP/theme/ui.zip";
+	else
+		return "/TWRP/theme/ui_landscape.zip";
 #endif
 }
