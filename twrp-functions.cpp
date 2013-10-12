@@ -1111,7 +1111,9 @@ bool TWFunc::loadTheme()
 		theme_path += getZIPThemePath(gr_get_rotation());
 		if(PageManager::LoadPackage("TWRP", theme_path, "main") == 0)
 		{
+#ifdef TW_HAS_LANDSCAPE
 			DataManager::SetValue(TW_ENABLE_ROTATION, 1);
+#endif
 			return true;
 		}
 	}
@@ -1140,7 +1142,9 @@ bool TWFunc::reloadTheme()
 		theme_path += getZIPThemePath(gr_get_rotation());
 		if(PageManager::ReloadPackage("TWRP", theme_path) == 0)
 		{
-			DataManager::SetValue(TW_ENABLE_ROTATION, 0);
+#ifdef TW_HAS_LANDSCAPE
+			DataManager::SetValue(TW_ENABLE_ROTATION, 1);
+#endif
 			return true;
 		}
 	}
