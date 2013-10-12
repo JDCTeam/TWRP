@@ -715,6 +715,14 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 
 	restoreBootPartition();
 	restoreMounts();
+
+	std::string sideload_path = DataManager::GetStrValue("tw_mrom_sideloaded");
+	if(!sideload_path.empty())
+	{
+		unlink(sideload_path.c_str());
+		DataManager::SetValue("tw_mrom_sideloaded", "");
+	}
+
 	return (status == INSTALL_SUCCESS);
 }
 

@@ -1101,6 +1101,37 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			}
 		}
 
+		if(function == "multirom_sideload")
+		{
+			int ret = 0;
+
+			operation_start("Sideload");
+			string Sideload_File;
+
+			if (!PartitionManager.Mount_Current_Storage(true)) {
+				operation_end(1, simulate);
+				return 0;
+			}
+			Sideload_File = DataManager::GetCurrentStoragePath() + "/sideload.zip";
+			if (TWFunc::Path_Exists(Sideload_File))
+				unlink(Sideload_File.c_str());
+
+			gui_print("Starting ADB sideload feature...\n");
+			ret = apply_from_adb(Sideload_File.c_str());
+			DataManager::SetValue("tw_has_cancel", 0); // Remove cancel button from gui now that the zip install is going to start
+			if (ret != 0) {
+				operation_end(1, simulate);
+				return 0;
+			} else {
+				operation_end(0, simulate);
+
+				DataManager::SetValue("tw_filename", Sideload_File);
+				DataManager::SetValue("tw_mrom_sideloaded", Sideload_File);
+				gui_changePage(DataManager::GetStrValue("tw_mrom_next_page"));
+				return 0;
+			}
+		}
+
 		if (function == "fileexists")
 		{
 			struct stat st;
