@@ -40,6 +40,7 @@ public:
 	static void check_and_run_script(const char* script_file, const char* display_name); // checks for the existence of a script, chmods it to 755, then runs it
 	static int Exec_Cmd(const string& cmd, string &result); //execute a command and return the result as a string by reference
 	static int Exec_Cmd(const string& cmd); //execute a command
+	static int Exec_Cmd_Show_Output(const string& cmd);
 	static int removeDir(const string path, bool removeParent); //recursively remove a directory
 	static int copy_file(string src, string dst, int mode); //copy file from src to dst with mode permissions
 	static unsigned int Get_D_Type_From_Stat(string Path);                      // Returns a dirent dt_type value using stat instead of dirent

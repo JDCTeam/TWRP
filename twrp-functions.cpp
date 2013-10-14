@@ -78,6 +78,27 @@ int TWFunc::Exec_Cmd(const string& cmd) {
 	}
 }
 
+int TWFunc::Exec_Cmd_Show_Output(const string& cmd) {
+	FILE* exec;
+	char buffer[130];
+	int ret = 0;
+	exec = __popen(cmd.c_str(), "r");
+
+	if (!exec)
+		return -1;
+
+	while(!feof(exec)) {
+		memset(buffer, 0, sizeof(buffer));
+		if (fgets(buffer, 128, exec) != NULL) {
+			buffer[128] = '\n';
+			buffer[129] = NULL;
+			gui_print(buffer);
+		}
+	}
+	ret = __pclose(exec);
+	return ret;
+}
+
 // Returns "file.name" from a full /path/to/file.name
 string TWFunc::Get_Filename(string Path) {
 	size_t pos = Path.find_last_of("/");

@@ -148,6 +148,7 @@ public:
 	static bool compareFiles(const char *path1, const char *path2);
 
 private:
+public:
 	static void findPath();
 	static bool changeMounts(std::string base);
 	static void restoreMounts();
