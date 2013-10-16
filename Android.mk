@@ -291,6 +291,9 @@ endif
 ifeq ($(MR_USE_MROM_FSTAB),true)
     LOCAL_CFLAGS += -DMR_USE_MROM_FSTAB
 endif
+ifeq ($(TARGET_DEVICE),mako)
+    LOCAL_CFLAGS += -DMR_MAKO_UTOUCH_HACK
+endif
 
 include $(BUILD_EXECUTABLE)
 

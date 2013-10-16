@@ -2059,6 +2059,12 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 		"        mkdir -p \\$LXC_ROOTFS_PATH/\\$dir\\n"
 		"        mount -n -o bind,recurse /mrom_dir/\\$dir \\$LXC_ROOTFS_PATH/\\$dir\\n"
 		"    done\\n"
+#ifdef MR_MAKO_UTOUCH_HACK // temp hack, I will switch to system-image installation soon
+		"    mkdir -p \\$LXC_ROOTFS_PATH/persist\\n"
+		"    mkdir -p \\$LXC_ROOTFS_PATH/firmware\\n"
+		"    mount -n -t ext4 -o nosuid,nodev,barrier=1,data=ordered,nodelalloc /dev/mmcblk0p20 \\$LXC_ROOTFS_PATH/persist\\n"
+		"    mount -n -t vfat -o ro,uid=1000,gid=1000,dmask=227,fmask=337 /dev/mmcblk0p1 \\$LXC_ROOTFS_PATH/firmware\\n"
+#endif
 		"fi\\n"
 		"\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
 
