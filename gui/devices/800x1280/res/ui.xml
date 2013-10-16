@@ -624,6 +624,14 @@
 			</object>
 
 			<object type="checkbox">
+				<placement x="%col1_x%" y="%row9_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Inject MultiROM after installation.</text>
+				<data variable="tw_auto_inject_mrom" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="checkbox">
 				<condition var1="tw_has_injecttwrp" var2="1" />
 				<placement x="%col1_x%" y="%row10_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -3889,6 +3897,14 @@
 				<font resource="font" color="%text_color%" />
 				<text>Wipe Cache.</text>
 				<data variable="tw_wipe_cache" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
+			<object type="checkbox">
+				<placement x="%col1_x%" y="%row4_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Inject MultiROM after installation.</text>
+				<data variable="tw_auto_inject_mrom" />
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 

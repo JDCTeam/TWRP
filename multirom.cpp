@@ -902,7 +902,7 @@ exit:
 	return false;
 }
 
-bool MultiROM::injectBoot(std::string img_path)
+bool MultiROM::injectBoot(std::string img_path, bool only_if_older)
 {
 	int rd_cmpr;
 	struct bootimg img;
@@ -934,6 +934,20 @@ bool MultiROM::injectBoot(std::string img_path)
 	{
 		gui_print("Failed to decompress ramdisk!\n");
 		goto fail;
+	}
+
+	if(only_if_older)
+	{
+		int tr_rd_ver = getTrampolineVersion("/tmp/boot/rd/init", true);
+		int tr_my_ver = getTrampolineVersion();
+
+		if(tr_rd_ver >= tr_my_ver && tr_my_ver > 0)
+		{
+			gui_print("No need to inject bootimg, it has the newest trampoline (v%d)\n", tr_rd_ver);
+			libbootimg_destroy(&img);
+			system("rm -r /tmp/boot");
+			return true;
+		}
 	}
 
 	// COPY TRAMPOLINE
@@ -2167,10 +2181,28 @@ bool MultiROM::compareFiles(const char *path1, const char *path2)
 
 int MultiROM::getTrampolineVersion()
 {
+	return getTrampolineVersion(m_path + "/trampoline", false);
+}
+
+int MultiROM::getTrampolineVersion(const std::string& path, bool silent)
+{
 	std::string result = "";
-	if(TWFunc::Exec_Cmd(m_path + "/trampoline -v", result) != 0)
+	char cmd[384];
+
+	// check the return value, if the -v is cut off, bad things happen.
+	if (snprintf(cmd, sizeof(cmd),
+		"strings \"%s\" | grep -q 'Running trampoline' && \"%s\" -v",
+		path.c_str(), path.c_str()) >= (int)sizeof(cmd))
 	{
-		gui_print("Failed to get trampoline version!\n");
+		if(!silent)
+			gui_print("Failed to get trampoline version, path is too long!\n");
+		return -1;
+	}
+
+	if(TWFunc::Exec_Cmd(cmd, result) != 0)
+	{
+		if(!silent)
+			gui_print("Failed to get trampoline version!\n");
 		return -1;
 	}
 	return atoi(result.c_str());

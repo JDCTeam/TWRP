@@ -126,7 +126,7 @@ public:
 	static bool erase(std::string name);
 
 	static bool flashZip(std::string rom, std::string file);
-	static bool injectBoot(std::string img_path);
+	static bool injectBoot(std::string img_path, bool only_if_older = false);
 	static bool extractBootForROM(std::string base);
 	static int copyBoot(std::string& orig, std::string rom);
 	static bool wipe(std::string name, std::string what);
@@ -161,6 +161,7 @@ private:
 	static bool extractBackupFile(std::string path, std::string part);
 	static int getType(int os, std::string loc);
 	static int getTrampolineVersion();
+	static int getTrampolineVersion(const std::string& path, bool silent = false);
 
 	static bool ubuntuExtractImage(std::string name, std::string img_path, std::string dest);
 	static bool patchUbuntuInit(std::string rootDir);

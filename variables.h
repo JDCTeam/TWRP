@@ -153,6 +153,7 @@
 #define TW_MILITARY_TIME            "tw_military_time"
 #define TW_ROTATION                 "tw_rotation"
 #define TW_ENABLE_ROTATION          "tw_enable_rotation"
+#define TW_AUTO_INJECT_MROM         "tw_auto_inject_mrom"
 
 // Also used:
 //   tw_boot_is_mountable
