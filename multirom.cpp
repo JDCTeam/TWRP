@@ -597,7 +597,16 @@ void MultiROM::restoreMounts()
 	gui_print("Restoring mounts...\n");
 
 	system("mv /sbin/umount.bak /sbin/umount");
-	system("sync; umount -d /system /data /cache /sdcard /realdata");
+	// script might have mounted it several times over, we _have_ to umount it all
+	system("sync;"
+		"i=0;"
+		"while"
+		"  [ -n \"$(grep -e /data -e /system -e /realdata -e /cache -e /sdcard /etc/mtab)\" ] &&"
+		"  [ $i -le 10 ];"
+		"do"
+		"    i=$(( $i + 1 ));"
+		"    umount -d /system /data /cache /sdcard /realdata;"
+		"done");
 
 	PartitionManager.Pop_Context();
 	PartitionManager.Update_System_Details();
