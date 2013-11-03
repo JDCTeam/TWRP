@@ -13,6 +13,8 @@
 #include "twrp-functions.hpp"
 #include "twinstall.h"
 #include "minzip/Zip.h"
+#include "variables.h"
+#include "openrecoveryscript.hpp"
 
 extern "C" {
 #include "twcommon.h"
@@ -539,6 +541,19 @@ bool MultiROM::changeMounts(std::string name)
 	realdata->Storage_Path.replace(0, sizeof("/data")-1, REALDATA);
 	realdata->Can_Be_Backed_Up = false;
 
+	if(DataManager::GetStrValue(TW_INTERNAL_PATH).find("/data/media") == 0)
+	{
+		std::string path = DataManager::GetStrValue(TW_INTERNAL_PATH);
+		path.replace(0, sizeof("/data")-1, REALDATA);
+		DataManager::SetValue(TW_INTERNAL_PATH, path);
+	}
+	if(DataManager::GetStrValue("tw_storage_path").find("/data/media") == 0)
+	{
+		std::string path = DataManager::GetStrValue("tw_storage_path");
+		path.replace(0, sizeof("/data")-1, REALDATA);
+		DataManager::SetValue("tw_storage_path", path);
+	}
+
 	if(!data->Mount(true))
 	{
 		gui_print("Failed to mount realdata, canceling!\n");
@@ -572,6 +587,7 @@ bool MultiROM::changeMounts(std::string name)
 	parts.push_back(cache);
 
 	PartitionManager.Output_Partition_Logging();
+	PartitionManager.Update_Storage_Sizes();
 	PartitionManager.Write_Fstab();
 
 	if(!data->Mount(true) || !sys->Mount(true) || !cache->Mount(true))
@@ -613,6 +629,19 @@ void MultiROM::restoreMounts()
 
 	PartitionManager.Mount_By_Path("/data", true);
 	PartitionManager.Mount_By_Path("/cache", true);
+
+	if(DataManager::GetStrValue(TW_INTERNAL_PATH).find("/realdata/media") == 0)
+	{
+		std::string path = DataManager::GetStrValue(TW_INTERNAL_PATH);
+		path.replace(0, sizeof("/realdata")-1, "/data");
+		DataManager::SetValue(TW_INTERNAL_PATH, path);
+	}
+	if(DataManager::GetStrValue("tw_storage_path").find("/realdata/media") == 0)
+	{
+		path = DataManager::GetStrValue("tw_storage_path");
+		path.replace(0, sizeof("/realdata")-1, "/data");
+		DataManager::SetValue("tw_storage_path", path);
+	}
 
 	restoreROMPath();
 }
@@ -2221,4 +2250,105 @@ int MultiROM::getTrampolineVersion(const std::string& path, bool silent)
 		return -1;
 	}
 	return atoi(result.c_str());
+}
+
+void MultiROM::executeCacheScripts()
+{
+	if(m_path.empty() && !folderExists())
+		return;
+
+	DIR *roms = opendir(m_curr_roms_path.c_str());
+	if(!roms)
+	{
+		LOGERR("Failed to open ROMs folder %s\n", m_curr_roms_path.c_str());
+		return;
+	}
+
+	struct dirent *dt;
+	struct stat info;
+	struct script_t  {
+		unsigned long mtime;
+		std::string name;
+		int type;
+	} script;
+
+	script.mtime = 0;
+
+	while((dt = readdir(roms)))
+	{
+		if(dt->d_type != DT_DIR || dt->d_name[0] == '.')
+			continue;
+
+		int type = M(getType(dt->d_name));
+		std::string path = m_curr_roms_path + dt->d_name + "/";
+
+		if(type & MASK_ANDROID)
+		{
+			if(stat((path + SCRIPT_FILE_CACHE).c_str(), &info) < 0)
+				continue;
+
+			if(info.st_mtime > script.mtime)
+			{
+				script.mtime = info.st_mtime;
+				script.name = dt->d_name;
+				script.type = type;
+			}
+		}
+		else if(type & MASK_UTOUCH)
+		{
+			if(stat((path + UBUNTU_COMMAND_FILE).c_str(), &info) < 0)
+				continue;
+
+			if(info.st_mtime > script.mtime)
+			{
+				script.mtime = info.st_mtime;
+				script.name = dt->d_name;
+				script.type = type;
+			}
+		}
+	}
+	closedir(roms);
+
+	if(script.mtime == 0)
+		return;
+
+	LOGINFO("Running script for ROM %s, type %d\n", script.name.c_str(), script.type);
+
+	if(!changeMounts(script.name))
+		return;
+
+	std::string boot = getRomsPath() + script.name;
+	normalizeROMPath(boot);
+	boot += "/boot.img";
+
+	translateToRealdata(boot);
+
+	if(!fakeBootPartition(boot.c_str()))
+	{
+		restoreMounts();
+		return;
+	}
+
+	if(script.type & MASK_ANDROID)
+		OpenRecoveryScript::Run_OpenRecoveryScript();
+	else if(script.type & MASK_UTOUCH)
+		startSystemImageUpgrader();
+
+	restoreBootPartition();
+	restoreMounts();
+}
+
+void MultiROM::startSystemImageUpgrader()
+{
+	DataManager::SetValue("tw_back", "main");
+	DataManager::SetValue("tw_action", "system-image-upgrader");
+	DataManager::SetValue("tw_has_action2", "0");
+	DataManager::SetValue("tw_action2", "");
+	DataManager::SetValue("tw_action2_param", "");
+	DataManager::SetValue("tw_action_text1", "Running system-image-upgrader");
+	DataManager::SetValue("tw_action_text2", "");
+	DataManager::SetValue("tw_complete_text1", "system-image-upgrader Complete");
+	DataManager::SetValue("tw_has_cancel", 0);
+	DataManager::SetValue("tw_show_reboot", 0);
+	gui_startPage("action_page");
 }

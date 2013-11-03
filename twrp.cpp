@@ -236,26 +236,16 @@ int main(int argc, char **argv) {
 
 	// Read the settings file
 	DataManager::ReadSettingsFile();
-	// Run any outstanding OpenRecoveryScript
-	if (DataManager::GetIntValue(TW_IS_ENCRYPTED) == 0 && (TWFunc::Path_Exists(SCRIPT_FILE_TMP) || TWFunc::Path_Exists(SCRIPT_FILE_CACHE))) {
-		OpenRecoveryScript::Run_OpenRecoveryScript();
-	}
 
 	gui_rotate(DataManager::GetIntValue(TW_ROTATION));
 
-	if(TWFunc::Path_Exists("/cache/recovery/mrom_ubuntu_touch_update"))
+	// Run any outstanding OpenRecoveryScript
+	if(DataManager::GetIntValue(TW_IS_ENCRYPTED) == 0)
 	{
-		DataManager::SetValue("tw_back", "main");
-		DataManager::SetValue("tw_action", "system-image-upgrader");
-		DataManager::SetValue("tw_has_action2", "0");
-		DataManager::SetValue("tw_action2", "");
-		DataManager::SetValue("tw_action2_param", "");
-		DataManager::SetValue("tw_action_text1", "Running system-image-upgrader");
-		DataManager::SetValue("tw_action_text2", "");
-		DataManager::SetValue("tw_complete_text1", "system-image-upgrader Complete");
-		DataManager::SetValue("tw_has_cancel", 0);
-		DataManager::SetValue("tw_show_reboot", 0);
-		gui_startPage("action_page");
+		if ((TWFunc::Path_Exists(SCRIPT_FILE_TMP) || TWFunc::Path_Exists(SCRIPT_FILE_CACHE)))
+			OpenRecoveryScript::Run_OpenRecoveryScript();
+		else
+			MultiROM::executeCacheScripts();
 	}
 
 	// Launch the main GUI

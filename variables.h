@@ -184,4 +184,6 @@
 #define SCRIPT_FILE_TMP "/tmp/openrecoveryscript"
 #define TMP_LOG_FILE "/tmp/recovery.log"
 
+#define UBUNTU_COMMAND_FILE "/cache/recovery/ubuntu_command"
+
 #endif  // _VARIABLES_HEADER_

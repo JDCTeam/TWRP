@@ -218,6 +218,7 @@ public:
 	void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
 	int Fstab_Processed();                                                    // Indicates if the fstab has been processed or not
 	void Output_Storage_Fstab();                                              // Creates a /cache/recovery/storage.fstab file with a list of all potential storage locations for app use
+	void Update_Storage_Sizes();
 
 	const std::vector<TWPartition*>& getPartitions() const { return Partitions; }
 	std::vector<TWPartition*>& getPartitions() { return Partitions; }

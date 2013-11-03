@@ -280,7 +280,6 @@
 				<actions>
 					<action function="set">tw_multirom_new_rom_name=%tw_multirom_rom_name%</action>
 					<action function="set">tw_fileexists=0</action>
-					<action function="fake_mounts" >%tw_multirom_rom_name%</action>
 					<action function="page">multirom_rename</action>
 				</actions>
 			</object>
@@ -534,10 +533,7 @@
 
 			<object type="action">
 				<touch key="back" />
-				<actions>
-					<action function="restore_mounts" />
-					<action function="page">multirom_manage</action>
-				</actions>
+				<action function="page">multirom_manage</action>
 			</object>
 
 			<object type="template" name="footer" />

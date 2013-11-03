@@ -970,20 +970,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return gui_changePage(arg);
 	}
 
-	if(function == "fake_mounts")
-	{
-		MultiROM::changeMounts(arg);
-		MultiROM::fakeBootPartition("/tmp/boot.img");
-		return 0;
-	}
-
-	if(function == "restore_mounts")
-	{
-		MultiROM::restoreBootPartition();
-		MultiROM::restoreMounts();
-		return 0;
-	}
-
 	if (isThreaded)
 	{
 		if (function == "timeout")
@@ -1152,20 +1138,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		{
 			operation_start("system-image-upgrader");
 
-			std::string name;
-			TWFunc::read_file("/cache/recovery/mrom_ubuntu_touch_update", name);
-
-			while(isspace(name.at(name.size()-1)))
-				name.erase(name.end()-1);
-
 			int res = 0;
-			gui_print("running system-image-upgrader for ROM %s\n", name.c_str());
-			if(MultiROM::folderExists() && MultiROM::changeMounts(name))
-			{
-				MultiROM::fakeBootPartition("/tmp/boot.img");
 
+			if(TWFunc::Path_Exists(UBUNTU_COMMAND_FILE))
+			{
 				gui_print("\n");
-				res = TWFunc::Exec_Cmd_Show_Output("system-image-upgrader /cache/recovery/ubuntu_command");
+				res = TWFunc::Exec_Cmd_Show_Output("system-image-upgrader "UBUNTU_COMMAND_FILE);
 				gui_print("\n");
 
 				if(res != 0)
@@ -1173,11 +1151,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					gui_print("system-image-upgrader failed\n");
 					res = 1;
 				}
-
-				MultiROM::restoreBootPartition();
-				MultiROM::restoreMounts();
-			}else
-				LOGERR("Failed to changeMounts");
+			} else
+				gui_print("Could not find system-image-upgrader command file: "UBUNTU_COMMAND_FILE"\n");
 
 			DataManager::SetValue("tw_page_done", 1);
 			operation_end(res, simulate);

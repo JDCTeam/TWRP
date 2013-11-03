@@ -1319,6 +1319,16 @@ void TWPartitionManager::Update_System_Details(void) {
 		}
 	}
 	DataManager::SetValue(TW_BACKUP_DATA_SIZE, data_size);
+
+	Update_Storage_Sizes();
+
+	if (!Write_Fstab())
+		LOGERR("Error creating fstab\n");
+	return;
+}
+
+void TWPartitionManager::Update_Storage_Sizes()
+{
 	string current_storage_path = DataManager::GetCurrentStoragePath();
 	TWPartition* FreeStorage = Find_Partition_By_Path(current_storage_path);
 	if (FreeStorage != NULL) {
@@ -1358,9 +1368,6 @@ void TWPartitionManager::Update_System_Details(void) {
 	} else {
 		LOGINFO("Unable to find storage partition '%s'.\n", current_storage_path.c_str());
 	}
-	if (!Write_Fstab())
-		LOGERR("Error creating fstab\n");
-	return;
 }
 
 int TWPartitionManager::Decrypt_Device(string Password) {

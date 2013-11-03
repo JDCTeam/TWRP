@@ -45,6 +45,7 @@ enum
 #define MASK_IMAGES (M(ROM_ANDROID_USB_IMG) | M(ROM_UBUNTU_USB_IMG) | M(ROM_INSTALLER_USB_IMG) | M(ROM_UTOUCH_USB_IMG))
 #define MASK_INTERNAL (M(ROM_ANDROID_INTERNAL) | M(ROM_UBUNTU_INTERNAL) | M(ROM_INSTALLER_INTERNAL) | M(ROM_UTOUCH_INTERNAL))
 #define MASK_INSTALLER (M(ROM_INSTALLER_INTERNAL) | M(ROM_INSTALLER_USB_DIR) | M(ROM_INSTALLER_USB_IMG))
+#define MASK_UTOUCH (M(ROM_UTOUCH_INTERNAL) | M(ROM_UTOUCH_USB_IMG) | M(ROM_UTOUCH_USB_DIR))
 
 #define INTERNAL_NAME "Internal"
 #define REALDATA "/realdata"
@@ -147,8 +148,10 @@ public:
 	static void failsafeCheckBootPartition();
 	static bool compareFiles(const char *path1, const char *path2);
 
+	static void executeCacheScripts();
+	static void startSystemImageUpgrader();
+
 private:
-public:
 	static void findPath();
 	static bool changeMounts(std::string base);
 	static void restoreMounts();
