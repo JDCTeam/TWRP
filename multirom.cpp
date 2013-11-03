@@ -597,7 +597,16 @@ void MultiROM::restoreMounts()
 	gui_print("Restoring mounts...\n");
 
 	system("mv /sbin/umount.bak /sbin/umount");
-	system("sync; umount -d /system /data /cache /sdcard /realdata");
+	// script might have mounted it several times over, we _have_ to umount it all
+	system("sync;"
+		"i=0;"
+		"while"
+		"  [ -n \"$(grep -e /data -e /system -e /realdata -e /cache -e /sdcard /etc/mtab)\" ] &&"
+		"  [ $i -le 10 ];"
+		"do"
+		"    i=$(( $i + 1 ));"
+		"    umount -d /system /data /cache /sdcard /realdata;"
+		"done");
 
 	PartitionManager.Pop_Context();
 	PartitionManager.Update_System_Details();
@@ -902,7 +911,7 @@ exit:
 	return false;
 }
 
-bool MultiROM::injectBoot(std::string img_path)
+bool MultiROM::injectBoot(std::string img_path, bool only_if_older)
 {
 	int rd_cmpr;
 	struct bootimg img;
@@ -934,6 +943,20 @@ bool MultiROM::injectBoot(std::string img_path)
 	{
 		gui_print("Failed to decompress ramdisk!\n");
 		goto fail;
+	}
+
+	if(only_if_older)
+	{
+		int tr_rd_ver = getTrampolineVersion("/tmp/boot/rd/init", true);
+		int tr_my_ver = getTrampolineVersion();
+
+		if(tr_rd_ver >= tr_my_ver && tr_my_ver > 0)
+		{
+			gui_print("No need to inject bootimg, it has the newest trampoline (v%d)\n", tr_rd_ver);
+			libbootimg_destroy(&img);
+			system("rm -r /tmp/boot");
+			return true;
+		}
 	}
 
 	// COPY TRAMPOLINE
@@ -2045,6 +2068,12 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 		"        mkdir -p \\$LXC_ROOTFS_PATH/\\$dir\\n"
 		"        mount -n -o bind,recurse /mrom_dir/\\$dir \\$LXC_ROOTFS_PATH/\\$dir\\n"
 		"    done\\n"
+#ifdef MR_MAKO_UTOUCH_HACK // temp hack, I will switch to system-image installation soon
+		"    mkdir -p \\$LXC_ROOTFS_PATH/persist\\n"
+		"    mkdir -p \\$LXC_ROOTFS_PATH/firmware\\n"
+		"    mount -n -t ext4 -o nosuid,nodev,barrier=1,data=ordered,nodelalloc /dev/mmcblk0p20 \\$LXC_ROOTFS_PATH/persist\\n"
+		"    mount -n -t vfat -o ro,uid=1000,gid=1000,dmask=227,fmask=337 /dev/mmcblk0p1 \\$LXC_ROOTFS_PATH/firmware\\n"
+#endif
 		"fi\\n"
 		"\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
 
@@ -2167,10 +2196,28 @@ bool MultiROM::compareFiles(const char *path1, const char *path2)
 
 int MultiROM::getTrampolineVersion()
 {
+	return getTrampolineVersion(m_path + "/trampoline", false);
+}
+
+int MultiROM::getTrampolineVersion(const std::string& path, bool silent)
+{
 	std::string result = "";
-	if(TWFunc::Exec_Cmd(m_path + "/trampoline -v", result) != 0)
+	char cmd[384];
+
+	// check the return value, if the -v is cut off, bad things happen.
+	if (snprintf(cmd, sizeof(cmd),
+		"strings \"%s\" | grep -q 'Running trampoline' && \"%s\" -v",
+		path.c_str(), path.c_str()) >= (int)sizeof(cmd))
 	{
-		gui_print("Failed to get trampoline version!\n");
+		if(!silent)
+			gui_print("Failed to get trampoline version, path is too long!\n");
+		return -1;
+	}
+
+	if(TWFunc::Exec_Cmd(cmd, result) != 0)
+	{
+		if(!silent)
+			gui_print("Failed to get trampoline version!\n");
 		return -1;
 	}
 	return atoi(result.c_str());

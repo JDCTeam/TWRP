@@ -1055,6 +1055,11 @@ int GUIFileSelector::GetFileList(const std::string folder)
 	std::sort(mFolderList.begin(), mFolderList.end(), fileSort);
 	std::sort(mFileList.begin(), mFileList.end(), fileSort);
 
+	int lines = (mRenderH - mHeaderH) / (actualLineHeight) - 1;
+	int totalSize = (mShowFolders ? mFolderList.size() : 0) + (mShowFiles ? mFileList.size() : 0);
+	if(mStart > totalSize - lines)
+		mStart = std::max(0, totalSize - lines);
+
 	return 0;
 }
 

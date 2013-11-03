@@ -1235,6 +1235,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					gui_print("TWRP injection complete.\n");
 				}
 			}
+
+			if(DataManager::GetIntValue(TW_AUTO_INJECT_MROM) == 1 && MultiROM::folderExists())
+			{
+				gui_print("Injecting boot.img with MultiROM...\n");
+				MultiROM::injectBoot(MultiROM::getBootDev(), true);
+			}
+
 			PartitionManager.Update_System_Details();
 			operation_end(ret_val, simulate);
 			return 0;
@@ -1670,6 +1677,11 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 						}
 						gui_print("TWRP injection complete.\n");
 					}
+				}
+				if(DataManager::GetIntValue(TW_AUTO_INJECT_MROM) == 1 && MultiROM::folderExists())
+				{
+					gui_print("Injecting boot.img with MultiROM...\n");
+					MultiROM::injectBoot(MultiROM::getBootDev(), true);
 				}
 			}
 			operation_end(ret, simulate);

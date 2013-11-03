@@ -963,6 +963,8 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_ENABLE_ROTATION, make_pair("0", 0)));
 
 	mConstValues.insert(make_pair("tw_device_name", TARGET_DEVICE));
+
+	mValues.insert(make_pair(TW_AUTO_INJECT_MROM, make_pair("1", 1)));
 }
 
 // Magic Values
