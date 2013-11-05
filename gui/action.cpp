@@ -1151,6 +1151,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					gui_print("system-image-upgrader failed\n");
 					res = 1;
 				}
+				DataManager::SetValue("system-image-upgrader-res", res);
 			} else
 				gui_print("Could not find system-image-upgrader command file: "UBUNTU_COMMAND_FILE"\n");
 

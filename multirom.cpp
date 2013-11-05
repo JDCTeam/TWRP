@@ -638,7 +638,7 @@ void MultiROM::restoreMounts()
 	}
 	if(DataManager::GetStrValue("tw_storage_path").find("/realdata/media") == 0)
 	{
-		path = DataManager::GetStrValue("tw_storage_path");
+		std::string path = DataManager::GetStrValue("tw_storage_path");
 		path.replace(0, sizeof("/realdata")-1, "/data");
 		DataManager::SetValue("tw_storage_path", path);
 	}
@@ -1723,7 +1723,7 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 			if(!flash_res)
 				break;
 
-			if(!ubuntuTouchProcessBoot(root))
+			if(!ubuntuTouchProcessBoot(root, "ubuntu-touch-init"))
 				break;
 
 			if(!ubuntuTouchProcess(root, name))
@@ -1996,14 +1996,14 @@ void MultiROM::umountBaseImages(const std::string& base)
 	rmdir(base.c_str());
 }
 
-bool MultiROM::ubuntuTouchProcessBoot(const std::string& root)
+bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const char *init_folder)
 {
 	int rd_cmpr;
 	struct bootimg img;
 
 	gui_print("Processing boot.img for Ubuntu Touch\n");
 	system("rm /tmp/boot.img");
-	system_args("mv %s/boot.img /tmp/boot.img", root.c_str());
+	system_args("cp %s/boot.img /tmp/boot.img", root.c_str());
 
 	if(access("/tmp/boot.img", F_OK) < 0)
 	{
@@ -2023,8 +2023,6 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root)
 		goto fail_inject;
 	}
 
-	libbootimg_destroy(&img);
-
 	// DECOMPRESS RAMDISK
 	gui_print("Decompressing ramdisk...\n");
 	system("mkdir /tmp/boot/rd");
@@ -2036,7 +2034,7 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root)
 	}
 
 	// COPY INIT FILES
-	system_args("cp -ra %s/ubuntu-touch-init/* /tmp/boot/rd/", m_path.c_str());
+	system_args("cp -ra %s/%s/* /tmp/boot/rd/", m_path.c_str(), init_folder);
 
 	// COMPRESS RAMDISK
 	gui_print("Compressing ramdisk...\n");
@@ -2046,6 +2044,14 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root)
 	// DEPLOY
 	system_args("cp /tmp/boot/initrd.img %s/initrd.img", root.c_str());
 	system_args("cp /tmp/boot/zImage %s/zImage", root.c_str());
+
+	if (libbootimg_load_ramdisk(&img, "/tmp/boot/initrd.img") < 0 ||
+		libbootimg_load_kernel(&img, "/tmp/boot/zImage") < 0 ||
+		libbootimg_write_img_and_destroy(&img, (root + "/boot.img").c_str()) < 0)
+	{
+		gui_print("Failed to deploy boot.img!\n");
+		goto fail_inject;
+	}
 
 	system("rm /tmp/boot.img");
 	system("rm -r /tmp/boot");
@@ -2332,10 +2338,23 @@ void MultiROM::executeCacheScripts()
 	if(script.type & MASK_ANDROID)
 		OpenRecoveryScript::Run_OpenRecoveryScript();
 	else if(script.type & MASK_UTOUCH)
+	{
 		startSystemImageUpgrader();
+		system("umount -d /cache/system");
+	}
 
 	restoreBootPartition();
 	restoreMounts();
+
+	if(script.type & MASK_UTOUCH)
+	{
+		ubuntuTouchProcessBoot(getRomsPath() + "/" + script.name, "ubuntu-touch-sysimage-init");
+		if(DataManager::GetIntValue("system-image-upgrader-res") == 0)
+		{
+			gui_print("\nSUCCESS, rebooting...\n");
+			TWFunc::tw_reboot(rb_system);
+		}
+	}
 }
 
 void MultiROM::startSystemImageUpgrader()
@@ -2345,8 +2364,8 @@ void MultiROM::startSystemImageUpgrader()
 	DataManager::SetValue("tw_has_action2", "0");
 	DataManager::SetValue("tw_action2", "");
 	DataManager::SetValue("tw_action2_param", "");
-	DataManager::SetValue("tw_action_text1", "Running system-image-upgrader");
-	DataManager::SetValue("tw_action_text2", "");
+	DataManager::SetValue("tw_action_text1", "Ubuntu Touch");
+	DataManager::SetValue("tw_action_text2", "Running system-image-upgrader");
 	DataManager::SetValue("tw_complete_text1", "system-image-upgrader Complete");
 	DataManager::SetValue("tw_has_cancel", 0);
 	DataManager::SetValue("tw_show_reboot", 0);
