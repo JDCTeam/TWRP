@@ -951,7 +951,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	if (function == "multirom_list_loc_selected")
 	{
 		std::string loc = DataManager::GetStrValue("tw_multirom_install_loc");
-		MultiROM::setRomsPath(loc);
+		if(!MultiROM::setRomsPath(loc))
+			MultiROM::setRomsPath(INTERNAL_MEM_LOC_TXT);
 		DataManager::SetValue("tw_multirom_folder", MultiROM::getRomsPath());
 		return gui_changePage("multirom_list");
 	}

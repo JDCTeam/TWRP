@@ -20,3 +20,17 @@ include $(BUILD_EXECUTABLE)
 # local module name
 ALL_MODULES.$(LOCAL_MODULE).INSTALLED := \
     $(ALL_MODULES.$(LOCAL_MODULE).INSTALLED) $(SYMLINKS)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := exfat-fuse-static
+LOCAL_MODULE_TAGS := eng
+LOCAL_CFLAGS = -D_FILE_OFFSET_BITS=64
+LOCAL_SRC_FILES = main.c
+LOCAL_C_INCLUDES += $(LOCAL_PATH) \
+					bootable/recovery/exfat/libexfat \
+					bootable/recovery/fuse/include
+LOCAL_STATIC_LIBRARIES += libfusetwrp libz libc libexfat
+LOCAL_FORCE_STATIC_EXECUTABLE := true
+
+include $(BUILD_EXECUTABLE)

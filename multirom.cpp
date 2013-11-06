@@ -117,35 +117,43 @@ void MultiROM::findPath()
 	m_path.clear();
 }
 
-void MultiROM::setRomsPath(std::string loc)
+bool MultiROM::setRomsPath(std::string loc)
 {
 	umount("/mnt"); // umount last thing mounted there
 
 	if(loc.compare(INTERNAL_MEM_LOC_TXT) == 0)
 	{
 		m_curr_roms_path = m_path + "/roms/";
-		return;
+		return true;
 	}
 
 	size_t idx = loc.find(' ');
 	if(idx == std::string::npos)
 	{
 		m_curr_roms_path.clear();
-		return;
+		return false;
 	}
 
 	std::string dev = loc.substr(0, idx);
 	mkdir("/mnt", 0777); // in case it does not exist
 
 	char cmd[256];
-	if(loc.find("(ntfs") == std::string::npos)
-		sprintf(cmd, "mount %s /mnt", dev.c_str());
-	else
+	if(loc.find("(ntfs") != std::string::npos)
 		sprintf(cmd, "%s/ntfs-3g %s /mnt", m_path.c_str(), dev.c_str());
-	system(cmd);
+	else if(loc.find("(exfat)") != std::string::npos)
+		sprintf(cmd, "%s/exfat-fuse -o big_writes,max_read=131072,max_write=131072,nonempty %s /mnt", m_path.c_str(), dev.c_str());
+	else
+		sprintf(cmd, "mount %s /mnt", dev.c_str());
+
+	if(system(cmd) != 0)
+	{
+		LOGERR("Failed to mount location \"%s\"!\n", loc.c_str());
+		return false;
+	}
 
 	m_curr_roms_path = "/mnt/multirom-"TARGET_DEVICE"/";
 	mkdir("/mnt/multirom-"TARGET_DEVICE"/", 0777);
+	return true;
 }
 
 std::string MultiROM::listInstallLocations()
@@ -1586,7 +1594,11 @@ bool MultiROM::mountUbuntuImage(std::string name, std::string& dest)
 
 bool MultiROM::addROM(std::string zip, int os, std::string loc)
 {
-	MultiROM::setRomsPath(loc);
+	if(!MultiROM::setRomsPath(loc))
+	{
+		MultiROM::setRomsPath(INTERNAL_MEM_LOC_TXT);
+		return false;
+	}
 
 	std::string name;
 	if(m_installer)

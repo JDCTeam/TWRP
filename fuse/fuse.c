@@ -235,10 +235,10 @@ static int fuse_load_so_name(const char *soname)
 	}
 
 	fuse_current_so = so;
-	so->handle = dlopen(soname, RTLD_NOW);
+	//so->handle = dlopen(soname, RTLD_NOW);
 	fuse_current_so = NULL;
 	if (!so->handle) {
-		fprintf(stderr, "fuse: %s\n", dlerror());
+		fprintf(stderr, "fuse: %s\n", /*dlerror()*/ "");
 		goto err;
 	}
 	if (!so->ctr) {
@@ -250,7 +250,7 @@ static int fuse_load_so_name(const char *soname)
 
 err:
 	if (so->handle)
-		dlclose(so->handle);
+		;//dlclose(so->handle);
 	free(so);
 	return -1;
 }
@@ -313,7 +313,7 @@ static void fuse_put_module(struct fuse_module *m)
 				else
 					mp = &(*mp)->next;
 			}
-			dlclose(so->handle);
+			//dlclose(so->handle);
 			free(so);
 		}
 	}

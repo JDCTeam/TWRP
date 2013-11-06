@@ -140,7 +140,7 @@ public:
 	static bool addROM(std::string zip, int os, std::string loc);
 
 	static std::string listInstallLocations();
-	static void setRomsPath(std::string loc);
+	static bool setRomsPath(std::string loc);
 	static bool patchInit(std::string name);
 	static bool disableFlashKernelAct(std::string name, std::string loc);
 	static bool fakeBootPartition(const char *fakeImg);
