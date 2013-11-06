@@ -319,6 +319,25 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_is_touch" var2="1" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Re-patch init</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_touch_patch_init</action>
+					<action function="set">tw_text1=Patch Ubuntu Touch's init?</action>
+					<action function="set">tw_action_text1=Patching...</action>
+					<action function="set">tw_complete_text1=Init patched</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_ubuntu" var2="1" />
 				<placement x="%col3_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />

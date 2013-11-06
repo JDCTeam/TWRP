@@ -150,6 +150,7 @@ public:
 
 	static void executeCacheScripts();
 	static void startSystemImageUpgrader();
+	static bool ubuntuTouchProcessBoot(const std::string& root, const char *init_folder);
 
 private:
 	static void findPath();
@@ -180,7 +181,6 @@ private:
 	static bool mountBaseImages(std::string base, std::string& dest);
 	static void umountBaseImages(const std::string& base);
 
-	static bool ubuntuTouchProcessBoot(const std::string& root, const char *init_folder);
 	static bool ubuntuTouchProcess(const std::string& root, const std::string& name);
 
 	static int system_args(const char *fmt, ...);

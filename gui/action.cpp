@@ -756,6 +756,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		int type = MultiROM::getType(name);
 		DataManager::SetValue("tw_multirom_is_android", (M(type) & MASK_ANDROID) != 0);
 		DataManager::SetValue("tw_multirom_is_ubuntu", (M(type) & MASK_UBUNTU) != 0);
+		DataManager::SetValue("tw_multirom_is_touch", (M(type) & MASK_UTOUCH) != 0);
 		if((M(type) & MASK_ANDROID) != 0)
 		{
 			std::string path = MultiROM::getRomsPath() + "/" + name + "/boot.img";
@@ -1056,6 +1057,28 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		{
 			operation_start("Patching");
 			int op_status = !MultiROM::patchInit(DataManager::GetStrValue("tw_multirom_rom_name"));
+			operation_end(op_status, simulate);
+			return 0;
+		}
+
+		if (function == "multirom_touch_patch_init")
+		{
+			operation_start("Patching");
+			int op_status = 1;
+			std::string root = MultiROM::getRomsPath() + DataManager::GetStrValue("tw_multirom_rom_name") + "/";
+			if(access((root + "/boot.img").c_str(), F_OK) >= 0)
+			{
+				std::string type;
+				if(access((root + "/data/system.img").c_str(), F_OK) >= 0)
+					type = "ubuntu-touch-sysimage-init";
+				else
+					type = "ubuntu-touch-init";
+
+				gui_print("Patching ubuntu with %s\n", type.c_str());
+				op_status = !MultiROM::ubuntuTouchProcessBoot(root, type.c_str());
+			}
+			else
+				LOGERR("This ubuntu installation does not have boot.img, it can't be patched.\n");
 			operation_end(op_status, simulate);
 			return 0;
 		}

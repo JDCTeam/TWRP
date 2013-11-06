@@ -2046,7 +2046,7 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const char *init_
 	}
 
 	// COPY INIT FILES
-	system_args("cp -ra %s/%s/* /tmp/boot/rd/", m_path.c_str(), init_folder);
+	system_args("cp -ra %s/%s/* /tmp/boot/rd/; chmod 755 /tmp/boot/rd/init", m_path.c_str(), init_folder);
 
 	// COMPRESS RAMDISK
 	gui_print("Compressing ramdisk...\n");
@@ -2360,7 +2360,7 @@ void MultiROM::executeCacheScripts()
 
 	if(script.type & MASK_UTOUCH)
 	{
-		ubuntuTouchProcessBoot(getRomsPath() + "/" + script.name, "ubuntu-touch-sysimage-init");
+		ubuntuTouchProcessBoot(getRomsPath() + script.name, "ubuntu-touch-sysimage-init");
 		if(DataManager::GetIntValue("system-image-upgrader-res") == 0)
 		{
 			gui_print("\nSUCCESS, rebooting...\n");
