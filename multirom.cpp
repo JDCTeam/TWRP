@@ -139,9 +139,9 @@ bool MultiROM::setRomsPath(std::string loc)
 
 	char cmd[256];
 	if(loc.find("(ntfs") != std::string::npos)
-		sprintf(cmd, "%s/ntfs-3g %s /mnt", m_path.c_str(), dev.c_str());
+		sprintf(cmd, "ntfs-3g %s /mnt", dev.c_str());
 	else if(loc.find("(exfat)") != std::string::npos)
-		sprintf(cmd, "%s/exfat-fuse -o big_writes,max_read=131072,max_write=131072,nonempty %s /mnt", m_path.c_str(), dev.c_str());
+		sprintf(cmd, "exfat-fuse -o big_writes,max_read=131072,max_write=131072,nonempty %s /mnt", dev.c_str());
 	else
 		sprintf(cmd, "mount %s /mnt", dev.c_str());
 
