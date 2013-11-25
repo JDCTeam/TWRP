@@ -274,6 +274,12 @@ if [ ! -e /data/SWAP.img ]; then
     mkswap /data/SWAP.img
 fi
 
+# Ensure we have sane permissions
+chmod 600 /data/system.img
+chown 0:0 /data/system.img
+chmod 600 /data/SWAP.img
+chown 0:0 /data/SWAP.img
+
 touch /data/.last_update || true
 sync
 echo "Done upgrading: $(date)"
