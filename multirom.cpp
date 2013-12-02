@@ -2166,6 +2166,11 @@ bool MultiROM::fakeBootPartition(const char *fakeImg)
 	system_args("echo '%s' > /tmp/mrom_fakebootpart", m_boot_dev.c_str());
 	system_args("mv \"%s\" \"%s\"-orig", m_boot_dev.c_str(), m_boot_dev.c_str());
 	system_args("ln -s \"%s\" \"%s\"", fakeImg, m_boot_dev.c_str());
+
+#ifdef BOARD_BOOTIMAGE_PARTITION_SIZE
+	// because of bloody abootimg
+	truncate(fakeImg, BOARD_BOOTIMAGE_PARTITION_SIZE);
+#endif
 	return true;
 }
 
