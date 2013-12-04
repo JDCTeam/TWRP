@@ -976,8 +976,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	{
 		if (function == "timeout")
 		{
+#ifndef TW_NO_SCREEN_TIMEOUT
 			blankTimer.blankScreen();
 			return 0;
+#endif
 		}
 	
 		if (function == "multirom_delete")
