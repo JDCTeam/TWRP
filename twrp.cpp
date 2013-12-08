@@ -82,6 +82,11 @@ int main(int argc, char **argv) {
 	time_t StartupTime = time(NULL);
 	printf("Starting TWRP %s on %s", TW_VERSION_STR, ctime(&StartupTime));
 
+#ifdef HAVE_SELINUX
+	printf("Setting SELinux to permissive\n");
+	TWFunc::write_file("/sys/fs/selinux/enforce", "0");
+#endif
+
 	// MultiROM _might_ have crashed the recovery while the boot device was redirected.
 	// It would be bad to let that as is.
 	MultiROM::failsafeCheckBootPartition();

@@ -537,7 +537,7 @@ int TWFunc::read_file(string fn, vector<string>& results) {
 	return -1;
 }
 
-int TWFunc::write_file(string fn, string& line) {
+int TWFunc::write_file(string fn, const string& line) {
 	FILE *file;
 	file = fopen(fn.c_str(), "w");
 	if (file != NULL) {
