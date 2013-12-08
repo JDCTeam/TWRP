@@ -97,6 +97,7 @@ public:
 
 		std::string current_rom;
 		int auto_boot_seconds;
+		int auto_boot_type;
 		std::string auto_boot_rom;
 		int colors;
 		int brightness;

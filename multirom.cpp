@@ -54,6 +54,7 @@ MultiROM::config::config()
 	current_rom = INTERNAL_NAME;
 	auto_boot_seconds = 5;
 	auto_boot_rom = INTERNAL_NAME;
+	auto_boot_type = 0;
 	colors = 0;
 	brightness = 40;
 	hide_internal = 0;
@@ -460,6 +461,8 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.auto_boot_seconds = atoi(val.c_str());
 			else if(name == "auto_boot_rom")
 				cfg.auto_boot_rom = val;
+			else if(name == "auto_boot_type")
+				cfg.auto_boot_type = atoi(val.c_str());
 			else if(name == "colors")
 				cfg.colors = atoi(val.c_str());
 			else if(name == "brightness")
@@ -487,6 +490,7 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "current_rom=%s\n", cfg.current_rom.c_str());
 	fprintf(f, "auto_boot_seconds=%d\n", cfg.auto_boot_seconds);
 	fprintf(f, "auto_boot_rom=%s\n", cfg.auto_boot_rom.c_str());
+	fprintf(f, "auto_boot_type=%d\n", cfg.auto_boot_type);
 	fprintf(f, "colors=%d\n", cfg.colors);
 	fprintf(f, "brightness=%d\n", cfg.brightness);
 	fprintf(f, "enable_adb=%d\n", cfg.enable_adb);

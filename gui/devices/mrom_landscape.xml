@@ -871,8 +871,70 @@
 				</actions>
 			</object>
 
-			<object type="listbox">
+			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<placement x="%col3_x%" y="%row10_text_y%" />
+				<font resource="font"/>
+				<text>Type:</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_type" var2="0" />
+				<placement x="%mrom_boot_delay_sub_x%" y="%row10_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Select ROM</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_type=0</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_type" var2="0" op="!=" />
+				<placement x="%mrom_boot_delay_sub_x%" y="%row10_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Select ROM</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_type=0</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<placement x="%col4_x%" y="%row10_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Use last booted ROM</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_type=1</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_type" var2="1" op="!=" />
+				<placement x="%col4_x%" y="%row10_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Use last booted ROM</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_type=1</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="listbox">
+				<conditions>
+					<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+					<condition var1="tw_multirom_auto_boot_type" var2="0" />
+				</conditions>
 				<highlight color="%fileselector_highlight_color%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
@@ -884,6 +946,34 @@
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<data name="tw_multirom_auto_boot_rom" />
 				<items>tw_multirom_roms</items>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<font resource="font" />
+				<placement x="%mrom_boot_rom_x%" y="%row5_text_y%" />
+				<text>MultiROM will remember the last ROM</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<font resource="font" />
+				<placement x="%mrom_boot_rom_x%" y="%row6_text_y%" />
+				<text>you've booted and auto-boot it on next</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<font resource="font" />
+				<placement x="%mrom_boot_rom_x%" y="%row7_text_y%" />
+				<text>reboot, unless you select different one.</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<font resource="font" />
+				<placement x="%mrom_boot_rom_x%" y="%row8_text_y%" />
+				<text>Only works with ROMs in internal memory.</text>
 			</object>
 
 			<object type="button">
