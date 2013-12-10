@@ -154,6 +154,7 @@
 #define TW_ROTATION                 "tw_rotation"
 #define TW_ENABLE_ROTATION          "tw_enable_rotation"
 #define TW_AUTO_INJECT_MROM         "tw_auto_inject_mrom"
+#define TW_ORS_IS_SECONDARY_ROM     "tw_ors_is_secondary_rom"
 
 // Also used:
 //   tw_boot_is_mountable

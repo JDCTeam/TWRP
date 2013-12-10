@@ -46,6 +46,8 @@ extern "C" {
 	int TWinstall_zip(const char* path, int* wipe_cache);
 }
 
+#include "multirom.h"
+
 #define SCRIPT_COMMAND_SIZE 512
 
 int OpenRecoveryScript::check_for_script_file(void) {
@@ -442,8 +444,13 @@ int OpenRecoveryScript::Install_Command(string Zip) {
 		gui_print("Unable to locate zip file '%s'.\n", Zip.c_str());
 		ret_val = 1;
 	} else {
-		gui_print("Installing zip file '%s'\n", Zip.c_str());
-		ret_val = TWinstall_zip(Zip.c_str(), &wipe_cache);
+		if(DataManager::GetIntValue(TW_ORS_IS_SECONDARY_ROM) == 1)
+			ret_val = !MultiROM::flashORSZip(Zip, &wipe_cache);
+		else
+		{
+			gui_print("Installing zip file '%s'\n", Zip.c_str());
+			ret_val = TWinstall_zip(Zip.c_str(), &wipe_cache);
+		}
 	}
 	if (ret_val != 0) {
 		LOGERR("Error installing zip file '%s'\n", Zip.c_str());

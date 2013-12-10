@@ -723,7 +723,7 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	bool format_system = false;
 
 	gui_print("Preparing ZIP file...\n");
-	if(!prepareZIP(file, format_system))
+	if(!prepareZIP(file, format_system))  // may change file var
 		return false;
 
 	if(!changeMounts(rom))
@@ -772,6 +772,36 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		unlink(sideload_path.c_str());
 		DataManager::SetValue("tw_mrom_sideloaded", "");
 	}
+
+	return (status == INSTALL_SUCCESS);
+}
+
+bool MultiROM::flashORSZip(std::string file, int *wipe_cache)
+{
+	int status;
+	bool format_system = false;
+
+	gui_print("Flashing ZIP file %s\n", file.c_str());
+	gui_print("Preparing ZIP file...\n");
+	if(!prepareZIP(file, format_system)) // may change file var
+		return false;
+
+	if(format_system)
+	{
+		gui_print("Clearing ROM's /system dir\n");
+		system("chattr -R -i /system/*; rm -rf /system/*");
+	}
+
+	status = TWinstall_zip(file.c_str(), wipe_cache);
+
+	system("rm -r "MR_UPDATE_SCRIPT_PATH);
+	if(file == "/tmp/mr_update.zip")
+		system("rm /tmp/mr_update.zip");
+
+	if(status != INSTALL_SUCCESS)
+		gui_print("Failed to install ZIP!\n");
+	else
+		gui_print("ZIP successfully installed\n");
 
 	return (status == INSTALL_SUCCESS);
 }
@@ -2344,11 +2374,18 @@ void MultiROM::executeCacheScripts()
 	if(!changeMounts(script.name))
 		return;
 
-	std::string boot = getRomsPath() + script.name;
+	int had_boot;
+	std::string boot, boot_orig;
+
+	boot = getRomsPath() + script.name;
 	normalizeROMPath(boot);
 	boot += "/boot.img";
 
+	boot_orig = boot;
+
 	translateToRealdata(boot);
+
+	had_boot = access(boot.c_str(), F_OK) >= 0;
 
 	if(!fakeBootPartition(boot.c_str()))
 	{
@@ -2357,7 +2394,10 @@ void MultiROM::executeCacheScripts()
 	}
 
 	if(script.type & MASK_ANDROID)
+	{
+		DataManager::SetValue(TW_ORS_IS_SECONDARY_ROM, 1);
 		OpenRecoveryScript::Run_OpenRecoveryScript();
+	}
 	else if(script.type & MASK_UTOUCH)
 	{
 		startSystemImageUpgrader();
@@ -2373,8 +2413,23 @@ void MultiROM::executeCacheScripts()
 		if(DataManager::GetIntValue("system-image-upgrader-res") == 0)
 		{
 			gui_print("\nSUCCESS, rebooting...\n");
+			usleep(2000000); // Sleep for 2 seconds before rebooting
 			TWFunc::tw_reboot(rb_system);
 		}
+	}
+	else if(script.type & MASK_ANDROID)
+	{
+		if(!had_boot && compareFiles(getBootDev().c_str(), boot_orig.c_str()))
+			unlink(boot_orig.c_str());
+		else
+		{
+			DataManager::SetValue("tw_multirom_share_kernel", !had_boot);
+			extractBootForROM(getRomsPath() + script.name);
+		}
+
+		gui_print("\nRebooting...\n");
+		usleep(2000000); // Sleep for 2 seconds before rebooting
+		TWFunc::tw_reboot(rb_system);
 	}
 }
 

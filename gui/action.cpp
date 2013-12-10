@@ -1731,7 +1731,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 						reboot = 1;
 					}
 				}
-				if (reboot) {
+				if (reboot && DataManager::GetIntValue(TW_ORS_IS_SECONDARY_ROM) != 1) {
 					usleep(2000000); // Sleep for 2 seconds before rebooting
 					TWFunc::tw_reboot(rb_system);
 				} else {
