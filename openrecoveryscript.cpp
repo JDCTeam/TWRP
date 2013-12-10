@@ -450,6 +450,12 @@ int OpenRecoveryScript::Install_Command(string Zip) {
 		{
 			gui_print("Installing zip file '%s'\n", Zip.c_str());
 			ret_val = TWinstall_zip(Zip.c_str(), &wipe_cache);
+
+			if(DataManager::GetIntValue(TW_AUTO_INJECT_MROM) == 1 && MultiROM::folderExists())
+			{
+				gui_print("Injecting boot.img with MultiROM...\n");
+				MultiROM::injectBoot(MultiROM::getBootDev(), true);
+			}
 		}
 	}
 	if (ret_val != 0) {
