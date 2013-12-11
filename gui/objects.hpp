@@ -752,7 +752,7 @@ protected:
 	virtual int RenderInternal(void);	   // Does the actual render
 };
 
-class GUISlider : public RenderObject, public ActionObject
+class GUISlider : public RenderObject, public ActionObject, public Conditional
 {
 public:
 	GUISlider(xml_node<>* node);

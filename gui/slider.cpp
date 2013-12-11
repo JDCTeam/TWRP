@@ -26,7 +26,7 @@ extern "C" {
 #include "rapidxml.hpp"
 #include "objects.hpp"
 
-GUISlider::GUISlider(xml_node<>* node)
+GUISlider::GUISlider(xml_node<>* node) : Conditional(node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -92,6 +92,9 @@ GUISlider::~GUISlider()
 
 int GUISlider::Render(void)
 {
+	if (!isConditionTrue())
+		return 0;
+
 	if (!sSlider || !sSlider->GetResource())
 		return -1;
 
@@ -112,6 +115,9 @@ int GUISlider::Render(void)
 
 int GUISlider::Update(void)
 {
+	if (!isConditionTrue())
+		return 0;
+
 	if (sUpdate)
 		return 2;
 	return 0;
@@ -120,6 +126,9 @@ int GUISlider::Update(void)
 int GUISlider::NotifyTouch(TOUCH_STATE state, int x, int y)
 {
 	static bool dragging = false;
+
+	if (!isConditionTrue())
+		return 0;
 
 	switch (state)
 	{
