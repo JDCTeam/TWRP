@@ -3,6 +3,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <linux/capability.h>
+#include <linux/xattr.h>
+#include <sys/xattr.h>
 
 // clone libbootimg to /system/extras/ from
 // https://github.com/Tasssadar/libbootimg.git
@@ -352,6 +355,9 @@ int MultiROM::getType(std::string name)
 	std::string path = getRomsPath() + "/" + name + "/";
 	if(getRomsPath().find("/mnt") != 0) // Internal memory
 	{
+		if(name == INTERNAL_NAME)
+			return ROM_INTERNAL_PRIMARY;
+
 		if (access((path + "system").c_str(), F_OK) >= 0 &&
 			access((path + "data").c_str(), F_OK) >= 0 &&
 			access((path + "cache").c_str(), F_OK) >= 0)
@@ -405,12 +411,13 @@ static bool rom_sort(std::string a, std::string b)
 	return a.compare(b) < 0;
 }
 
-std::string MultiROM::listRoms()
+std::string MultiROM::listRoms(uint32_t mask, bool with_bootimg_only)
 {
 	DIR *d = opendir(getRomsPath().c_str());
 	if(!d)
 		return "";
 
+	int type;
 	std::vector<std::string> vec;
 	struct dirent *dr;
 	while((dr = readdir(d)) != NULL)
@@ -421,7 +428,23 @@ std::string MultiROM::listRoms()
 		if(dr->d_name[0] == '.')
 			continue;
 
-		vec.push_back(dr->d_name);
+		if(mask == MASK_ALL)
+			vec.push_back(dr->d_name);
+		else
+		{
+			type = M(getType(dr->d_name));
+			if(!(type & mask))
+				continue;
+
+			if((type & MASK_ANDROID) && with_bootimg_only)
+			{
+				std::string path = getRomsPath() + dr->d_name + "/boot.img";
+				if(access(path.c_str(), F_OK) < 0)
+					continue;
+			}
+
+			vec.push_back(dr->d_name);
+		}
 	}
 	closedir(d);
 
@@ -2165,12 +2188,17 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 
 int MultiROM::system_args(const char *fmt, ...)
 {
-	char cmd[256];
+	char cmd[512];
 	va_list ap;
 	va_start(ap, fmt);
-	vsnprintf(cmd, sizeof(cmd), fmt, ap);
+	if(vsnprintf(cmd, sizeof(cmd), fmt, ap) >= (int)sizeof(cmd))
+	{
+		LOGERR("FATAL: system_arg overflow!\n");
+		assert(0);
+	}
 	va_end(ap);
 
+	LOGINFO("Running cmd \"%s\"\n", cmd);
 	return system(cmd);
 }
 
@@ -2446,4 +2474,249 @@ void MultiROM::startSystemImageUpgrader()
 	DataManager::SetValue("tw_has_cancel", 0);
 	DataManager::SetValue("tw_show_reboot", 0);
 	gui_startPage("action_page");
+}
+
+bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst, const std::string& part, bool skipMedia)
+{
+	if(!skipMedia)
+	{
+		gui_print("Copying /%s...\n", part.c_str());
+		if(system_args("cp -a \"%s/%s/\"* \"%s/%s/\"", src.c_str(), part.c_str(), dst.c_str(), part.c_str()) != 0)
+		{
+			LOGERR("Copying failed, see log for more info!\n");
+			return false;
+		}
+
+		if(!copyXAttrs(src + "/" + part, dst + "/" + part, DT_DIR))
+			return false;
+
+		return true;
+	}
+	else
+	{
+		char path1[256];
+		char path2[256];
+		DIR *d;
+		struct dirent *dt;
+		bool res = true;
+
+		gui_print("Copying /%s...\n", part.c_str());
+
+		snprintf(path1, sizeof(path1), "%s/%s", src.c_str(), part.c_str());
+		snprintf(path2, sizeof(path2), "%s/%s", dst.c_str(), part.c_str());
+
+		if(!copySingleXAttr(path1, path2))
+			return false;
+
+		d = opendir(path1);
+		if(!d)
+		{
+			LOGERR("Failed to open %s!\n", path1);
+			return false;
+		}
+
+		while((dt = readdir(d)))
+		{
+			if (dt->d_type == DT_DIR && dt->d_name[0] == '.' &&
+				(dt->d_name[1] == '.' || dt->d_name[1] == 0))
+				continue;
+
+			if(dt->d_type == DT_DIR && strcmp(dt->d_name, "media") == 0)
+			{
+				struct stat st;
+				snprintf(path1, sizeof(path1), "%s/%s/media", src.c_str(), part.c_str());
+				snprintf(path2, sizeof(path2), "%s/%s/media", dst.c_str(), part.c_str());
+
+				if(stat(path1, &st) >= 0)
+				{
+					mkdir(path2, st.st_mode);
+					copySingleXAttr(path1, path2);
+				}
+				continue;
+			}
+
+			if(system_args("cp -a \"%s/%s/%s\" \"%s/%s/\"", src.c_str(), part.c_str(), dt->d_name, dst.c_str(), part.c_str()) != 0)
+			{
+				LOGERR("Copying failed, see log for more info!\n");
+				res = false;
+				break;
+			}
+
+			snprintf(path1, sizeof(path1), "%s/%s/%s", src.c_str(), part.c_str(), dt->d_name);
+			snprintf(path2, sizeof(path2), "%s/%s/%s", dst.c_str(), part.c_str(), dt->d_name);
+
+			if(!copyXAttrs(path1, path2, dt->d_type))
+			{
+				res = false;
+				break;
+			}
+		}
+
+		closedir(d);
+		return res;
+	}
+}
+
+bool MultiROM::copySingleXAttr(const char *from, const char *to)
+{
+	ssize_t res;
+	char selabel[512];
+	struct vfs_cap_data cap_data;
+
+	res = lgetxattr(from, "security.capability", &cap_data, sizeof(struct vfs_cap_data));
+	if (res == sizeof(struct vfs_cap_data))
+	{
+		res = lsetxattr(to, "security.capability", &cap_data, sizeof(struct vfs_cap_data), 0);
+		if(res < 0)
+		{
+			LOGERR("Failed to lsetxattr capability on %s: %d (%s)\n", to, errno, strerror(errno));
+			return false;
+		}
+	}
+
+	res = lgetxattr(from, "security.selinux", selabel, sizeof(selabel));
+	if(res > 0)
+	{
+		selabel[sizeof(selabel)-1] = 0;
+		res = lsetxattr(to, "security.selinux", selabel, strlen(selabel)+1, 0);
+		if(res < 0)
+		{
+			LOGERR("Failed to lsetxattr selinux on %s: %d (%s)\n", to, errno, strerror(errno));
+			return false;
+		}
+	}
+	else if(res < 0 && errno == ERANGE)
+		LOGERR("lgetxattr selinux on %s failed: label is too long\n", from);
+
+	return true;
+}
+
+bool MultiROM::copyXAttrs(const std::string& from, const std::string& to, unsigned char type)
+{
+	if(!copySingleXAttr(from.c_str(), to.c_str()))
+		return false;
+
+	if(type != DT_DIR)
+		return true;
+
+	DIR *d;
+	struct dirent *dt;
+
+	d = opendir(from.c_str());
+	if(!d)
+	{
+		LOGERR("Failed to open dir %s\n", from.c_str());
+		return false;
+	}
+
+	while((dt = readdir(d)))
+	{
+		if (dt->d_type == DT_DIR && dt->d_name[0] == '.' &&
+			(dt->d_name[1] == '.' || dt->d_name[1] == 0))
+			continue;
+
+		if(!copyXAttrs(from + "/" + dt->d_name, to + "/" + dt->d_name, dt->d_type))
+		{
+			closedir(d);
+			return false;
+		}
+	}
+
+	closedir(d);
+	return true;
+}
+
+bool MultiROM::copyInternal(const std::string& dest_name)
+{
+	gui_print("Copying Internal ROM to \"%s\"\n", dest_name.c_str());
+
+	std::string dest_dir = getRomsPath() + dest_name + "/";
+	if(access(dest_dir.c_str(), F_OK) >= 0)
+	{
+		LOGERR("This ROM name is taken!\n");
+		return false;
+	}
+
+	if (!PartitionManager.Mount_By_Path("/system", true) ||
+		!PartitionManager.Mount_By_Path("/data", true) ||
+		!PartitionManager.Mount_By_Path("/cache", true))
+	{
+		LOGERR("Failed to mount all partitions!\n");
+		return false;
+	}
+
+	if(!createDirs(dest_name, ROM_ANDROID_INTERNAL))
+		goto erase_incomplete;
+
+	gui_print("Copying boot partition...\n");
+	if(system_args("dd if=%s of=\"%s/boot.img\" bs=4096", getBootDev().c_str(), dest_dir.c_str()) != 0)
+	{
+		gui_print("Dumping boot dev failed!\n");
+		goto erase_incomplete;
+	}
+
+	DataManager::SetValue("tw_multirom_share_kernel", 0);
+	if(!extractBootForROM(dest_dir))
+		goto erase_incomplete;
+
+	static const char *parts[] = { "system", "data", "cache" };
+	for(size_t i = 0; i < sizeof(parts)/sizeof(parts[0]); ++i)
+		if(!copyPartWithXAttrs("", dest_dir, parts[i], strcmp(parts[i], "data") == 0))
+			goto erase_incomplete;
+
+	return true;
+
+erase_incomplete:
+	gui_print("Failed, removing incomplete ROM...\n");
+	system_args("rm -rf \"%s\"", dest_dir.c_str());
+	return false;
+}
+
+bool MultiROM::wipeInternal()
+{
+	if(!PartitionManager.Wipe_By_Path("/cache") || !PartitionManager.Wipe_By_Path("/system"))
+		return false;
+
+	if(!PartitionManager.Factory_Reset())
+	{
+		LOGERR("Wiping /data without datamedia failed!\n");
+		return false;
+	}
+	return true;
+}
+
+bool MultiROM::copySecondaryToInternal(const std::string& rom_name)
+{
+	gui_print("Copying secondary ROM \"%s\" to Internal...\n", rom_name.c_str());
+
+	std::string src_dir = getRomsPath() + rom_name + "/";
+	if(access(src_dir.c_str(), F_OK) < 0)
+	{
+		LOGERR("This ROM does not exist!\n");
+		return false;
+	}
+
+	if (!PartitionManager.Mount_By_Path("/system", true) ||
+		!PartitionManager.Mount_By_Path("/data", true) ||
+		!PartitionManager.Mount_By_Path("/cache", true))
+	{
+		LOGERR("Failed to mount all partitions!\n");
+		return false;
+	}
+
+	gui_print("Writing boot partition...\n");
+	if(system_args("dd if=\"%s/boot.img\" of=\"%s\" bs=4096", src_dir.c_str(), getBootDev().c_str()) != 0)
+	{
+		gui_print("Writing boot.img has failed!\n");
+		return false;
+	}
+
+	injectBoot(getBootDev(), true);
+
+	static const char *parts[] = { "system", "data", "cache" };
+	for(size_t i = 0; i < sizeof(parts)/sizeof(parts[0]); ++i)
+		if(!copyPartWithXAttrs(src_dir, "", parts[i], strcmp(parts[i], "data") == 0))
+			return false;
+
+	return true;
 }

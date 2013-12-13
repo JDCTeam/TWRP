@@ -736,12 +736,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		}
 	}
 
-	if (function == "multirom_list")
+	if (function == "multirom_reset_roms_paths")
 	{
 		MultiROM::setRomsPath(INTERNAL_MEM_LOC_TXT);
 		DataManager::SetValue("tw_multirom_folder", MultiROM::getRomsPath());
 		DataManager::SetValue("tw_multirom_install_loc", INTERNAL_MEM_LOC_TXT);
-		return gui_changePage("multirom_list");
+		return 0;
 	}
 
 	if (function == "multirom_rename")
@@ -974,6 +974,31 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return gui_changePage(arg);
 	}
 
+	if(function == "multirom_create_internal_rom_name")
+	{
+		std::string name = TWFunc::getROMName();
+		if(name.size() > MAX_ROM_NAME)
+			name.resize(MAX_ROM_NAME);
+		else if(name.empty())
+			name = "unknown";
+
+		TWFunc::stringReplace(name, ' ', '_');
+
+		std::string roms = MultiROM::getRomsPath();
+		for(char i = '1'; TWFunc::Path_Exists(roms + name) && i <= '9'; ++i)
+			name.replace(name.size()-1, 1, 1, i);
+
+		DataManager::SetValue(arg, name);
+		return 0;
+	}
+
+	if (function == "multirom_list_roms_for_swap")
+	{
+		const int mask = MASK_ANDROID & (~M(ROM_INTERNAL_PRIMARY));
+		DataManager::SetValue(arg, MultiROM::listRoms(mask, true));
+		return 0;
+	}
+
 	if (isThreaded)
 	{
 		if (function == "timeout")
@@ -1160,6 +1185,151 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				gui_changePage(DataManager::GetStrValue("tw_mrom_next_page"));
 				return 0;
 			}
+		}
+
+		if(function == "multirom_swap_calc_space")
+		{
+			static const char *parts[] = { "/cache", "/system", "/data" };
+			TWPartition *p;
+			unsigned long long int_size = 0, int_data_size = 0, sec_data_size = 0;
+			unsigned long long needed = 0, free = 0;
+
+			std::string swap_rom = DataManager::GetStrValue("tw_multirom_swap_rom");
+			int type = DataManager::GetIntValue("tw_multirom_swap_type");
+
+			operation_start("CalcSpace");
+
+			PartitionManager.Update_System_Details();
+
+			p = PartitionManager.Find_Partition_By_Path(MultiROM::getRomsPath());
+			if(!p)
+			{
+				LOGINFO("multirom_swap_calc_space: failed to find partition for ROMs!\n");
+				operation_end(1, simulate);
+				return 0;
+			}
+
+			free = p->GetSizeFree();
+
+			for(size_t i = 0; i < sizeof(parts)/sizeof(parts[0]); ++i)
+			{
+				p = PartitionManager.Find_Partition_By_Path(parts[i]);
+				if(!p)
+				{
+					LOGINFO("multirom_swap_calc_space: failed to get %s!\n", parts[i]);
+					operation_end(1, simulate);
+					return 0;
+				}
+
+				int_size += p->GetSizeBackup();
+				if(strcmp("/data", parts[i]) == 0)
+					int_data_size = p->GetSizeBackup();
+			}
+
+			if(type == MROM_SWAP_WITH_SECONDARY || type == MROM_SWAP_COPY_SECONDARY)
+				sec_data_size = TWFunc::Get_Folder_Size(MultiROM::getRomsPath() + swap_rom + "/data", true);
+
+			switch(type)
+			{
+				case MROM_SWAP_WITH_SECONDARY:
+					needed = int_size + sec_data_size;
+					break;
+				case MROM_SWAP_COPY_SECONDARY:
+					if(sec_data_size > int_data_size)
+						needed = sec_data_size - int_data_size + 50*1024*1024;
+					break;
+				case MROM_SWAP_COPY_INTERNAL:
+				case MROM_SWAP_MOVE_INTERNAL:
+					needed = int_size;
+					break;
+			}
+
+			needed >>= 20; // divide by (1024*1024) to MB
+			free >>= 20;
+			DataManager::SetValue("tw_multirom_swap_needed", needed);
+			DataManager::SetValue("tw_multirom_swap_free", free);
+
+			LOGINFO("multirom_swap_calc_space: needed: %llu MB, free: %llu MB\n", needed, free);
+
+			operation_end(0, simulate);
+
+			if(needed >= free)
+			{
+				DataManager::SetValue("tw_multirom_swap_calculating", 0);
+				gui_changeOverlay("multirom_swap_space_info");
+			}
+			else
+			{
+				sleep(1); // give the user chance to read the overlay
+				gui_changeOverlay("");
+				gui_changePage("action_page");
+			}
+			return 0;
+		}
+
+		if(function == "multirom_execute_swap")
+		{
+			operation_start("SwapROMs");
+
+			int res = 1;
+			int type = DataManager::GetIntValue("tw_multirom_swap_type");
+			std::string int_target = DataManager::GetStrValue("tw_multirom_swap_internal_name");
+
+			switch(type)
+			{
+				case MROM_SWAP_WITH_SECONDARY:
+				{
+					std::string src_rom = DataManager::GetStrValue("tw_multirom_swap_rom");
+
+					if(!MultiROM::copyInternal(int_target))
+						break;
+
+					if(!MultiROM::wipeInternal())
+						break;
+
+					if(!MultiROM::copySecondaryToInternal(src_rom))
+						break;
+
+					if(!MultiROM::erase(src_rom))
+						break;
+
+					res = 0;
+					break;
+				}
+				case MROM_SWAP_COPY_SECONDARY:
+				{
+					std::string src_rom = DataManager::GetStrValue("tw_multirom_swap_rom");
+
+					if(!MultiROM::wipeInternal())
+						break;
+
+					if(!MultiROM::copySecondaryToInternal(src_rom))
+						break;
+
+					res = 0;
+					break;
+				}
+				case MROM_SWAP_COPY_INTERNAL:
+					if(MultiROM::copyInternal(int_target))
+						res = 0;
+					break;
+				case MROM_SWAP_MOVE_INTERNAL:
+				{
+					if(!MultiROM::copyInternal(int_target))
+						break;
+
+					if(!MultiROM::wipeInternal())
+						break;
+
+					res = 0;
+					break;
+				}
+			}
+
+			PartitionManager.Update_System_Details();
+
+			operation_end(res, simulate);
+			return 0;
 		}
 
 		if(function == "system-image-upgrader")

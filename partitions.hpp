@@ -71,6 +71,9 @@ public:
 	void Check_FS_Type();                                                     // Checks the fs type using blkid, does not do anything on MTD / yaffs2 because this crashes on some devices
 	bool Update_Size(bool Display_Error);                                     // Updates size information
 	void Recreate_Media_Folder();                                             // Recreates the /data/media folder
+	unsigned long long GetSizeUsed() { return Used; }
+	unsigned long long GetSizeFree() { return Free; }
+	unsigned long long GetSizeBackup() { return Backup_Size; }
 
 public:
 	string Current_File_System;                                               // Current file system

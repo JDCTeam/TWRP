@@ -64,6 +64,8 @@ public:
 	static bool reloadTheme();
 	static std::string getDefaultThemePath(int rotation);
 	static std::string getZIPThemePath(int rotation);
+	static std::string getROMName();
+	static void stringReplace(std::string& str, char before, char after);
 
 private:
 	static void Copy_Log(string Source, string Destination);

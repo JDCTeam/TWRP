@@ -213,6 +213,7 @@
 		<variable name="mrom_img4_btn_y" value="710" />
 		<variable name="mrom_img5_btn_y" value="830" />
 		<variable name="mrom_rom_loc_list_h" value="660" />
+		<variable name="mrom_swap_list_h" value="400" />
 	</variables>
 
 	<templates>

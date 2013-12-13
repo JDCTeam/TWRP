@@ -16,18 +16,19 @@ enum { INSTALL_SUCCESS, INSTALL_ERROR, INSTALL_CORRUPT };
 
 enum
 {
-	ROM_ANDROID_INTERNAL  = 0,
-	ROM_ANDROID_USB_DIR   = 1,
-	ROM_ANDROID_USB_IMG   = 2,
-	ROM_UBUNTU_INTERNAL   = 3,
-	ROM_UBUNTU_USB_DIR    = 4,
-	ROM_UBUNTU_USB_IMG    = 5,
-	ROM_INSTALLER_INTERNAL= 6,
-	ROM_INSTALLER_USB_DIR = 7,
-	ROM_INSTALLER_USB_IMG = 8,
-	ROM_UTOUCH_INTERNAL   = 9,
-	ROM_UTOUCH_USB_DIR    = 10,
-	ROM_UTOUCH_USB_IMG    = 11,
+	ROM_INTERNAL_PRIMARY  = 0,
+	ROM_ANDROID_INTERNAL  = 1,
+	ROM_ANDROID_USB_DIR   = 2,
+	ROM_ANDROID_USB_IMG   = 3,
+	ROM_UBUNTU_INTERNAL   = 4,
+	ROM_UBUNTU_USB_DIR    = 5,
+	ROM_UBUNTU_USB_IMG    = 6,
+	ROM_INSTALLER_INTERNAL= 7,
+	ROM_INSTALLER_USB_DIR = 8,
+	ROM_INSTALLER_USB_IMG = 9,
+	ROM_UTOUCH_INTERNAL   = 10,
+	ROM_UTOUCH_USB_DIR    = 11,
+	ROM_UTOUCH_USB_IMG    = 12,
 
 	ROM_UNKNOWN,
 };
@@ -41,11 +42,12 @@ enum
 
 #define M(x) (1 << x)
 #define MASK_UBUNTU (M(ROM_UBUNTU_INTERNAL) | M(ROM_UBUNTU_USB_IMG)| M(ROM_UBUNTU_USB_DIR))
-#define MASK_ANDROID (M(ROM_ANDROID_USB_DIR) | M(ROM_ANDROID_USB_IMG) | M(ROM_ANDROID_INTERNAL))
+#define MASK_ANDROID (M(ROM_INTERNAL_PRIMARY) | M(ROM_ANDROID_USB_DIR) | M(ROM_ANDROID_USB_IMG) | M(ROM_ANDROID_INTERNAL))
 #define MASK_IMAGES (M(ROM_ANDROID_USB_IMG) | M(ROM_UBUNTU_USB_IMG) | M(ROM_INSTALLER_USB_IMG) | M(ROM_UTOUCH_USB_IMG))
-#define MASK_INTERNAL (M(ROM_ANDROID_INTERNAL) | M(ROM_UBUNTU_INTERNAL) | M(ROM_INSTALLER_INTERNAL) | M(ROM_UTOUCH_INTERNAL))
+#define MASK_INTERNAL (M(ROM_INTERNAL_PRIMARY) | M(ROM_ANDROID_INTERNAL) | M(ROM_UBUNTU_INTERNAL) | M(ROM_INSTALLER_INTERNAL) | M(ROM_UTOUCH_INTERNAL))
 #define MASK_INSTALLER (M(ROM_INSTALLER_INTERNAL) | M(ROM_INSTALLER_USB_DIR) | M(ROM_INSTALLER_USB_IMG))
 #define MASK_UTOUCH (M(ROM_UTOUCH_INTERNAL) | M(ROM_UTOUCH_USB_IMG) | M(ROM_UTOUCH_USB_DIR))
+#define MASK_ALL 0xFFFFFFFF
 
 #define INTERNAL_NAME "Internal"
 #define REALDATA "/realdata"
@@ -75,6 +77,11 @@ enum
 
 #define UB_DATA_IMG_MINSIZE 2048
 #define UB_DATA_IMG_DEFSIZE 4095
+
+#define MROM_SWAP_WITH_SECONDARY 0
+#define MROM_SWAP_COPY_SECONDARY 1
+#define MROM_SWAP_COPY_INTERNAL  2
+#define MROM_SWAP_MOVE_INTERNAL  3
 
 struct base_folder
 {
@@ -111,7 +118,7 @@ public:
 	static std::string getRomsPath();
 	static std::string getPath();
 	static int getType(std::string name);
-	static std::string listRoms();
+	static std::string listRoms(uint32_t mask = MASK_ALL, bool with_bootimg_only = false);
 	static void setInstaller(MROMInstaller *i);
 	static MROMInstaller *getInstaller(MROMInstaller *i);
 	static std::string getBootDev() { return m_boot_dev; }
@@ -154,6 +161,10 @@ public:
 	static void startSystemImageUpgrader();
 	static bool ubuntuTouchProcessBoot(const std::string& root, const char *init_folder);
 
+	static bool copyInternal(const std::string& dest_name);
+	static bool wipeInternal();
+	static bool copySecondaryToInternal(const std::string& rom_name);
+
 private:
 	static void findPath();
 	static bool changeMounts(std::string base);
@@ -190,6 +201,10 @@ private:
 	static bool calculateMD5(const char *path, unsigned char *md5sum/*len: 16*/);
 	static void normalizeROMPath(std::string& path);
 	static void restoreROMPath();
+
+	static bool copyPartWithXAttrs(const std::string& src, const std::string& dst, const std::string& part, bool skipMedia = false);
+	static bool copyXAttrs(const std::string& from, const std::string& to, unsigned char type);
+	static bool copySingleXAttr(const char *from, const char *to);
 
 	static std::string m_path;
 	static std::string m_mount_rom_paths[2];

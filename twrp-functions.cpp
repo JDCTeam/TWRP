@@ -1206,3 +1206,50 @@ std::string TWFunc::getZIPThemePath(int rotation)
 		return "/TWRP/theme/ui_landscape.zip";
 #endif
 }
+
+std::string TWFunc::getROMName()
+{
+	std::string res;
+	bool mount_state = PartitionManager.Is_Mounted_By_Path("/system");
+	std::vector<string> buildprop;
+	if (!PartitionManager.Mount_By_Path("/system", true)) {
+		return res;
+	}
+	if (TWFunc::read_file("/system/build.prop", buildprop) != 0) {
+		LOGINFO("Unable to open /system/build.prop for getting backup name.\n");
+		if (!mount_state)
+			PartitionManager.UnMount_By_Path("/system", false);
+		return res;
+	}
+	int line_count = buildprop.size();
+	int index;
+	size_t start_pos = 0, end_pos;
+	string propname;
+	for (index = 0; index < line_count; index++) {
+		end_pos = buildprop.at(index).find("=", start_pos);
+		propname = buildprop.at(index).substr(start_pos, end_pos);
+		if (propname == "ro.build.display.id") {
+			res = buildprop.at(index).substr(end_pos + 1, buildprop.at(index).size());
+			if (res.size() > MAX_BACKUP_NAME_LEN)
+				res.resize(MAX_BACKUP_NAME_LEN);
+			break;
+		}
+	}
+	if (res.empty()) {
+		LOGINFO("ro.build.display.id not found in build.prop\n");
+	}
+	if (!mount_state)
+		PartitionManager.UnMount_By_Path("/system", false);
+	return res;
+}
+
+void TWFunc::stringReplace(std::string& str, char before, char after)
+{
+	const size_t size = str.size();
+	for(size_t i = 0; i < size; ++i)
+	{
+		char& c = str[i];
+		if(c == before)
+			c = after;
+	}
+}
