@@ -626,7 +626,7 @@
 
 			<object type="action">
 				<touch key="back" />
-				<action function="page">main</action>
+				<action function="page">multirom_manage</action>
 			</object>
 
 			<object type="action">

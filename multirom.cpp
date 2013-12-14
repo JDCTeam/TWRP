@@ -31,6 +31,7 @@ std::string MultiROM::m_curr_roms_path = "";
 MROMInstaller *MultiROM::m_installer = NULL;
 MultiROM::baseFolders MultiROM::m_base_folders;
 int MultiROM::m_base_folder_cnt = 0;
+bool MultiROM::m_has_firmware = false;
 
 base_folder::base_folder(const std::string& name, int min_size, int size)
 {
@@ -101,6 +102,9 @@ void MultiROM::findPath()
 	}
 
 	m_boot_dev = boot->Actual_Block_Device;
+
+	TWPartition *fw = PartitionManager.Find_Partition_By_Path("/firmware");
+	m_has_firmware = (fw && fw->Current_File_System == "vfat");
 
 	static const char *paths[] = {
 		"/data/media/multirom",

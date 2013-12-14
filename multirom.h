@@ -122,6 +122,7 @@ public:
 	static void setInstaller(MROMInstaller *i);
 	static MROMInstaller *getInstaller(MROMInstaller *i);
 	static std::string getBootDev() { return m_boot_dev; }
+	static bool hasFirmwareDev() { return m_has_firmware; }
 	static void updateSupportedSystems();
 
 	static void clearBaseFolders();
@@ -213,6 +214,7 @@ private:
 	static baseFolders m_base_folders;
 	static int m_base_folder_cnt;
 	static std::string m_boot_dev;
+	static bool m_has_firmware;
 };
 
 
