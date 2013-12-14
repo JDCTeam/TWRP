@@ -743,10 +743,8 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	gui_print("Flashing ZIP file %s\n", file.c_str());
 	gui_print("ROM: %s\n", rom.c_str());
 
-	bool format_system = false;
-
 	gui_print("Preparing ZIP file...\n");
-	if(!prepareZIP(file, format_system))  // may change file var
+	if(!prepareZIP(file))  // may change file var
 		return false;
 
 	if(!changeMounts(rom))
@@ -766,12 +764,6 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	{
 		restoreMounts();
 		return false;
-	}
-
-	if(format_system)
-	{
-		gui_print("Clearing ROM's /system dir\n");
-		system("chattr -R -i /system/*; rm -rf /system/*");
 	}
 
 	int wipe_cache = 0;
@@ -802,18 +794,11 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 bool MultiROM::flashORSZip(std::string file, int *wipe_cache)
 {
 	int status;
-	bool format_system = false;
 
 	gui_print("Flashing ZIP file %s\n", file.c_str());
 	gui_print("Preparing ZIP file...\n");
-	if(!prepareZIP(file, format_system)) // may change file var
+	if(!prepareZIP(file)) // may change file var
 		return false;
-
-	if(format_system)
-	{
-		gui_print("Clearing ROM's /system dir\n");
-		system("chattr -R -i /system/*; rm -rf /system/*");
-	}
 
 	status = TWinstall_zip(file.c_str(), wipe_cache);
 
@@ -895,7 +880,7 @@ bool MultiROM::skipLine(const char *line)
 	return false;
 }
 
-bool MultiROM::prepareZIP(std::string& file, bool& format_system)
+bool MultiROM::prepareZIP(std::string& file)
 {
 	bool res = false;
 
@@ -978,8 +963,13 @@ bool MultiROM::prepareZIP(std::string& file, bool& format_system)
 		{
 			changed = true;
 
-			if (strstr(p, "format") == p && strstr(p, "/system"))
-				format_system = true;
+			if (strstr(p, "format(") == p && strstr(p, "/system"))
+			{
+				fputs("run_program(\"/sbin/sh\", \"-c\", \"mount /system\");\n", new_script);
+				fputs("run_program(\"/sbin/sh\", \"-c\", \"chattr -R -i /system/*\");\n", new_script);
+				fputs("run_program(\"/sbin/sh\", \"-c\", \"rm -rf /system/*\");\n", new_script);
+				fputs("run_program(\"/sbin/sh\", \"-c\", \"busybox umount /system\");\n", new_script);
+			}
 
 		}
 		token = strtok(NULL, "\n");

@@ -169,7 +169,7 @@ private:
 	static void findPath();
 	static bool changeMounts(std::string base);
 	static void restoreMounts();
-	static bool prepareZIP(std::string& file, bool& format_system);
+	static bool prepareZIP(std::string& file);
 	static bool skipLine(const char *line);
 	static std::string getNewRomName(std::string zip, std::string def);
 	static bool createDirs(std::string name, int type);
