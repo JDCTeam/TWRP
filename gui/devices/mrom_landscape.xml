@@ -676,12 +676,6 @@
 				<text>%tw_file%</text>
 			</object>
 
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%row10_text_y%" placement="5" />
-				<text>Do NOT flash ROMs or OTAs via this menu!</text>
-			</object>
-
 			<object type="slider">
 				<placement x="%slider_x%" y="%slider_y%" placement="5" />
 				<resource base="slider" used="slider-used" touch="slider-touch" />
