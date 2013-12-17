@@ -146,7 +146,7 @@ do
 
                 data)
                     for entry in /data/*; do
-                        if [ "$entry" != "system.img" ]; then
+                        if [ "$entry" != "/data/system.img" ]; then
                             rm -Rf $entry
                         fi
                     done
