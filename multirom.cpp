@@ -662,7 +662,14 @@ void MultiROM::restoreMounts()
 		"do"
 		"    i=$(( $i + 1 ));"
 		"    umount -d /system /data /cache /sdcard /realdata;"
-		"done");
+		"done;"
+		"i=0;"
+		"while [ $i -le 10 ]; do"
+		"    if [ -e \"/dev/block/loop$i\" ]; then"
+		"        losetup -d  \"/dev/block/loop$i\";"
+		"    fi;"
+		"    i=$(( $i + 1 ));"
+		"done;");
 
 	PartitionManager.Pop_Context();
 	PartitionManager.Update_System_Details();
@@ -999,10 +1006,9 @@ bool MultiROM::prepareZIP(std::string& file)
 
 			if (strstr(p, "format(") == p && strstr(p, "/system"))
 			{
-				fputs("run_program(\"/sbin/sh\", \"-c\", \"mount /system\");\n", new_script);
+				fputs("run_program(\"/sbin/sh\", \"-c\", \"grep -q '/system' /etc/mtab || mount /system\");\n", new_script);
 				fputs("run_program(\"/sbin/sh\", \"-c\", \"chattr -R -i /system/*\");\n", new_script);
 				fputs("run_program(\"/sbin/sh\", \"-c\", \"rm -rf /system/*\");\n", new_script);
-				fputs("run_program(\"/sbin/sh\", \"-c\", \"busybox umount /system\");\n", new_script);
 			}
 
 		}
@@ -1310,9 +1316,11 @@ bool MultiROM::createImage(const std::string& base, const char *img, int size)
 		return false;
 	}
 
-	sprintf(cmd, "make_ext4fs -l %dM \"%s/%s.img\"", size, base.c_str(), img);
-	system(cmd);
-	return true;
+	bool ctx = TWFunc::Path_Exists("/file_contexts");
+
+	snprintf(cmd, sizeof(cmd), "make_ext4fs -l %dM -a \"/%s\" %s \"%s/%s.img\"", size, img, ctx ? "-S /file_contexts" : "", base.c_str(), img);
+	LOGINFO("Creating image with cmd: %s\n", cmd);
+	return system(cmd) == 0;
 }
 
 bool MultiROM::createImagesFromBase(const std::string& base)
