@@ -12,8 +12,6 @@
 #include "data.hpp"
 #include "mrominstaller.h"
 
-enum { INSTALL_SUCCESS, INSTALL_ERROR, INSTALL_CORRUPT };
-
 enum
 {
 	ROM_INTERNAL_PRIMARY  = 0,
@@ -171,6 +169,7 @@ private:
 	static bool changeMounts(std::string base);
 	static void restoreMounts();
 	static bool prepareZIP(std::string& file);
+	static bool verifyZIP(const std::string& file, int &verify_status);
 	static bool skipLine(const char *line);
 	static std::string getNewRomName(std::string zip, std::string def);
 	static bool createDirs(std::string name, int type);

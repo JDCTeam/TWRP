@@ -18,6 +18,7 @@
 #include "minzip/Zip.h"
 #include "variables.h"
 #include "openrecoveryscript.hpp"
+#include "verifier.h"
 
 extern "C" {
 #include "twcommon.h"
@@ -744,8 +745,15 @@ void MultiROM::restoreROMPath()
 
 bool MultiROM::flashZip(std::string rom, std::string file)
 {
+	int status;
+	int verify_status = 0;
+	int wipe_cache = 0;
+
 	gui_print("Flashing ZIP file %s\n", file.c_str());
 	gui_print("ROM: %s\n", rom.c_str());
+
+	if(!verifyZIP(file, verify_status))
+		return false;
 
 	gui_print("Preparing ZIP file...\n");
 	if(!prepareZIP(file))  // may change file var
@@ -770,8 +778,9 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		return false;
 	}
 
-	int wipe_cache = 0;
-	int status = TWinstall_zip(file.c_str(), &wipe_cache);
+	DataManager::SetValue(TW_SIGNED_ZIP_VERIFY_VAR, 0);
+	status = TWinstall_zip(file.c_str(), &wipe_cache);
+	DataManager::SetValue(TW_SIGNED_ZIP_VERIFY_VAR, verify_status);
 
 	system("rm -r "MR_UPDATE_SCRIPT_PATH);
 	if(file == "/tmp/mr_update.zip")
@@ -797,14 +806,20 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 
 bool MultiROM::flashORSZip(std::string file, int *wipe_cache)
 {
-	int status;
+	int status, verify_status = 0;
 
 	gui_print("Flashing ZIP file %s\n", file.c_str());
+
+	if(!verifyZIP(file, verify_status))
+		return false;
+
 	gui_print("Preparing ZIP file...\n");
 	if(!prepareZIP(file)) // may change file var
 		return false;
 
+	DataManager::SetValue(TW_SIGNED_ZIP_VERIFY_VAR, 0);
 	status = TWinstall_zip(file.c_str(), wipe_cache);
+	DataManager::SetValue(TW_SIGNED_ZIP_VERIFY_VAR, verify_status);
 
 	system("rm -r "MR_UPDATE_SCRIPT_PATH);
 	if(file == "/tmp/mr_update.zip")
@@ -816,6 +831,21 @@ bool MultiROM::flashORSZip(std::string file, int *wipe_cache)
 		gui_print("ZIP successfully installed\n");
 
 	return (status == INSTALL_SUCCESS);
+}
+
+bool MultiROM::verifyZIP(const std::string& file, int &verify_status)
+{
+	DataManager::GetValue(TW_SIGNED_ZIP_VERIFY_VAR, verify_status);
+	if(!verify_status)
+		return true;
+
+	gui_print("Verifying zip signature...\n");
+	int ret_val = verify_file(file.c_str());
+	if (ret_val != VERIFY_SUCCESS) {
+		LOGERR("Zip signature verification failed: %i\n", ret_val);
+		return false;
+	}
+	return true;
 }
 
 static char *strstr_wildcard(const char *s, const char *find)
