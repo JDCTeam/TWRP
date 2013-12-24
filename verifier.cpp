@@ -248,7 +248,6 @@ load_keys(const char* filename, int* numKeys) {
             out = (RSAPublicKey*)realloc(out, *numKeys * sizeof(RSAPublicKey));
             RSAPublicKey* key = out + (*numKeys - 1);
 
-#ifdef HAS_EXPONENT
             char start_char;
             if (fscanf(f, " %c", &start_char) != 1) goto exit;
             if (start_char == '{') {
@@ -265,9 +264,6 @@ load_keys(const char* filename, int* numKeys) {
             }
 
             if (fscanf(f, " %i , 0x%x , { %u",
-#else
-            if (fscanf(f, " { %i , 0x%x , { %u",
-#endif
                        &(key->len), &(key->n0inv), &(key->n[0])) != 3) {
                 goto exit;
             }
@@ -298,9 +294,7 @@ load_keys(const char* filename, int* numKeys) {
                 LOGE("unexpected character between keys\n");
                 goto exit;
             }
-#ifdef HAS_EXPONENT
             LOGI("read key e=%d\n", key->exponent);
-#endif
         }
     }
 
