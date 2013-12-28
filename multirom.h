@@ -164,6 +164,8 @@ public:
 	static bool wipeInternal();
 	static bool copySecondaryToInternal(const std::string& rom_name);
 
+	static std::string getRecoveryVersion();
+
 private:
 	static void findPath();
 	static bool changeMounts(std::string base);

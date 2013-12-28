@@ -2752,3 +2752,37 @@ bool MultiROM::copySecondaryToInternal(const std::string& rom_name)
 
 	return true;
 }
+
+std::string MultiROM::getRecoveryVersion()
+{
+	TWPartition *recovery = PartitionManager.Find_Partition_By_Path("/recovery");
+	if(!recovery)
+		return std::string();
+
+	struct boot_img_hdr hdr;
+	if(libbootimg_load_header(&hdr, recovery->Actual_Block_Device.c_str()) < 0)
+		return std::string();
+
+	hdr.name[BOOT_NAME_SIZE-1] = 0; // to be sure
+
+	if (strncmp((char*)hdr.name, "mrom", 4) != 0 ||
+		strlen((char*)hdr.name) != sizeof("mromYYYYMMDD-PP")-1)
+	{
+		return std::string();
+	}
+
+	int patch = atoi((char*)hdr.name+sizeof("mromYYYYMMDD-")-1);
+	std::string res((char*)hdr.name+4, sizeof("YYYYMMDD")-1);
+
+	res.insert(6, "-");
+	res.insert(4, "-");
+
+	if(patch > 0)
+	{
+		char buff[5];
+		snprintf(buff, sizeof(buff), " p%d", patch);
+		res += buff;
+	}
+
+	return res;
+}

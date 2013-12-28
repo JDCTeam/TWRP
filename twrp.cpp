@@ -111,6 +111,9 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	PartitionManager.Output_Partition_Logging();
+
+	DataManager::SetValue(TW_MROM_REC_VERSION_VAR, MultiROM::getRecoveryVersion());
+
 	// Load up all the resources
 	gui_loadResources();
 

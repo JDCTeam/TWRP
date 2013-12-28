@@ -236,7 +236,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="250" y="5" />
-				<text>Team Win Recovery Project  v%tw_version%</text>
+				<text>MultiROM TWRP %tw_mrom_rec_version% (v%tw_version%)</text>
 			</object>
 
 			<object type="text" color="%text_color%">

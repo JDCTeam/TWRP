@@ -17,7 +17,7 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
-#define TW_VERSION_STR              "2.6.3.0"
+#define TW_VERSION_STR              "2.6.3"
 
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
 #define TW_FILENAME                 "tw_filename"
@@ -74,6 +74,7 @@
 #define TW_SHOW_SPAM_VAR            "tw_show_spam"
 #define TW_COLOR_THEME_VAR          "tw_color_theme"
 #define TW_VERSION_VAR              "tw_version"
+#define TW_MROM_REC_VERSION_VAR     "tw_mrom_rec_version"
 #define TW_SORT_FILES_BY_DATE_VAR   "tw_sort_files_by_date"
 #define TW_GUI_SORT_ORDER           "tw_gui_sort_order"
 #define TW_ZIP_LOCATION_VAR         "tw_zip_location"
