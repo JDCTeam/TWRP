@@ -23,6 +23,7 @@
 extern "C" {
 #include "twcommon.h"
 #include "digest/md5.h"
+#include "multirom_hooks.h"
 }
 
 std::string MultiROM::m_path = "";
@@ -2203,15 +2204,13 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 		"    for dir in \\$folders; do\\n"
 		"        mkdir -p \\$LXC_ROOTFS_PATH/\\$dir\\n"
 		"        mount -n -o bind,recurse /mrom_dir/\\$dir \\$LXC_ROOTFS_PATH/\\$dir\\n"
-		"    done\\n"
-#ifdef MR_MAKO_UTOUCH_HACK // temp hack, I will switch to system-image installation soon
-		"    mkdir -p \\$LXC_ROOTFS_PATH/persist\\n"
-		"    mkdir -p \\$LXC_ROOTFS_PATH/firmware\\n"
-		"    mount -n -t ext4 -o nosuid,nodev,barrier=1,data=ordered,nodelalloc /dev/mmcblk0p20 \\$LXC_ROOTFS_PATH/persist\\n"
-		"    mount -n -t vfat -o ro,uid=1000,gid=1000,dmask=227,fmask=337 /dev/mmcblk0p1 \\$LXC_ROOTFS_PATH/firmware\\n"
+		"    done\\n\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
+
+#if MR_DEVICE_RECOVERY_HOOKS >= 1
+	system_args("echo -e \"%s \" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh", mrom_hook_ubuntu_touch_get_extra_mounts());
 #endif
-		"fi\\n"
-		"\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
+
+	system("echo -e \"fi\\n\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
 
 	gui_print("Restoring mounts\n");
 	restoreMounts();
