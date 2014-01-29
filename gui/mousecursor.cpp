@@ -152,3 +152,10 @@ void MouseCursor::GetPos(int& x, int& y)
 	x = mRenderX;
 	y = mRenderY;
 }
+
+void MouseCursor::SetResolution(int resX, int resY)
+{
+	m_resX = resX;
+	m_resY = resY;
+	SetRenderPos(resX/2, resY/2);
+}

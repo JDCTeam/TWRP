@@ -991,6 +991,7 @@ public:
 	void GetPos(int& x, int& y);
 	void LoadData(xml_node<>* node);
 	void ResetData(int resX, int resY);
+	void SetResolution(int resX, int resY);
 
 private:
 	int m_resX;

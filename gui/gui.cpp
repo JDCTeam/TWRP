@@ -777,6 +777,8 @@ int gui_rotate(int rotation)
 	gr_freeze_fb(0);
 	gui_setRenderEnabled(1);
 
+	PageManager::GetMouseCursor()->SetResolution(gr_fb_width(), gr_fb_height());
+
 	if(!pagename.empty())
 		PageManager::ChangePage(pagename);
 
