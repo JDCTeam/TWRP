@@ -29,6 +29,7 @@ class ResourceManager;
 class RenderObject;
 class ActionObject;
 class InputObject;
+class MouseCursor;
 
 class Page
 {
@@ -133,6 +134,9 @@ public:
 	static int SetKeyBoardFocus(int inFocus);
 	static int NotifyVarChange(std::string varName, std::string value);
 
+	static MouseCursor *GetMouseCursor();
+	static void LoadCursorData(xml_node<>* node);
+
 protected:
 	static PageSet* FindPackage(std::string name);
 
@@ -140,6 +144,7 @@ protected:
 	static std::map<std::string, PageSet*> mPageSets;
 	static PageSet* mCurrentSet;
 	static PageSet* mBaseSet;
+	static MouseCursor *mMouseCursor;
 };
 
 #endif  // _PAGES_HEADER_HPP
