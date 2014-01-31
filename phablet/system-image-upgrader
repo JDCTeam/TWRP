@@ -41,6 +41,8 @@ verify_signature() {
     if gpg --ignore-time-conflict --verify $2 >/dev/null 2>&1; then
         return 0
     fi
+
+    return 1
 }
 
 install_keyring() {
