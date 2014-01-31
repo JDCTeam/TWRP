@@ -212,8 +212,8 @@ do
 
             REMOVE_LIST="$REMOVE_LIST /cache/recovery/$2 /cache/recovery/$3"
 
-            if ! verify_signature device-signing /cache/recovery/$2 && \
-               ! verify_signature image-signing /cache/recovery/$2; then
+            if ! verify_signature device-signing /cache/recovery/$3 && \
+               ! verify_signature image-signing /cache/recovery/$3; then
                 echo "Invalid signature"
                 continue
             fi
