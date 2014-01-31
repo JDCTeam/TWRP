@@ -25,7 +25,7 @@ verify_signature() {
     # Check against the blacklist
     if [ -e /tmp/system-image/blacklist/pubring.gpg ]; then
         export GNUPGHOME=/tmp/system-image/blacklist/
-        if gpg --verify $2 >/dev/null 2>&1; then
+        if gpg --ignore-time-conflict --verify $2 >/dev/null 2>&1; then
             echo "File signed by a blacklisted key: $2"
             return 1
         fi
@@ -38,7 +38,7 @@ verify_signature() {
         return 1
     fi
 
-    if gpg --verify $2 >/dev/null 2>&1; then
+    if gpg --ignore-time-conflict --verify $2 >/dev/null 2>&1; then
         return 0
     fi
 }
