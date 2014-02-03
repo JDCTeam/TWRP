@@ -256,6 +256,8 @@ int main(int argc, char **argv) {
 			MultiROM::executeCacheScripts();
 	}
 
+	TWFunc::Fixup_Time_On_Boot();
+
 	// Launch the main GUI
 	gui_start();
 
