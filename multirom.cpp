@@ -2219,18 +2219,30 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 
 int MultiROM::system_args(const char *fmt, ...)
 {
+	int ret;
 	char cmd[512];
 	va_list ap;
 	va_start(ap, fmt);
-	if(vsnprintf(cmd, sizeof(cmd), fmt, ap) >= (int)sizeof(cmd))
+
+	ret = vsnprintf(cmd, sizeof(cmd), fmt, ap);
+	if(ret < (int)sizeof(cmd))
 	{
-		LOGERR("FATAL: system_arg overflow!\n");
-		assert(0);
+		LOGINFO("Running cmd \"%s\"\n", cmd);
+		ret = system(cmd);
+	}
+	else
+	{
+		char *buff = new char[ret+1];
+		vsnprintf(buff, ret+1, fmt, ap);
+
+		LOGINFO("Running cmd \"%s\"\n", buff);
+		ret = system(buff);
+
+		delete[] buff;
 	}
 	va_end(ap);
 
-	LOGINFO("Running cmd \"%s\"\n", cmd);
-	return system(cmd);
+	return ret;
 }
 
 bool MultiROM::fakeBootPartition(const char *fakeImg)
