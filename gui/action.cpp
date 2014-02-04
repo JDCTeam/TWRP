@@ -1106,6 +1106,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 				gui_print("Patching ubuntu with %s\n", type.c_str());
 				op_status = !MultiROM::ubuntuTouchProcessBoot(root, type.c_str());
+				if(op_status == 0)
+					op_status = !MultiROM::ubuntuTouchProcess(root, DataManager::GetStrValue("tw_multirom_rom_name"));
 			}
 			else
 				LOGERR("This ubuntu installation does not have boot.img, it can't be patched.\n");

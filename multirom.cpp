@@ -2171,11 +2171,35 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 	// rom_info.txt
 	system_args("cp %s/infos/ubuntu_touch.txt %s/rom_info.txt", m_path.c_str(), root.c_str());
 
-	TWPartition *p = PartitionManager.Find_Partition_By_Path("/system");
-	if(!p)
+	struct ut_part_info {
+		const char *path_twrp;
+		const char *path_ubuntu;
+		const char *flags;
+		std::string block_dev;
+		std::string fs;
+	} parts[] = {
+		{ "/system", "/systemorig", "ro", "", "" },
+		{ "/persist", "/persist", "rw", "", "" },
+		{ "", "/vendor", "bind,ro", "/system/vendor", "auto" },
+
+		{ 0, 0, 0, "", "" }
+	};
+
+	for(ut_part_info *p = parts; p->path_twrp != NULL; ++p)
 	{
-		gui_print("Couldn't find /system partiton in PartitionManager!\n");
-		return false;
+		TWPartition *tw_part = PartitionManager.Find_Partition_By_Path(p->path_twrp);
+		if(!tw_part)
+		{
+			if(*p->path_twrp != 0)
+				gui_print("Couldn't find %s partiton in PartitionManager!\n", p->path_twrp);
+			continue;
+		}
+
+		p->fs = tw_part->Current_File_System;
+		p->block_dev = tw_part->Actual_Block_Device;
+		size_t idx = p->block_dev.find("/block");
+		if(idx != std::string::npos)
+			p->block_dev.erase(idx, sizeof("/block")-1);
 	}
 
 	gui_print("Changing mountpoints\n");
@@ -2185,32 +2209,40 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 		return false;
 	}
 
-	std::string sys_block = p->Actual_Block_Device;
-	size_t idx = sys_block.find("/block");
-	if(idx != std::string::npos)
-		sys_block.erase(idx, sizeof("/block")-1);
-
 	// fstab
-	system("mkdir -p /data/ubuntu/systemorig");
-	system_args("echo \"%s\t/systemorig\text4\tro\t0\t0\" >> /data/ubuntu/etc/fstab", sys_block.c_str());
-	system("echo \"/system/vendor\t/vendor\tauto\tro,bind\t0\t0\" >> /data/ubuntu/etc/fstab");
+	if(system("grep -q '/systemorig' /data/ubuntu/etc/fstab") != 0)
+	{
+		for(ut_part_info *p = parts; p->path_twrp != NULL; ++p)
+		{
+			if(p->block_dev.empty())
+				continue;
+
+			system_args("mkdir -p /data/ubuntu%s;"
+						"echo -e \"%s\t%s\t%s\t%s\t0\t0\" >> /data/ubuntu/etc/fstab",
+						p->path_ubuntu,
+						p->block_dev.c_str(), p->path_ubuntu, p->fs.c_str(), p->flags);
+		}
+	}
 
 	// change the way android lxc is initiated
-	system("echo -e \""
-		"if [ \\\"\\$INITRD\\\" = \\\"/boot/android-ramdisk.img\\\" ]; then\\n"
-		"    sed -i \\\"/mount_all /d\\\" \\$LXC_ROOTFS_PATH/init.*.rc\\n"
-		"    sed -i \\\"/on nonencrypted/d\\\" \\$LXC_ROOTFS_PATH/init.rc\\n"
-		"    folders=\\\"data system cache\\\"\\n"
-		"    for dir in \\$folders; do\\n"
-		"        mkdir -p \\$LXC_ROOTFS_PATH/\\$dir\\n"
-		"        mount -n -o bind,recurse /mrom_dir/\\$dir \\$LXC_ROOTFS_PATH/\\$dir\\n"
-		"    done\\n\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
+	if(system("grep -q 'if \\[ \"$INITRD\" = \"/boot/android-ramdisk.img\" \\]; then' /data/ubuntu/var/lib/lxc/android/pre-start.sh") != 0)
+	{
+		system("echo -e \""
+			"if [ \\\"\\$INITRD\\\" = \\\"/boot/android-ramdisk.img\\\" ]; then\\n"
+			"    sed -i \\\"/mount_all /d\\\" \\$LXC_ROOTFS_PATH/init.*.rc\\n"
+			"    sed -i \\\"/on nonencrypted/d\\\" \\$LXC_ROOTFS_PATH/init.rc\\n"
+			"    folders=\\\"data system cache\\\"\\n"
+			"    for dir in \\$folders; do\\n"
+			"        mkdir -p \\$LXC_ROOTFS_PATH/\\$dir\\n"
+			"        mount -n -o bind,recurse /mrom_dir/\\$dir \\$LXC_ROOTFS_PATH/\\$dir\\n"
+			"    done\\n\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
 
 #if MR_DEVICE_RECOVERY_HOOKS >= 1
-	system_args("echo -e \"%s \" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh", mrom_hook_ubuntu_touch_get_extra_mounts());
+		system_args("echo -e \"%s \" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh", mrom_hook_ubuntu_touch_get_extra_mounts());
 #endif
 
-	system("echo -e \"fi\\n\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
+		system("echo -e \"fi\\n\" >> /data/ubuntu/var/lib/lxc/android/pre-start.sh");
+	}
 
 	gui_print("Restoring mounts\n");
 	restoreMounts();
