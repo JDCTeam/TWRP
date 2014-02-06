@@ -11,6 +11,10 @@
 // https://github.com/Tasssadar/libbootimg.git
 #include <libbootimg.h>
 
+#if LIBBOOTIMG_VERSION  < 0x000200
+#error "libbootimg version 0.2.0 or higher is required. Please update libbootimg."
+#endif
+
 #include "multirom.h"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
@@ -1052,7 +1056,7 @@ bool MultiROM::injectBoot(std::string img_path, bool only_if_older)
 	gui_print("Extracting boot image...\n");
 	system("rm -r /tmp/boot; mkdir /tmp/boot");
 
-	if (libbootimg_init_load(&img, img_path.c_str()) < 0 ||
+	if (libbootimg_init_load(&img, img_path.c_str(), LIBBOOTIMG_LOAD_ALL) < 0 ||
 		libbootimg_dump_ramdisk(&img, "/tmp/boot/initrd.img") < 0)
 	{
 		gui_print("Failed to unpack boot img!\n");
@@ -1111,7 +1115,6 @@ bool MultiROM::injectBoot(std::string img_path, bool only_if_older)
 		goto fail;
 	}
 
-	img.size = 0; // any size
 #ifdef MR_RD_ADDR
 	img.hdr.ramdisk_addr = MR_RD_ADDR;
 #endif
@@ -1417,7 +1420,7 @@ bool MultiROM::extractBootForROM(std::string base)
 	struct bootimg img;
 
 	gui_print("Extracting contents of boot.img...\n");
-	if(libbootimg_init_load(&img, (base + "/boot.img").c_str()) < 0)
+	if(libbootimg_init_load(&img, (base + "/boot.img").c_str(), LIBBOOTIMG_LOAD_RAMDISK) < 0)
 	{
 		gui_print("Failed to load bootimg!\n");
 		return false;
@@ -2117,7 +2120,7 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const char *init_
 	gui_print("Extracting boot image...\n");
 	system("rm -r /tmp/boot; mkdir /tmp/boot");
 
-	if (libbootimg_init_load(&img, "/tmp/boot.img") < 0 ||
+	if (libbootimg_init_load(&img, "/tmp/boot.img", LIBBOOTIMG_LOAD_ALL) < 0 ||
 		libbootimg_dump_ramdisk(&img, "/tmp/boot/initrd.img") < 0 ||
 		libbootimg_dump_kernel(&img, "/tmp/boot/zImage") < 0)
 	{
@@ -2148,7 +2151,6 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const char *init_
 	system_args("cp /tmp/boot/zImage %s/zImage", root.c_str());
 
 	if (libbootimg_load_ramdisk(&img, "/tmp/boot/initrd.img") < 0 ||
-		libbootimg_load_kernel(&img, "/tmp/boot/zImage") < 0 ||
 		libbootimg_write_img_and_destroy(&img, (root + "/boot.img").c_str()) < 0)
 	{
 		gui_print("Failed to deploy boot.img!\n");
