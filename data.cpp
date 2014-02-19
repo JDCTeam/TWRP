@@ -1,18 +1,20 @@
 /*
- * Copyright (C) 2007 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+	Copyright 2012 bigbiff/Dees_Troy TeamWin
+	This file is part of TWRP/TeamWin Recovery Project.
+
+	TWRP is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	TWRP is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <linux/input.h>
 #include <pthread.h>
@@ -53,7 +55,7 @@ extern "C"
 	#include "twcommon.h"
 	#include "data.h"
 	#include "gui/pages.h"
-
+	#include "minuitwrp/minui.h"
 	void gui_notifyVarChange(const char *name, const char* value);
 }
 
@@ -581,6 +583,9 @@ void DataManager::SetDefaultValues()
 
 	mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
 	mValues.insert(make_pair("tw_storage_path", make_pair("/", 1)));
+	mValues.insert(make_pair("tw_button_vibrate", make_pair("80", 1)));
+	mValues.insert(make_pair("tw_keyboard_vibrate", make_pair("40", 1)));
+	mValues.insert(make_pair("tw_action_vibrate", make_pair("160", 1)));
 
 #ifdef TW_FORCE_CPUINFO_FOR_DEVICE_ID
 	printf("TW_FORCE_CPUINFO_FOR_DEVICE_ID := true\n");
@@ -1249,4 +1254,12 @@ extern "C" void DataManager_DumpValues(void)
 extern "C" void DataManager_ReadSettingsFile(void)
 {
 	return DataManager::ReadSettingsFile();
+}
+void DataManager::Vibrate(const string varName)
+{
+	int vib_value = 0;
+	GetValue(varName, vib_value);
+	if (vib_value) {
+		vibrate(vib_value);
+	}
 }

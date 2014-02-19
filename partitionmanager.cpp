@@ -1,24 +1,20 @@
-/* Partition Management classes for TWRP
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- *
- * The code was written from scratch by Dees_Troy dees_troy at
- * yahoo
- *
- * Copyright (c) 2012
- */
+/*
+	Copyright 2012 bigbiff/Dees_Troy TeamWin
+	This file is part of TWRP/TeamWin Recovery Project.
+
+	TWRP is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	TWRP is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +36,11 @@
 #include "twrp-functions.hpp"
 #include "fixPermissions.hpp"
 #include "twrpDigest.hpp"
+#include "twrpDU.hpp"
+
+extern "C" {
+	#include "cutils/properties.h"
+}
 
 #ifdef TW_INCLUDE_CRYPTO
 	#ifdef TW_INCLUDE_JB_CRYPTO
@@ -47,8 +48,10 @@
 	#else
 		#include "crypto/ics/cryptfs.h"
 	#endif
-	#include "cutils/properties.h"
 #endif
+
+TWPartitionManager::TWPartitionManager(void) {
+}
 
 int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error) {
 	FILE *fstabFile;
@@ -93,6 +96,9 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 			if ((*iter)->Is_Storage) {
 				(*iter)->Is_Settings_Storage = true;
+#ifndef RECOVERY_SDCARD_ON_DATA
+				(*iter)->Setup_AndSec();
+#endif
 				Found_Settings_Storage = true;
 				DataManager::SetValue("tw_settings_path", (*iter)->Storage_Path);
 				DataManager::SetValue("tw_storage_path", (*iter)->Storage_Path);
@@ -244,6 +250,8 @@ void TWPartitionManager::Output_Partition(TWPartition* Part) {
 		printf("   Bind_Of: %s\n", Part->Bind_Of.c_str());
 	string back_meth = Part->Backup_Method_By_Name();
 	printf("   Backup_Method: %s\n\n", back_meth.c_str());
+	if (Part->Mount_Flags || !Part->Mount_Options.empty())
+		printf("   Mount_Flags=0x%8x, Mount_Options=%s\n", Part->Mount_Flags, Part->Mount_Options.c_str());
 }
 
 int TWPartitionManager::Mount_By_Path(string Path, bool Display_Error) {
@@ -779,7 +787,7 @@ int TWPartitionManager::Run_Backup(void) {
 
 	time(&total_stop);
 	int total_time = (int) difftime(total_stop, total_start);
-	unsigned long long actual_backup_size = TWFunc::Get_Folder_Size(Full_Backup_Path, true);
+	uint64_t actual_backup_size = du.Get_Folder_Size(Full_Backup_Path);
     actual_backup_size /= (1024LLU * 1024LLU);
 
 	int prev_img_bps, use_compression;
@@ -906,7 +914,6 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 			end_pos = Restore_List.find(";", start_pos);
 		}
 	}
-
 	TWFunc::GUI_Operation_Text(TW_UPDATE_SYSTEM_DETAILS_TEXT, "Updating System Details");
 	Update_System_Details();
 	UnMount_Main_Partitions();
@@ -1481,9 +1488,8 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 			if (dat->Mount(false) && TWFunc::Path_Exists("/data/media/0")) {
 				dat->Storage_Path = "/data/media/0";
 				dat->Symlink_Path = dat->Storage_Path;
-				DataManager::SetValue(TW_INTERNAL_PATH, "/data/media/0");
+				DataManager::SetValue("tw_storage_path", "/data/media/0");
 				dat->UnMount(false);
-				DataManager::SetBackupFolder();
 				Output_Partition(dat);
 			}
 #endif
@@ -1531,6 +1537,7 @@ int TWPartitionManager::Open_Lun_File(string Partition_Path, string Lun_File) {
 		LOGERR("Unable to write to ums lunfile '%s': (%s)\n", Lun_File.c_str(), strerror(errno));
 		return false;
 	}
+	property_set("sys.storage.ums_enabled", "1");
 	return true;
 }
 
@@ -1591,6 +1598,7 @@ int TWPartitionManager::usb_storage_disable(void) {
 	Mount_All_Storage();
 	Update_System_Details();
 	UnMount_Main_Partitions();
+	property_set("sys.storage.ums_enabled", "0");
 	if (ret < 0 && index == 0) {
 		LOGERR("Unable to write to ums lunfile '%s'.", lun_file);
 		return false;
@@ -1833,7 +1841,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 			while (end_pos != string::npos && start_pos < Restore_List.size()) {
 				restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
 				if ((restore_part = Find_Partition_By_Path(restore_path)) != NULL) {
-					if (restore_part->Backup_Name == "recovery" || restore_part->Is_SubPartition) {
+					if (restore_part->Backup_Name == "recovery" && !restore_part->Can_Be_Backed_Up || restore_part->Is_SubPartition) {
 						// Don't allow restore of recovery (causes problems on some devices)
 						// Don't add subpartitions to the list of items
 					} else {

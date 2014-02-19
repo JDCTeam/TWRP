@@ -52,7 +52,7 @@ extern "C" {
 #define SCROLLING_FLOOR 10
 #define SCROLLING_MULTIPLIER 6
 
-GUIPartitionList::GUIPartitionList(xml_node<>* node)
+GUIPartitionList::GUIPartitionList(xml_node<>* node) : GUIObject(node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -344,6 +344,9 @@ GUIPartitionList::~GUIPartitionList()
 
 int GUIPartitionList::Render(void)
 {
+	if(!isConditionTrue())
+		return 0;
+
 	// First step, fill background
 	gr_color(mBackgroundColor.red, mBackgroundColor.green, mBackgroundColor.blue, 255);
 	gr_fill(mRenderX, mRenderY + mHeaderH, mRenderW, mRenderH - mHeaderH);
@@ -525,6 +528,9 @@ int GUIPartitionList::Render(void)
 
 int GUIPartitionList::Update(void)
 {
+	if(!isConditionTrue())
+		return 0;
+
 	if (!mHeaderIsStatic) {
 		std::string newValue = gui_parse_text(mHeaderText);
 		if (mLastValue != newValue) {
@@ -619,6 +625,9 @@ int GUIPartitionList::GetSelection(int x, int y)
 
 int GUIPartitionList::NotifyTouch(TOUCH_STATE state, int x, int y)
 {
+	if(!isConditionTrue())
+		return -1;
+
 	static int lastY = 0, last2Y = 0;
 	int selection = 0;
 
@@ -735,6 +744,8 @@ int GUIPartitionList::NotifyTouch(TOUCH_STATE state, int x, int y)
 			}
 
 			if (actualSelection < listSize && ListType == "mount") {
+				DataManager::Vibrate("tw_button_vibrate");
+
 				if (!mList.at(actualSelection).selected) {
 					if (PartitionManager.Mount_By_Path(mList.at(actualSelection).Mount_Point, true)) {
 						mList.at(actualSelection).selected = 1;
@@ -747,6 +758,8 @@ int GUIPartitionList::NotifyTouch(TOUCH_STATE state, int x, int y)
 					}
 				}
 			} else if (actualSelection < listSize && !mVariable.empty()) {
+				DataManager::Vibrate("tw_button_vibrate");
+
 				if (ListType == "storage") {
 					int i;
 					std::string str = mList.at(actualSelection).Mount_Point;
@@ -814,8 +827,13 @@ int GUIPartitionList::NotifyTouch(TOUCH_STATE state, int x, int y)
 	return 0;
 }
 
-int GUIPartitionList::NotifyVarChange(std::string varName, std::string value)
+int GUIPartitionList::NotifyVarChange(const std::string& varName, const std::string& value)
 {
+	GUIObject::NotifyVarChange(varName, value);
+
+	if(!isConditionTrue())
+		return 0;
+
 	if (!mHeaderIsStatic) {
 		std::string newValue = gui_parse_text(mHeaderText);
 		if (mLastValue != newValue) {

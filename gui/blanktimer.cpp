@@ -153,6 +153,7 @@ int blanktimer::setBrightness(int brightness) {
 	bstring = buff;
 	if ((TWFunc::write_file(brightness_path, bstring)) != 0)
 		return -1;
+	gui_forceRender();
 	return 0;
 }
 

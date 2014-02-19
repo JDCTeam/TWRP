@@ -15,7 +15,8 @@
 	You should have received a copy of the GNU General Public License
 	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
 */
-// objects.h - Base classes for object manager of GUI
+
+// objects.hpp - Base classes for object manager of GUI
 
 #ifndef _OBJECTS_HEADER
 #define _OBJECTS_HEADER
@@ -24,6 +25,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <time.h>
 
 extern "C" {
 #ifdef HAVE_SELINUX
@@ -112,33 +114,38 @@ public:
 	//  Return 0 if this object handles the request, 1 if not
 	virtual int IsInRegion(int x, int y) { return ((x < mActionX || x > mActionX + mActionW || y < mActionY || y > mActionY + mActionH) ? 0 : 1); }
 
-	// NotifyVarChange - Notify of a variable change
-	//  Returns 0 on success, <0 on error
-	virtual int NotifyVarChange(std::string varName, std::string value) { return 0; }
-
 protected:
 	int mActionX, mActionY, mActionW, mActionH;
 };
 
-class Conditional
+class GUIObject
 {
 public:
-	Conditional(xml_node<>* node);
+	GUIObject(xml_node<>* node);
+	virtual ~GUIObject();
 
 public:
 	bool IsConditionVariable(std::string var);
 	bool isConditionTrue();
 	bool isConditionValid();
-	void NotifyPageSet();
+
+	// NotifyVarChange - Notify of a variable change
+	//  Returns 0 on success, <0 on error
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 
 protected:
 	class Condition
 	{
 	public:
+		Condition() {
+			mLastResult = true;
+		}
+
 		std::string mVar1;
 		std::string mVar2;
 		std::string mCompareOp;
 		std::string mLastVal;
+		bool mLastResult;
 	};
 
 	std::vector<Condition> mConditions;
@@ -146,6 +153,8 @@ protected:
 protected:
 	bool isMounted(std::string vol);
 	bool isConditionTrue(Condition* condition);
+
+	bool mConditionsResult;
 };
 
 class InputObject
@@ -167,7 +176,7 @@ protected:
 
 // Derived Objects
 // GUIText - Used for static text
-class GUIText : public RenderObject, public ActionObject, public Conditional
+class GUIText : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	// w and h may be ignored, in which case, no bounding box is applied
@@ -186,7 +195,7 @@ public:
 	virtual int GetCurrentBounds(int& w, int& h);
 
 	// Notify of a variable change
-	virtual int NotifyVarChange(std::string varName, std::string value);
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 
 	// Set maximum width in pixels
 	virtual int SetMaxWidth(unsigned width);
@@ -215,7 +224,7 @@ protected:
 };
 
 // GUIImage - Used for static image
-class GUIImage : public RenderObject, public Conditional
+class GUIImage : public GUIObject, public RenderObject
 {
 public:
 	GUIImage(xml_node<>* node);
@@ -238,7 +247,7 @@ protected:
 };
 
 // GUIFill - Used for fill colors
-class GUIFill : public RenderObject
+class GUIFill : public GUIObject, public RenderObject
 {
 public:
 	GUIFill(xml_node<>* node);
@@ -253,7 +262,7 @@ protected:
 };
 
 // GUIAction - Used for standard actions
-class GUIAction : public ActionObject, public Conditional
+class GUIAction : public GUIObject, public ActionObject
 {
 public:
 	GUIAction(xml_node<>* node);
@@ -261,7 +270,7 @@ public:
 public:
 	virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
 	virtual int NotifyKey(int key);
-	virtual int NotifyVarChange(std::string varName, std::string value);
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 	virtual int doActions();
 
 protected:
@@ -284,9 +293,10 @@ protected:
 	void operation_start(const string operation_name);
 	void operation_end(const int operation_status, const int simulate);
 	static void* command_thread(void *cookie);
+	time_t Start;
 };
 
-class GUIConsole : public RenderObject, public ActionObject
+class GUIConsole : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUIConsole(xml_node<>* node);
@@ -344,7 +354,7 @@ protected:
 	virtual int RenderConsole(void);
 };
 
-class GUIButton : public RenderObject, public ActionObject, public Conditional
+class GUIButton : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUIButton(xml_node<>* node);
@@ -383,7 +393,7 @@ protected:
 	Placement TextPlacement;
 };
 
-class GUICheckbox: public RenderObject, public ActionObject, public Conditional
+class GUICheckbox: public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUICheckbox(xml_node<>* node);
@@ -417,7 +427,7 @@ protected:
 	std::string mVarName;
 };
 
-class GUIFileSelector : public RenderObject, public ActionObject, public Conditional
+class GUIFileSelector : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUIFileSelector(xml_node<>* node);
@@ -437,7 +447,7 @@ public:
 	virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
 
 	// NotifyVarChange - Notify of a variable change
-	virtual int NotifyVarChange(std::string varName, std::string value);
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 
 	// SetPos - Update the position of the render object
 	//  Return 0 on success, <0 on error
@@ -522,7 +532,7 @@ protected:
 	bool updateFileList;
 };
 
-class GUIListBox : public RenderObject, public ActionObject, public Conditional
+class GUIListBox : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUIListBox(xml_node<>* node);
@@ -542,7 +552,7 @@ public:
 	virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
 
 	// NotifyVarChange - Notify of a variable change
-	virtual int NotifyVarChange(std::string varName, std::string value);
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 
 	// SetPos - Update the position of the render object
 	//  Return 0 on success, <0 on error
@@ -611,7 +621,7 @@ protected:
 	int touchDebounce;
 };
 
-class GUIPartitionList : public RenderObject, public ActionObject
+class GUIPartitionList : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUIPartitionList(xml_node<>* node);
@@ -631,7 +641,7 @@ public:
 	virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
 
 	// NotifyVarChange - Notify of a variable change
-	virtual int NotifyVarChange(std::string varName, std::string value);
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 
 	// SetPos - Update the position of the render object
 	//  Return 0 on success, <0 on error
@@ -696,7 +706,7 @@ protected:
 };
 
 // GUIAnimation - Used for animations
-class GUIAnimation : public RenderObject
+class GUIAnimation : public GUIObject, public RenderObject
 {
 public:
 	GUIAnimation(xml_node<>* node);
@@ -719,7 +729,7 @@ protected:
 	int mUpdateCount;
 };
 
-class GUIProgressBar : public RenderObject, public ActionObject
+class GUIProgressBar : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUIProgressBar(xml_node<>* node);
@@ -735,7 +745,7 @@ public:
 
 	// NotifyVarChange - Notify of a variable change
 	//  Returns 0 on success, <0 on error
-	virtual int NotifyVarChange(std::string varName, std::string value);
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 
 protected:
 	Resource* mEmptyBar;
@@ -752,7 +762,8 @@ protected:
 	virtual int RenderInternal(void);	   // Does the actual render
 };
 
-class GUISlider : public RenderObject, public ActionObject, public Conditional
+
+class GUISlider : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUISlider(xml_node<>* node);
@@ -797,7 +808,7 @@ protected:
 #define KEYBOARD_SPECIAL_KEYS 245
 #define KEYBOARD_BACKSPACE 8
 
-class GUIKeyboard : public RenderObject, public ActionObject, public Conditional
+class GUIKeyboard : public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUIKeyboard(xml_node<>* node);
@@ -835,7 +846,7 @@ protected:
 };
 
 // GUIInput - Used for keyboard input
-class GUIInput : public RenderObject, public ActionObject, public Conditional, public InputObject
+class GUIInput : public GUIObject, public RenderObject, public ActionObject, public InputObject
 {
 public:
 	// w and h may be ignored, in which case, no bounding box is applied
@@ -852,7 +863,7 @@ public:
 	virtual int Update(void);
 
 	// Notify of a variable change
-	virtual int NotifyVarChange(std::string varName, std::string value);
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 
 	// NotifyTouch - Notify of a touch event
 	//  Return 0 on success, >0 to ignore remainder of touch, and <0 on error
@@ -911,7 +922,7 @@ public:
 	virtual int KeyRepeat(void);
 };
 
-class GUISliderValue: public RenderObject, public ActionObject, public Conditional
+class GUISliderValue: public GUIObject, public RenderObject, public ActionObject
 {
 public:
 	GUISliderValue(xml_node<>* node);
@@ -935,7 +946,7 @@ public:
 	virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
 
 	// Notify of a variable change
-	virtual int NotifyVarChange(std::string varName, std::string value);
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
 
 	// SetPageFocus - Notify when a page gains or loses focus
 	virtual void SetPageFocus(int inFocus);

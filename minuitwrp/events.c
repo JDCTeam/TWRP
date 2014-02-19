@@ -112,6 +112,8 @@ int vibrate(int timeout_ms)
     int fd;
     int ret;
 
+    if (timeout_ms > 10000) timeout_ms = 1000;
+
     fd = open(VIBRATOR_TIMEOUT_FILE, O_WRONLY);
     if (fd < 0)
         return -1;
@@ -439,10 +441,12 @@ static int vk_modify(struct ev *e, struct input_event *ev)
         case ABS_MT_TOUCH_MAJOR: //30
             if (ev->value == 0)
             {
+#ifndef TW_IGNORE_MAJOR_AXIS_0
                 // We're in a touch release, although some devices will still send positions as well
                 e->mt_p.x = 0;
                 e->mt_p.y = 0;
                 touchReleaseOnNextSynReport = 1;
+#endif
             }
 #ifdef _EVENT_LOGGING
             printf("EV: %s => EV_ABS  ABS_MT_TOUCH_MAJOR  %d\n", e->deviceName, ev->value);

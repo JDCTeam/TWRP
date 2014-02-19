@@ -1,3 +1,21 @@
+/*
+        Copyright 2012 bigbiff/Dees_Troy TeamWin
+        This file is part of TWRP/TeamWin Recovery Project.
+
+        TWRP is free software: you can redistribute it and/or modify
+        it under the terms of the GNU General Public License as published by
+        the Free Software Foundation, either version 3 of the License, or
+        (at your option) any later version.
+
+        TWRP is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU General Public License for more details.
+
+        You should have received a copy of the GNU General Public License
+        along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 // input.cpp - GUIInput object
 
 #include <linux/input.h>
@@ -29,7 +47,7 @@ extern "C" {
 #include "../data.hpp"
 
 GUIInput::GUIInput(xml_node<>* node)
-	: Conditional(node)
+	: GUIObject(node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -198,7 +216,6 @@ GUIInput::~GUIInput()
 	if (mInputText)	 	delete mInputText;
 	if (mBackground)	delete mBackground;
 	if (mCursor)		delete mCursor;
-	if (mFont)			delete mFont;
 	if (mAction)		delete mAction;
 }
 
@@ -574,8 +591,10 @@ int GUIInput::NotifyTouch(TOUCH_STATE state, int x, int y)
 	return 0;
 }
 
-int GUIInput::NotifyVarChange(std::string varName, std::string value)
+int GUIInput::NotifyVarChange(const std::string& varName, const std::string& value)
 {
+	GUIObject::NotifyVarChange(varName, value);
+
 	if (varName == mVariable && !isLocalChange) {
 		HandleTextLocation(-1003);
 		return 0;

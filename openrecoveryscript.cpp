@@ -1,24 +1,20 @@
-/* OpenRecoveryScript class for TWRP
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- *
- * The code was written from scratch by Dees_Troy dees_troy at
- * yahoo
- *
- * Copyright (c) 2012
- */
+/*
+	Copyright 2012 bigbiff/Dees_Troy TeamWin
+	This file is part of TWRP/TeamWin Recovery Project.
+
+	TWRP is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	TWRP is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,24 +186,21 @@ int OpenRecoveryScript::run_script_file(void) {
 				if (folder_path[0] != '/') {
 					char backup_folder[512];
 					string folder_var;
-					DataManager::GetValue(TW_BACKUPS_FOLDER_VAR, folder_var);
-					sprintf(backup_folder, "%s/%s", folder_var.c_str(), folder_path);
-					LOGINFO("Restoring relative path: '%s'\n", backup_folder);
-					if (!TWFunc::Path_Exists(backup_folder)) {
-						if (DataManager::GetIntValue(TW_HAS_DUAL_STORAGE)) {
-							if (DataManager::GetIntValue(TW_USE_EXTERNAL_STORAGE)) {
-								LOGINFO("Backup folder '%s' not found on external storage, trying internal...\n", folder_path);
-								DataManager::SetValue(TW_USE_EXTERNAL_STORAGE, 0);
-							} else {
-								LOGINFO("Backup folder '%s' not found on internal storage, trying external...\n", folder_path);
-								DataManager::SetValue(TW_USE_EXTERNAL_STORAGE, 1);
-							}
+					std::vector<PartitionList> Storage_List;
+
+					PartitionManager.Get_Partition_List("storage", &Storage_List);
+					int listSize = Storage_List.size();
+					for (int i = 0; i < listSize; i++) {
+						if (PartitionManager.Is_Mounted_By_Path(Storage_List.at(i).Mount_Point)) {
+							DataManager::SetValue("tw_storage_path", Storage_List.at(i).Mount_Point);
 							DataManager::GetValue(TW_BACKUPS_FOLDER_VAR, folder_var);
 							sprintf(backup_folder, "%s/%s", folder_var.c_str(), folder_path);
-							LOGINFO("2Restoring relative path: '%s'\n", backup_folder);
+							if (TWFunc::Path_Exists(backup_folder)) {
+								strcpy(folder_path, backup_folder);
+								break;
+							}
 						}
 					}
-					strcpy(folder_path, backup_folder);
 				} else {
 					if (folder_path[strlen(folder_path) - 1] == '/')
 						strcat(folder_path, ".");
@@ -355,6 +348,10 @@ int OpenRecoveryScript::run_script_file(void) {
 					sideload = 1; // Causes device to go to the home screen afterwards
 					gui_print("Sideload finished.\n");
 				}
+			} else if (strcmp(command, "fixperms") == 0 || strcmp(command, "fixpermissions") == 0) {
+				ret_val = PartitionManager.Fix_Permissions();
+				if (ret_val != 0)
+					ret_val = 1; // failure
 			} else {
 				LOGERR("Unrecognized script command: '%s'\n", command);
 				ret_val = 1;
@@ -400,42 +397,26 @@ int OpenRecoveryScript::Install_Command(string Zip) {
 	// Install zip
 	string ret_string;
 	int ret_val = 0, wipe_cache = 0;
+	std::vector<PartitionList> Storage_List;
+	string Full_Path;
 
 	PartitionManager.Mount_All_Storage();
-	if (Zip.substr(0, 1) != "/") {
-		// Relative path given
-		string Full_Path;
-
-		Full_Path = DataManager::GetCurrentStoragePath();
-		Full_Path += "/" + Zip;
-		LOGINFO("Full zip path: '%s'\n", Full_Path.c_str());
-		if (!TWFunc::Path_Exists(Full_Path)) {
-			ret_string = Locate_Zip_File(Full_Path, DataManager::GetCurrentStoragePath());
-			if (!ret_string.empty()) {
-				Full_Path = ret_string;
-			} else if (DataManager::GetIntValue(TW_HAS_DUAL_STORAGE)) {
-				if (DataManager::GetIntValue(TW_USE_EXTERNAL_STORAGE)) {
-					LOGINFO("Zip file not found on external storage, trying internal...\n");
-					DataManager::SetValue(TW_USE_EXTERNAL_STORAGE, 0);
-				} else {
-					LOGINFO("Zip file not found on internal storage, trying external...\n");
-					DataManager::SetValue(TW_USE_EXTERNAL_STORAGE, 1);
-				}
-				Full_Path = DataManager::GetCurrentStoragePath();
-				Full_Path += "/" + Zip;
-				LOGINFO("Full zip path: '%s'\n", Full_Path.c_str());
-				ret_string = Locate_Zip_File(Full_Path, DataManager::GetCurrentStoragePath());
-				if (!ret_string.empty())
-					Full_Path = ret_string;
+	PartitionManager.Get_Partition_List("storage", &Storage_List);
+	int listSize = Storage_List.size();
+	for (int i = 0; i < listSize; i++) {
+		if (PartitionManager.Is_Mounted_By_Path(Storage_List.at(i).Mount_Point)) {
+			Full_Path = Storage_List.at(i).Mount_Point + "/" + Zip;
+			if (TWFunc::Path_Exists(Full_Path)) {
+				Zip = Full_Path;
+				break;
 			}
-		}
-		Zip = Full_Path;
-	} else {
-		// Full path given
-		if (!TWFunc::Path_Exists(Zip)) {
-			ret_string = Locate_Zip_File(Zip, DataManager::GetCurrentStoragePath());
-			if (!ret_string.empty())
+			Full_Path = Zip;
+			LOGINFO("Trying to find zip '%s' on '%s'...\n", Full_Path.c_str(), Storage_List.at(i).Mount_Point.c_str());
+			ret_string = Locate_Zip_File(Full_Path, Storage_List.at(i).Mount_Point);
+			if (!ret_string.empty()) {
 				Zip = ret_string;
+				break;
+			}
 		}
 	}
 
@@ -478,9 +459,11 @@ string OpenRecoveryScript::Locate_Zip_File(string Zip, string Storage_Root) {
 	{
 		pathCpy = Path.substr(pos, Path.size() - pos);
 		wholePath = pathCpy + "/" + File;
+		LOGINFO("Looking for zip at '%s'\n", wholePath.c_str());
 		if (TWFunc::Path_Exists(wholePath))
 			return wholePath;
 		wholePath = Storage_Root + "/" + wholePath;
+		LOGINFO("Looking for zip at '%s'\n", wholePath.c_str());
 		if (TWFunc::Path_Exists(wholePath))
 			return wholePath;
 

@@ -1,24 +1,20 @@
-/* keyboard.cpp - GUIKeyboard object
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- *
- * The code was written from scratch by Dees_Troy dees_troy at
- * yahoo
- *
- * Copyright (c) 2012
- */
+/*
+        Copyright 2012 bigbiff/Dees_Troy TeamWin
+        This file is part of TWRP/TeamWin Recovery Project.
+
+        TWRP is free software: you can redistribute it and/or modify
+        it under the terms of the GNU General Public License as published by
+        the Free Software Foundation, either version 3 of the License, or
+        (at your option) any later version.
+
+        TWRP is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU General Public License for more details.
+
+        You should have received a copy of the GNU General Public License
+        along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -34,6 +30,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "../data.hpp"
 
 #include <string>
 
@@ -46,7 +43,7 @@ extern "C" {
 #include "objects.hpp"
 
 GUIKeyboard::GUIKeyboard(xml_node<>* node)
-	: Conditional(node)
+	: GUIObject(node)
 {
 	int layoutindex, rowindex, keyindex, Xindex, Yindex, keyHeight = 0, keyWidth = 0;
 	rowY = colX = -1;
@@ -307,10 +304,7 @@ GUIKeyboard::GUIKeyboard(xml_node<>* node)
 
 GUIKeyboard::~GUIKeyboard()
 {
-	int layoutindex;
 
-	for (layoutindex=0; layoutindex<MAX_KEYBOARD_LAYOUTS; layoutindex++)
-		if (keyboardImg[layoutindex])   delete keyboardImg[layoutindex];
 }
 
 int GUIKeyboard::Render(void)
@@ -479,6 +473,7 @@ int GUIKeyboard::NotifyTouch(TOUCH_STATE state, int x, int y)
 					startSelection = 0;
 					break;
 				} else if (state == TOUCH_RELEASE && was_held == 0) {
+					DataManager::Vibrate("tw_keyboard_vibrate");
 					if ((int)keyboard_keys[currentLayout - 1][rowIndex][indexx].key < KEYBOARD_SPECIAL_KEYS && (int)keyboard_keys[currentLayout - 1][rowIndex][indexx].key > 0) {
 						// Regular key
 						PageManager::NotifyKeyboard(keyboard_keys[currentLayout - 1][rowIndex][indexx].key);
@@ -504,6 +499,7 @@ int GUIKeyboard::NotifyTouch(TOUCH_STATE state, int x, int y)
 						PageManager::NotifyKeyboard(keyboard_keys[currentLayout - 1][rowIndex][indexx].key);
 					} else if ((int)keyboard_keys[currentLayout - 1][rowIndex][indexx].longpresskey < KEYBOARD_SPECIAL_KEYS && (int)keyboard_keys[currentLayout - 1][rowIndex][indexx].longpresskey > 0) {
 						// Long Press Key
+						DataManager::Vibrate("tw_keyboard_vibrate");
 						PageManager::NotifyKeyboard(keyboard_keys[currentLayout - 1][rowIndex][indexx].longpresskey);
 					}
 				} else if (state == TOUCH_REPEAT) {

@@ -27,8 +27,10 @@ extern "C" {
 #include "objects.hpp"
 #include "../data.hpp"
 
-Conditional::Conditional(xml_node<>* node)
+GUIObject::GUIObject(xml_node<>* node)
 {
+	mConditionsResult = true;
+
 	// Break out early, it's too hard to check if valid every step
 	if (!node)		return;
 
@@ -61,7 +63,11 @@ Conditional::Conditional(xml_node<>* node)
 	}
 }
 
-bool Conditional::IsConditionVariable(std::string var)
+GUIObject::~GUIObject()
+{
+}
+
+bool GUIObject::IsConditionVariable(std::string var)
 {
 	std::vector<Condition>::iterator iter;
 	for (iter = mConditions.begin(); iter != mConditions.end(); iter++)
@@ -72,18 +78,12 @@ bool Conditional::IsConditionVariable(std::string var)
 	return false;
 }
 
-bool Conditional::isConditionTrue()
+bool GUIObject::isConditionTrue()
 {
-	std::vector<Condition>::iterator iter;
-	for (iter = mConditions.begin(); iter != mConditions.end(); iter++)
-	{
-		if (!isConditionTrue(&(*iter)))
-			return false;
-	}
-	return true;
+	return mConditionsResult;
 }
 
-bool Conditional::isConditionTrue(Condition* condition)
+bool GUIObject::isConditionTrue(Condition* condition)
 {
 	// This is used to hold the proper value of "true" based on the '!' NOT flag
 	bool bTrue = true;
@@ -150,17 +150,20 @@ bool Conditional::isConditionTrue(Condition* condition)
 	return !bTrue;
 }
 
-bool Conditional::isConditionValid()
+bool GUIObject::isConditionValid()
 {
 	return !mConditions.empty();
 }
 
-void Conditional::NotifyPageSet()
+int GUIObject::NotifyVarChange(const std::string& varName, const std::string& value)
 {
+	mConditionsResult = true;
+
+	const bool varNameEmpty = varName.empty();
 	std::vector<Condition>::iterator iter;
-	for (iter = mConditions.begin(); iter != mConditions.end(); iter++)
+	for (iter = mConditions.begin(); iter != mConditions.end(); ++iter)
 	{
-		if (iter->mCompareOp == "modified")
+		if(varNameEmpty && iter->mCompareOp == "modified")
 		{
 			string val;
 	
@@ -172,10 +175,17 @@ void Conditional::NotifyPageSet()
 			}
 			iter->mLastVal = val;
 		}
+
+		if(varNameEmpty || iter->mVar1 == varName || iter->mVar2 == varName)
+			iter->mLastResult = isConditionTrue(&(*iter));
+
+		if(!iter->mLastResult)
+			mConditionsResult = false;
 	}
+	return 0;
 }
 
-bool Conditional::isMounted(string vol)
+bool GUIObject::isMounted(string vol)
 {
 	FILE *fp;
 	char tmpOutput[255];

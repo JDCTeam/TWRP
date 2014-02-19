@@ -27,6 +27,7 @@ extern "C" {
 #include <fstream>
 #include <string>
 #include <vector>
+#include "twrpDU.hpp"
 
 using namespace std;
 
@@ -46,11 +47,11 @@ public:
 	virtual ~twrpTar();
 	int createTarFork();
 	int extractTarFork();
-	int splitArchiveFork();
 	void setexcl(string exclude);
 	void setfn(string fn);
 	void setdir(string dir);
-	unsigned long long uncompressedSize();
+	void setsize(unsigned long long backup_size);
+	void setpassword(string pass);
 
 public:
 	int use_encryption;
@@ -67,22 +68,19 @@ private:
 	int addFile(string fn, bool include_root);
 	int entryExists(string entry);
 	int closeTar();
-	int create();
-	int Split_Archive();
 	int removeEOT(string tarFile);
 	int extractTar();
-	int tarDirs(bool include_root);
-	int Generate_Multiple_Archives(string Path);
 	string Strip_Root_Dir(string Path);
 	int openTar();
 	int Generate_TarList(string Path, std::vector<TarListStruct> *TarList, unsigned long long *Target_Size, unsigned *thread_id);
 	static void* createList(void *cookie);
 	static void* extractMulti(void *cookie);
-	int tarList(bool include_root, std::vector<TarListStruct> *TarList, unsigned thread_id);
+	int tarList(std::vector<TarListStruct> *TarList, unsigned thread_id);
 
-	int Archive_File_Count;
 	int Archive_Current_Type;
 	unsigned long long Archive_Current_Size;
+	unsigned long long Total_Backup_Size;
+	bool include_root_dir;
 	TAR *t;
 	int fd;
 	pid_t pigz_pid;
@@ -91,9 +89,9 @@ private:
 	string tardir;
 	string tarfn;
 	string basefn;
+	string password;
 
 	vector <string> tarexclude;
-	vector<string> split;
 
 	std::vector<TarListStruct> *ItemList;
 	int thread_id;

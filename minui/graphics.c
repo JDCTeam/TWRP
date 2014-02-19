@@ -390,8 +390,8 @@ int gr_init(void)
 
     get_memory_surface(&gr_mem_surface);
 
-    fprintf(stderr, "framebuffer: fd %d (%d x %d)\n",
-            gr_fb_fd, gr_framebuffer[0].width, gr_framebuffer[0].height);
+    printf("framebuffer: fd %d (%d x %d)\n",
+           gr_fb_fd, gr_framebuffer[0].width, gr_framebuffer[0].height);
 
         /* start with 0 as front (displayed) and 1 as back (drawing) */
     gr_active_fb = 0;
@@ -437,9 +437,23 @@ gr_pixel *gr_fb_data(void)
 
 void gr_fb_blank(bool blank)
 {
+#if defined(TW_NO_SCREEN_BLANK) && defined(TW_BRIGHTNESS_PATH) && defined(TW_MAX_BRIGHTNESS)
+    int fd;
+    char brightness[4];
+    snprintf(brightness, 4, "%03d", TW_MAX_BRIGHTNESS/2);
+
+    fd = open(TW_BRIGHTNESS_PATH, O_RDWR);
+    if (fd < 0) {
+        perror("cannot open LCD backlight");
+        return;
+    }
+    write(fd, blank ? "000" : brightness, 3);
+    close(fd);
+#else
     int ret;
 
     ret = ioctl(gr_fb_fd, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK);
     if (ret < 0)
         perror("ioctl(): blank");
+#endif
 }

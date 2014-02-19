@@ -30,6 +30,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "../data.hpp"
 
 #include <string>
 
@@ -42,7 +43,7 @@ extern "C" {
 #include "objects.hpp"
 
 GUIButton::GUIButton(xml_node<>* node)
-	: Conditional(node)
+	: GUIObject(node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -58,15 +59,19 @@ GUIButton::GUIButton(xml_node<>* node)
 
 	if (!node)  return;
 
-	// Three of the four can be loaded directly from the node
-	mButtonImg = new GUIImage(node);
+	// These can be loaded directly from the node
 	mButtonLabel = new GUIText(node);
 	mAction = new GUIAction(node);
 
-	if (mButtonImg->Render() < 0)
+	child = node->first_node("image");
+	if (child)
 	{
-		delete mButtonImg;
-		mButtonImg = NULL;
+		mButtonImg = new GUIImage(node);
+		if (mButtonImg->Render() < 0)
+		{
+			delete mButtonImg;
+			mButtonImg = NULL;
+		}
 	}
 	if (mButtonLabel->Render() < 0)
 	{
@@ -276,6 +281,7 @@ int GUIButton::NotifyTouch(TOUCH_STATE state, int x, int y)
 	} else {
 		if (last_state == 0) {
 			last_state = 1;
+			DataManager::Vibrate("tw_button_vibrate");
 			if (mButtonLabel != NULL)
 				mButtonLabel->isHighlighted = true;
 			if (mButtonImg != NULL)

@@ -16,9 +16,6 @@ LOCAL_C_INCLUDES += \
     system/core/include \
     external/jpeg
 
-LOCAL_C_INCLUDES += \
-    bootable/recovery/libjpegtwrp
-
 ifeq ($(RECOVERY_TOUCHSCREEN_SWAP_XY), true)
 LOCAL_CFLAGS += -DRECOVERY_TOUCHSCREEN_SWAP_XY
 endif
@@ -53,6 +50,10 @@ endif
 
 ifeq ($(BOARD_HAS_FLIPPED_SCREEN), true)
 LOCAL_CFLAGS += -DBOARD_HAS_FLIPPED_SCREEN
+endif
+
+ifeq ($(TW_IGNORE_MAJOR_AXIS_0), true)
+LOCAL_CFLAGS += -DTW_IGNORE_MAJOR_AXIS_0
 endif
 
 ifneq ($(BOARD_USE_CUSTOM_RECOVERY_FONT),)

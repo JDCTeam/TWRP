@@ -1,18 +1,20 @@
 /*
- * Copyright (C) 2007 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+        Copyright 2012 bigbiff/Dees_Troy TeamWin
+        This file is part of TWRP/TeamWin Recovery Project.
+
+        TWRP is free software: you can redistribute it and/or modify
+        it under the terms of the GNU General Public License as published by
+        the Free Software Foundation, either version 3 of the License, or
+        (at your option) any later version.
+
+        TWRP is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU General Public License for more details.
+
+        You should have received a copy of the GNU General Public License
+        along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <linux/input.h>
 #include <pthread.h>
@@ -54,6 +56,9 @@ extern "C"
 #ifndef TW_NO_SCREEN_TIMEOUT
 #include "blanktimer.hpp"
 #endif
+
+// Enable to print render time of each frame to the log file
+//#define PRINT_RENDER_TIME 1
 
 const static int CURTAIN_FADE = 32;
 
@@ -488,11 +493,31 @@ static inline void doRenderIteration(void)
 
 	if(gRenderState == RENDER_NORMAL)
 	{
+#ifndef PRINT_RENDER_TIME
 		int ret = PageManager::Update();
 		if(ret > 1)
 			PageManager::Render();
 		if(ret > 0)
 			flip();
+#else
+		timespec start, end;
+		int32_t render_t, flip_t;
+		if (ret > 1)
+		{
+			clock_gettime(CLOCK_MONOTONIC, &start);
+			PageManager::Render();
+			clock_gettime(CLOCK_MONOTONIC, &end);
+			render_t = TWFunc::timespec_diff_ms(start, end);
+
+			flip();
+			clock_gettime(CLOCK_MONOTONIC, &start);
+			flip_t = TWFunc::timespec_diff_ms(end, start);
+
+			LOGINFO("Render(): %u ms, flip(): %u ms, total: %u ms\n", render_t, flip_t, render_t+flip_t);
+		}
+		else if(ret == 1)
+			flip();
+#endif
 	}
 	else if(gRenderState & RENDER_FORCE)
 	{

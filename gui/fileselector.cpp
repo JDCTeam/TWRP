@@ -55,7 +55,7 @@ extern "C" {
 
 int GUIFileSelector::mSortOrder = 0;
 
-GUIFileSelector::GUIFileSelector(xml_node<>* node) : Conditional(node)
+GUIFileSelector::GUIFileSelector(xml_node<>* node) : GUIObject(node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -419,7 +419,8 @@ GUIFileSelector::~GUIFileSelector()
 
 int GUIFileSelector::Render(void)
 {
-	if (!isConditionTrue())     return 0;
+	if(!isConditionTrue())
+		return 0;
 
 	// First step, fill background
 	gr_color(mBackgroundColor.red, mBackgroundColor.green, mBackgroundColor.blue, 255);
@@ -606,7 +607,8 @@ int GUIFileSelector::Render(void)
 
 int GUIFileSelector::Update(void)
 {
-	if (!isConditionTrue())     return 0;
+	if(!isConditionTrue())
+		return 0;
 
 	if (!mHeaderIsStatic) {
 		std::string newValue = gui_parse_text(mHeaderText);
@@ -690,7 +692,8 @@ int GUIFileSelector::GetSelection(int x, int y)
 
 int GUIFileSelector::NotifyTouch(TOUCH_STATE state, int x, int y)
 {
-	if (!isConditionTrue())     return -1;
+	if(!isConditionTrue())
+		return -1;
 
 	static int lastY = 0, last2Y = 0, fastScroll = 0;
 	int selection = 0;
@@ -816,6 +819,8 @@ int GUIFileSelector::NotifyTouch(TOUCH_STATE state, int x, int y)
 
 			if (startSelection < folderSize + fileSize)
 			{
+				DataManager::Vibrate("tw_button_vibrate");
+
 				if (startSelection < folderSize)
 				{
 					std::string oldcwd;
@@ -887,9 +892,12 @@ int GUIFileSelector::NotifyTouch(TOUCH_STATE state, int x, int y)
 	return 0;
 }
 
-int GUIFileSelector::NotifyVarChange(std::string varName, std::string value)
+int GUIFileSelector::NotifyVarChange(const std::string& varName, const std::string& value)
 {
-	if (!isConditionTrue())     return 0;
+	GUIObject::NotifyVarChange(varName, value);
+
+	if(!isConditionTrue())
+		return 0;
 
 	if (varName.empty()) {
 		// Always clear the data variable so we know to use it

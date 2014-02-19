@@ -51,7 +51,7 @@ extern "C" {
 #define SCROLLING_FLOOR 10
 #define SCROLLING_MULTIPLIER 6
 
-GUIListBox::GUIListBox(xml_node<>* node) : Conditional(node)
+GUIListBox::GUIListBox(xml_node<>* node) : GUIObject(node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -360,7 +360,8 @@ GUIListBox::~GUIListBox()
 
 int GUIListBox::Render(void)
 {
-	if (!isConditionTrue())     return 0;
+	if(!isConditionTrue())
+		return 0;
 
 	// First step, fill background
 	gr_color(mBackgroundColor.red, mBackgroundColor.green, mBackgroundColor.blue, 255);
@@ -532,7 +533,8 @@ int GUIListBox::Render(void)
 
 int GUIListBox::Update(void)
 {
-	if (!isConditionTrue())     return 0;
+	if(!isConditionTrue())
+		return 0;
 
 	if (!mHeaderIsStatic) {
 		std::string newValue = gui_parse_text(mHeaderText);
@@ -614,7 +616,8 @@ int GUIListBox::GetSelection(int x, int y)
 
 int GUIListBox::NotifyTouch(TOUCH_STATE state, int x, int y)
 {
-	if (!isConditionTrue())     return -1;
+	if(!isConditionTrue())
+		return -1;
 
 	static int lastY = 0, last2Y = 0, fastScroll = 0;
 	int selection = 0;
@@ -747,6 +750,8 @@ int GUIListBox::NotifyTouch(TOUCH_STATE state, int x, int y)
 				mList.at(actualSelection).selected = 1;
 				DataManager::SetValue(mVariable, str);
 				mUpdate = 1;
+
+				DataManager::Vibrate("tw_button_vibrate");
 			}
 		} else {
 			// This is for kinetic scrolling
@@ -763,8 +768,13 @@ int GUIListBox::NotifyTouch(TOUCH_STATE state, int x, int y)
 	return 0;
 }
 
-int GUIListBox::NotifyVarChange(std::string varName, std::string value)
+int GUIListBox::NotifyVarChange(const std::string& varName, const std::string& value)
 {
+	GUIObject::NotifyVarChange(varName, value);
+
+	if(!isConditionTrue())
+		return 0;
+
 	if (!mHeaderIsStatic) {
 		std::string newValue = gui_parse_text(mHeaderText);
 		if (mLastValue != newValue) {
