@@ -38,6 +38,7 @@
 #include "../partitions.hpp"
 #include "../twrp-functions.hpp"
 #include "../openrecoveryscript.hpp"
+#include "../twrpDU.hpp"
 
 #include <ctype.h>
 
@@ -1232,7 +1233,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			}
 
 			if(type == MROM_SWAP_WITH_SECONDARY || type == MROM_SWAP_COPY_SECONDARY)
-				sec_data_size = TWFunc::Get_Folder_Size(MultiROM::getRomsPath() + swap_rom + "/data", true);
+				sec_data_size = du.Get_Folder_Size(MultiROM::getRomsPath() + swap_rom + "/data");
 
 			switch(type)
 			{

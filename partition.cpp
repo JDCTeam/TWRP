@@ -1840,7 +1840,7 @@ bool TWPartition::Update_Size(bool Display_Error) {
 	}
 
 	if(!Bind_Of.empty()) {
-		Used = TWFunc::Get_Folder_Size(Actual_Block_Device, Display_Error);
+		Used = du.Get_Folder_Size(Actual_Block_Device);
 		Backup_Size = Used;
 	}
 
