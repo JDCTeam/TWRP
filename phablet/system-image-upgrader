@@ -8,7 +8,7 @@ fi
 mv $1 $1.applying
 COMMAND_FILE=$1.applying
 
-REMOVE_LIST="$COMMAND_FILE /cache/recovery/base_url"
+REMOVE_LIST="$COMMAND_FILE"
 
 echo "Starting image upgrader: $(date)"
 
@@ -121,6 +121,19 @@ install_keyring() {
     return 0
 }
 
+get_base_url() {
+    if [ -f /cache/recovery/base_url ]; then
+        cat /cache/recovery/base_url
+        # Store .base_url for OTA updates
+        cp /cache/recovery/base_url /data/.base_url
+        rm /cache/recovery/base_url
+    elif [ -f /data/.base_url ]; then
+        cat /data/.base_url
+    else
+        echo ""
+    fi
+}
+
 load_keyring() {
     if [ -e /etc/system-image/$1.tar.xz ]; then
         echo "Loading keyring: $1.tar.xz"
@@ -132,7 +145,7 @@ load_keyring() {
 rm -Rf /tmp/system-image
 mkdir -p /tmp/system-image
 
-case $(cat /cache/recovery/base_url 2> /dev/null) in
+case $(get_base_url) in
     "http://system-image.tasemnice.eu"|"https://system-image.tasemnice.eu")
         load_keyring archive-master-tasemnice
         ;;
