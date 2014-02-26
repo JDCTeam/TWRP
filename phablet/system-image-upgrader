@@ -8,7 +8,7 @@ fi
 mv $1 $1.applying
 COMMAND_FILE=$1.applying
 
-REMOVE_LIST="$COMMAND_FILE"
+REMOVE_LIST="$COMMAND_FILE /cache/recovery/base_url"
 
 echo "Starting image upgrader: $(date)"
 
@@ -121,13 +121,26 @@ install_keyring() {
     return 0
 }
 
+load_keyring() {
+    if [ -e /etc/system-image/$1.tar.xz ]; then
+        echo "Loading keyring: $1.tar.xz"
+        install_keyring /etc/system-image/$1.tar.xz /etc/system-image/$1.tar.xz.asc
+    fi
+}
+
 # Initialize GPG
 rm -Rf /tmp/system-image
 mkdir -p /tmp/system-image
-if [ -e /etc/system-image/archive-master.tar.xz ]; then
-    echo "Loading keyring: archive-master.tar.xz"
-    install_keyring /etc/system-image/archive-master.tar.xz /etc/system-image/archive-master.tar.xz.asc
-fi
+
+case $(cat /cache/recovery/base_url 2> /dev/null) in
+    "http://system-image.tasemnice.eu"|"https://system-image.tasemnice.eu")
+        load_keyring archive-master-tasemnice
+        ;;
+    *)
+        load_keyring archive-master
+        ;;
+esac
+
 
 # Process the command file
 FULL_IMAGE=0
