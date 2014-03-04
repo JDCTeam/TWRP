@@ -339,15 +339,17 @@ protected:
 	unsigned int mFontHeight;
 	int mCurrentLine;
 	unsigned int mLastCount;
+	unsigned int RenderCount;
 	unsigned int mMaxRows;
 	int mStartY;
 	int mSlideoutX, mSlideoutY, mSlideoutW, mSlideoutH;
 	int mSlideinX, mSlideinY, mSlideinW, mSlideinH;
 	int mConsoleX, mConsoleY, mConsoleW, mConsoleH;
 	int mLastTouchX, mLastTouchY;
-	int mSlideMultiplier;
 	int mSlideout;
 	SlideoutState mSlideoutState;
+	std::vector<std::string> rConsole;
+	bool mRender;
 
 protected:
 	virtual int RenderSlideout(void);
@@ -831,18 +833,26 @@ protected:
 		unsigned int end_x;
 		unsigned int layout;
 	};
+	struct capslock_tracking_struct
+	{
+		int capslock;
+		int set_capslock;
+		int revert_layout;
+	};
 
 	Resource* keyboardImg[MAX_KEYBOARD_LAYOUTS];
 	struct keyboard_key_class keyboard_keys[MAX_KEYBOARD_LAYOUTS][MAX_KEYBOARD_ROWS][MAX_KEYBOARD_KEYS];
+	struct capslock_tracking_struct caps_tracking[MAX_KEYBOARD_LAYOUTS];
 	bool mRendered;
 	std::string mVariable;
 	unsigned int cursorLocation;
 	unsigned int currentLayout;
 	unsigned int row_heights[MAX_KEYBOARD_LAYOUTS][MAX_KEYBOARD_ROWS];
 	unsigned int KeyboardWidth, KeyboardHeight;
-	int rowY, colX, highlightRenderCount, hasHighlight;
+	int rowY, colX, highlightRenderCount, hasHighlight, hasCapsHighlight;
 	GUIAction* mAction;
 	COLOR mHighlightColor;
+	COLOR mCapsHighlightColor;
 };
 
 // GUIInput - Used for keyboard input
