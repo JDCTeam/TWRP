@@ -493,8 +493,8 @@ static inline void doRenderIteration(void)
 
 	if(gRenderState == RENDER_NORMAL)
 	{
-#ifndef PRINT_RENDER_TIME
 		int ret = PageManager::Update();
+#ifndef PRINT_RENDER_TIME
 		if(ret > 1)
 			PageManager::Render();
 		if(ret > 0)
