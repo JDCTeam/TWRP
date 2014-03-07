@@ -173,7 +173,7 @@ do
                 ;;
 
                 data)
-                    for entry in /data/*; do
+                    for entry in /data/* /data/.writable_image; do
                         if [ "$entry" != "/data/system.img" ]; then
                             rm -Rf $entry
                         fi
