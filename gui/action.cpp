@@ -740,7 +740,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		cfg.force_generic_fb = DataManager::GetIntValue("tw_multirom_force_generic_fb");
 
 		MultiROM::saveConfig(cfg);
-		return gui_changePage("multirom_main");
+		return 0;
 	}
 
 	if (function == "multirom_add")
