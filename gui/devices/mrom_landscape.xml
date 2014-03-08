@@ -735,6 +735,14 @@
 				<image checked="checkbox_true" unchecked="checkbox_false" />
 			</object>
 
+			<object type="checkbox">
+				<placement x="%col2_x%" y="%row4_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Force using generic screen drawing code</text>
+				<data variable="tw_multirom_force_generic_fb" />
+				<image checked="checkbox_true" unchecked="checkbox_false" />
+			</object>
+
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row5_text_y%" />

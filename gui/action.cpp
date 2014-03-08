@@ -715,6 +715,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		DataManager::SetValue("tw_multirom_hide_internal", cfg.hide_internal);
 		DataManager::SetValue("tw_multirom_int_display_name", cfg.int_display_name);
 		DataManager::SetValue("tw_multirom_rotation", cfg.rotation);
+		DataManager::SetValue("tw_multirom_force_generic_fb", cfg.force_generic_fb);
 
 		DataManager::SetValue("tw_multirom_roms", MultiROM::listRoms());
 		return gui_changePage("multirom_settings");
@@ -736,6 +737,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		cfg.hide_internal = DataManager::GetIntValue("tw_multirom_hide_internal");
 		cfg.int_display_name = DataManager::GetStrValue("tw_multirom_int_display_name");
 		cfg.rotation = DataManager::GetIntValue("tw_multirom_rotation");
+		cfg.force_generic_fb = DataManager::GetIntValue("tw_multirom_force_generic_fb");
 
 		MultiROM::saveConfig(cfg);
 		return gui_changePage("multirom_main");

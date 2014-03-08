@@ -110,6 +110,7 @@ public:
 		int hide_internal;
 		std::string int_display_name;
 		int rotation;
+		int force_generic_fb;
 	};
 
 	static bool folderExists();
