@@ -281,6 +281,9 @@ int main(int argc, char **argv) {
 
 	gui_rotate(DataManager::GetIntValue(TW_ROTATION));
 
+	// Fixup the RTC clock on devices which require it
+	TWFunc::Fixup_Time_On_Boot();
+
 	// Run any outstanding OpenRecoveryScript
 	if(DataManager::GetIntValue(TW_IS_ENCRYPTED) == 0)
 	{
@@ -289,8 +292,6 @@ int main(int argc, char **argv) {
 		else
 			MultiROM::executeCacheScripts();
 	}
-
-	TWFunc::Fixup_Time_On_Boot();
 
 	// Launch the main GUI
 	gui_start();
