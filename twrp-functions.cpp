@@ -298,6 +298,31 @@ unsigned long TWFunc::Get_File_Size(string Path) {
 	return st.st_size;
 }
 
+std::string TWFunc::Remove_Trailing_Slashes(const std::string& path, bool leaveLast)
+{
+	std::string res;
+	size_t last_idx = 0, idx = 0;
+
+	while(last_idx != std::string::npos)
+	{
+		if(last_idx != 0)
+			res += '/';
+
+		idx = path.find_first_of('/', last_idx);
+		if(idx == std::string::npos) {
+			res += path.substr(last_idx, idx);
+			break;
+		}
+
+		res += path.substr(last_idx, idx-last_idx);
+		last_idx = path.find_first_not_of('/', idx);
+	}
+
+	if(leaveLast)
+		res += '/';
+	return res;
+}
+
 #ifndef BUILD_TWRPTAR_MAIN
 
 // Returns "/path" from a full /path/to/file.name
@@ -1139,6 +1164,44 @@ void TWFunc::Fixup_Time_On_Boot()
 
 	settimeofday(&tv, NULL);
 #endif
+}
+
+std::vector<std::string> TWFunc::Split_String(const std::string& str, const std::string& delimiter, bool removeEmpty)
+{
+	std::vector<std::string> res;
+	size_t idx = 0, idx_last = 0;
+
+	while(idx < str.size())
+	{
+		idx = str.find_first_of(delimiter, idx_last);
+		if(idx == std::string::npos)
+			idx = str.size();
+
+		if(idx-idx_last != 0 || !removeEmpty)
+			res.push_back(str.substr(idx_last, idx-idx_last));
+
+		idx_last = idx + delimiter.size();
+	}
+
+	return res;
+}
+
+bool TWFunc::Create_Dir_Recursive(const std::string& path, mode_t mode, uid_t uid, gid_t gid)
+{
+	std::vector<std::string> parts = Split_String(path, "/");
+	std::string cur_path;
+	struct stat info;
+	for(size_t i = 0; i < parts.size(); ++i)
+	{
+		cur_path += "/" + parts[i];
+		if(stat(cur_path.c_str(), &info) < 0 || !S_ISDIR(info.st_mode))
+		{
+			if(mkdir(cur_path.c_str(), mode) < 0)
+				return false;
+			chown(cur_path.c_str(), uid, gid);
+		}
+	}
+	return true;
 }
 
 bool TWFunc::loadTheme()

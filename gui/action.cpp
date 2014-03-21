@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <dirent.h>
+#include <pwd.h>
 
 #include <string>
 #include <sstream>
@@ -81,8 +82,6 @@ GUIAction::GUIAction(xml_node<>* node)
 	xml_node<>* actions;
 	xml_attribute<>* attr;
 
-	mKey = 0;
-
 	if (!node)  return;
 
 	// First, get the action
@@ -113,9 +112,12 @@ GUIAction::GUIAction(xml_node<>* node)
 		attr = child->first_attribute("key");
 		if (attr)
 		{
-			std::string key = attr->value();
-	
-			mKey = getKeyByName(key);
+			std::vector<std::string> keys = TWFunc::Split_String(attr->value(), "+");
+			for(size_t i = 0; i < keys.size(); ++i)
+			{
+				const int key = getKeyByName(keys[i]);
+				mKeys[key] = false;
+			}
 		}
 		else
 		{
@@ -143,12 +145,41 @@ int GUIAction::NotifyTouch(TOUCH_STATE state, int x, int y)
 	return 0;
 }
 
-int GUIAction::NotifyKey(int key)
+int GUIAction::NotifyKey(int key, bool down)
 {
-	if (!mKey || key != mKey)
-		return 1;
+	if (mKeys.empty())
+		return 0;
 
-	doActions();
+	std::map<int, bool>::iterator itr = mKeys.find(key);
+	if(itr == mKeys.end())
+		return 0;
+
+	bool prevState = itr->second;
+	itr->second = down;
+
+	// If there is only one key for this action, wait for key up so it
+	// doesn't trigger with multi-key actions.
+	// Else, check if all buttons are pressed, then consume their release events
+	// so they don't trigger one-button actions and reset mKeys pressed status
+	if(mKeys.size() == 1) {
+		if(!down && prevState)
+			doActions();
+	} else if(down) {
+		for(itr = mKeys.begin(); itr != mKeys.end(); ++itr) {
+			if(!itr->second)
+				return 0;
+		}
+
+		// Passed, all req buttons are pressed, reset them and consume release events
+		HardwareKeyboard *kb = PageManager::GetHardwareKeyboard();
+		for(itr = mKeys.begin(); itr != mKeys.end(); ++itr) {
+			kb->ConsumeKeyRelease(itr->first);
+			itr->second = false;
+		}
+
+		doActions();
+	}
+
 	return 0;
 }
 
@@ -156,7 +187,7 @@ int GUIAction::NotifyVarChange(const std::string& varName, const std::string& va
 {
 	GUIObject::NotifyVarChange(varName, value);
 
-	if (varName.empty() && !isConditionValid() && !mKey && !mActionW)
+	if (varName.empty() && !isConditionValid() && mKeys.empty() && !mActionW)
 		doActions();
 	else if((varName.empty() || IsConditionVariable(varName)) && isConditionValid() && isConditionTrue())
 		doActions();
@@ -388,7 +419,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 	if (function == "key")
 	{
-		PageManager::NotifyKey(getKeyByName(arg));
+		const int key = getKeyByName(arg);
+		PageManager::NotifyKey(key, true);
+		PageManager::NotifyKey(key, false);
 		return 0;
 	}
 
@@ -652,6 +685,53 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		TWFunc::Auto_Generate_Backup_Name();
 		operation_end(0, simulate);
 		return 0;
+	}
+
+	if (function == "screenshot")
+	{
+		time_t tm;
+		char path[256];
+		int path_len;
+		uid_t uid = -1;
+		gid_t gid = -1;
+
+		struct passwd *pwd = getpwnam("media_rw");
+		if(pwd) {
+			uid = pwd->pw_uid;
+			gid = pwd->pw_gid;
+		}
+
+		const std::string storage = DataManager::GetCurrentStoragePath();
+		if(PartitionManager.Is_Mounted_By_Path(storage)) {
+			snprintf(path, sizeof(path), "%s/Pictures/Screenshots/", storage.c_str());
+		} else {
+			strcpy(path, "/tmp/");
+		}
+
+		if(!TWFunc::Create_Dir_Recursive(path, 0666, uid, gid))
+			return 0;
+
+		tm = time(NULL);
+		path_len = strlen(path);
+
+		// Screenshot_2014-01-01-18-21-38.png
+		strftime(path+path_len, sizeof(path)-path_len, "Screenshot_%Y-%m-%d-%H-%M-%S.png", localtime(&tm));
+
+		int res = gr_save_screenshot(path);
+		if(res == 0) {
+			chmod(path, 0666);
+			chown(path, uid, gid);
+
+			gui_print("Screenshot was saved to %s\n", path);
+
+			// blink to notify that the screenshow was taken
+			gr_color(255, 255, 255, 255);
+			gr_fill(0, 0, gr_fb_width(), gr_fb_height());
+			gr_flip();
+			gui_forceRender();
+		} else {
+			LOGERR("Failed to take a screenshot!\n");
+		}
 	}
 
 	if (function == "multirom")

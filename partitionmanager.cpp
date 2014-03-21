@@ -56,7 +56,7 @@ TWPartitionManager::TWPartitionManager(void) {
 int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error) {
 	FILE *fstabFile;
 	char fstab_line[MAX_FSTAB_LINE_LENGTH];
-	bool Found_Settings_Storage = false;
+	TWPartition* settings_partition = NULL;
 
 	fstabFile = fopen(Fstab_Filename.c_str(), "rt");
 	if (fstabFile == NULL) {
@@ -76,37 +76,26 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		memset(fstab_line, 0, sizeof(fstab_line));
 
 		if (partition->Process_Fstab_Line(line, Display_Error)) {
-			if (!Found_Settings_Storage && partition->Is_Settings_Storage) {
-				Found_Settings_Storage = true;
-				Partitions.push_back(partition);
-				DataManager::SetValue("tw_settings_path", partition->Storage_Path);
-				DataManager::SetValue("tw_storage_path", partition->Storage_Path);
-				LOGINFO("Settings storage is '%s'\n", partition->Storage_Path.c_str());
+			if (!settings_partition && partition->Is_Settings_Storage) {
+				settings_partition = partition;
 			} else {
 				partition->Is_Settings_Storage = false;
-				Partitions.push_back(partition);
 			}
+			Partitions.push_back(partition);
 		} else {
 			delete partition;
 		}
 	}
 	fclose(fstabFile);
-	if (!Found_Settings_Storage) {
+	if (!settings_partition) {
 		std::vector<TWPartition*>::iterator iter;
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 			if ((*iter)->Is_Storage) {
-				(*iter)->Is_Settings_Storage = true;
-#ifndef RECOVERY_SDCARD_ON_DATA
-				(*iter)->Setup_AndSec();
-#endif
-				Found_Settings_Storage = true;
-				DataManager::SetValue("tw_settings_path", (*iter)->Storage_Path);
-				DataManager::SetValue("tw_storage_path", (*iter)->Storage_Path);
-				LOGINFO("Settings storage is '%s'\n", (*iter)->Storage_Path.c_str());
+				settings_partition = (*iter);
 				break;
 			}
 		}
-		if (!Found_Settings_Storage)
+		if (!settings_partition)
 			LOGERR("Unable to locate storage partition for storing settings file.\n");
 	}
 	if (!Write_Fstab()) {
@@ -117,6 +106,7 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 	}
 	Update_System_Details();
 	UnMount_Main_Partitions();
+	Setup_Settings_Storage_Partition(settings_partition);
 	return true;
 }
 
@@ -149,6 +139,15 @@ int TWPartitionManager::Write_Fstab(void) {
 	}
 	fclose(fp);
 	return true;
+}
+
+void TWPartitionManager::Setup_Settings_Storage_Partition(TWPartition* Part) {
+#ifndef RECOVERY_SDCARD_ON_DATA
+	Part->Setup_AndSec();
+#endif
+	DataManager::SetValue("tw_settings_path", Part->Storage_Path);
+	DataManager::SetValue("tw_storage_path", Part->Storage_Path);
+	LOGINFO("Settings storage is '%s'\n", Part->Storage_Path.c_str());
 }
 
 void TWPartitionManager::Output_Partition_Logging(void) {

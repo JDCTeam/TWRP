@@ -54,10 +54,12 @@ unsigned int gr_get_height(gr_surface surface);
 int gr_get_surface(gr_surface* surface);
 int gr_free_surface(gr_surface surface);
 
+
 void gr_freeze_fb(int freeze);
 void gr_set_rotation(int rot);
 int gr_get_rotation(void);
 void gr_update_surface_dimensions(void);
+int gr_save_screenshot(const char *dest);
 
 #ifdef TW_HAS_LANDSCAPE
 inline void gr_cpy_fb_with_rotation(void *dst, void *src);
