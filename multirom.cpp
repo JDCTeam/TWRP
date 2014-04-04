@@ -1929,9 +1929,9 @@ bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 	struct dirent *dr;
 	while((!has_system || !has_data) && (dr = readdir(d)))
 	{
-		if(strstr(dr->d_name, "system.ext4"))
+		if(strstr(dr->d_name, "system.") == dr->d_name)
 			has_system = 1;
-		else if(strstr(dr->d_name, "data.ext4"))
+		else if(strstr(dr->d_name, "data.") == dr->d_name)
 			has_data = 1;
 	}
 	closedir(d);
@@ -1969,11 +1969,41 @@ bool MultiROM::extractBackupFile(std::string path, std::string part)
 	gui_print("Extracting backup of %s partition...\n", part.c_str());
 
 	struct stat info;
-	std::string filename = part + ".ext4.win";
-	std::string full_path =  path + "/" + filename;
+	std::string filename;
+	std::string full_path;
 	int index = 0;
 	char split_index[5];
 	char cmd[256];
+	DIR *d;
+	struct dirent *dt;
+
+	d = opendir(path.c_str());
+	if(!d)
+	{
+		gui_print("Failed to list backup folder\n");
+		return false;
+	}
+
+	while((dt = readdir(d)))
+	{
+		if(strncmp(dt->d_name, part.c_str(), part.size()) == 0)
+		{
+			std::vector<std::string> tok = TWFunc::Split_String(dt->d_name, ".");
+			if(tok.size() < 3)
+				continue;
+			//         system  .    ext4      .win
+			filename = part + "." + tok[1] + ".win";
+			full_path = path + "/" + filename;
+			break;
+		}
+	}
+	closedir(d);
+
+	if(filename.empty())
+	{
+		gui_print("Failed to find backup's filesystem\n");
+		return false;
+	}
 
 	if (stat(full_path.c_str(), &info) < 0) // multiple archives
 	{
