@@ -34,6 +34,10 @@ typedef enum
 	rb_download,
 } RebootCommand;
 
+#ifdef HAVE_SELINUX
+struct selabel_handle;
+#endif
+
 // Partition class
 class TWFunc
 {
@@ -89,6 +93,9 @@ public:
 	static std::string getZIPThemePath(int rotation);
 	static std::string getROMName();
 	static void stringReplace(std::string& str, char before, char after);
+#ifdef HAVE_SELINUX
+	static bool restorecon(const std::string& path, struct selabel_handle *sh);
+#endif
 
 private:
 	static void Copy_Log(string Source, string Destination);

@@ -93,11 +93,12 @@ ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
     RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/openaes
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libopenaes.so
 endif
-ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
+# MultiROM: always enable f2fs binaries
+#ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
     RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/mkfs.f2fs
     RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/fsck.f2fs
     RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/fibmap.f2fs
-endif
+#endif
 ifneq ($(wildcard system/core/reboot/Android.mk),)
     RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/reboot
 endif

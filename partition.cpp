@@ -1007,6 +1007,8 @@ bool TWPartition::Mount(bool Display_Error) {
 	// Check the current file system before mounting
 	Check_FS_Type();
 
+	std::string mnt_opts = Get_Mount_Options_With_Defaults();
+
 	if (Current_File_System == "exfat" && TWFunc::Path_Exists("/sbin/exfat-fuse") && !mounted) {
 		string cmd = "/sbin/exfat-fuse -o big_writes,max_read=131072,max_write=131072 " + Actual_Block_Device + " " + Mount_Point;
 		LOGINFO("cmd: %s\n", cmd.c_str());
@@ -1061,7 +1063,7 @@ bool TWPartition::Mount(bool Display_Error) {
 			}
 			return true;
 		}
-	} else if (!mounted && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), Mount_Flags, Mount_Options.c_str()) != 0 && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), Mount_Flags, NULL) != 0) {
+	} else if (!mounted && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), Mount_Flags, mnt_opts.c_str()) != 0 && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), Mount_Flags, NULL) != 0) {
 #ifdef TW_NO_EXFAT_FUSE
 		if (Current_File_System == "exfat") {
 			LOGINFO("Mounting exfat failed, trying vfat...\n");
@@ -1070,7 +1072,7 @@ bool TWPartition::Mount(bool Display_Error) {
 					LOGERR("Unable to mount '%s'\n", Mount_Point.c_str());
 				else
 					LOGINFO("Unable to mount '%s'\n", Mount_Point.c_str());
-				LOGINFO("Actual block device: '%s', current file system: '%s', flags: 0x%8x, options: '%s'\n", Actual_Block_Device.c_str(), Current_File_System.c_str(), Mount_Flags, Mount_Options.c_str());
+				LOGINFO("Actual block device: '%s', current file system: '%s', flags: 0x%8x, options: '%s'\n", Actual_Block_Device.c_str(), Current_File_System.c_str(), Mount_Flags, mnt_opts.c_str());
 				return false;
 			}
 		} else {
@@ -1428,6 +1430,16 @@ void TWPartition::Check_FS_Type() {
 	blkid_free_probe(pr);
 }
 
+std::string TWPartition::Get_Mount_Options_With_Defaults()
+{
+	std::string res = Mount_Options;
+	if(Current_File_System == "f2fs") {
+		if(res.find("inline_xattr") == std::string::npos)
+			res += ",inline_xattr";
+	}
+	return res;
+}
+
 bool TWPartition::Wipe_EXT23(string File_System) {
 	if (!UnMount(true))
 		return false;
@@ -1614,17 +1626,29 @@ bool TWPartition::Wipe_F2FS() {
 		if (!UnMount(true))
 			return false;
 
+
 		gui_print("Formatting %s using mkfs.f2fs...\n", Display_Name.c_str());
 		Find_Actual_Block_Device();
 		command = "mkfs.f2fs " + Actual_Block_Device;
 		if (TWFunc::Exec_Cmd(command) == 0) {
 			Recreate_AndSec_Folder();
 			gui_print("Done.\n");
-			return true;
 		} else {
 			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
 			return false;
 		}
+
+#ifdef HAVE_SELINUX
+		char *secontext = NULL;
+		if (!selinux_handle || selabel_lookup(selinux_handle, &secontext, Mount_Point.c_str(), S_IFDIR) < 0) {
+			LOGINFO("Cannot lookup security context for '%s'\n", Mount_Point.c_str());
+		} else if(Mount(false)) {
+			LOGINFO("Running restorecon on %s\n", Mount_Point.c_str());
+			TWFunc::restorecon(Mount_Point, selinux_handle);
+			UnMount(false);
+		}
+#endif
+
 		return true;
 	} else {
 		gui_print("mkfs.f2fs binary not found, using rm -rf to wipe.\n");

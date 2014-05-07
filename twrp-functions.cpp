@@ -57,6 +57,13 @@ extern "C" {
 
 #include "gui/objects.hpp"
 
+#ifdef HAVE_SELINUX
+#include <selinux/selinux.h>
+#include <selinux/label.h>
+#include <selinux/android.h>
+#include <selinux/label.h>
+#endif
+
 /* Execute a command */
 int TWFunc::Exec_Cmd(const string& cmd, string &result) {
 	FILE* exec;
@@ -1373,5 +1380,30 @@ void TWFunc::stringReplace(std::string& str, char before, char after)
 			c = after;
 	}
 }
+
+#ifdef HAVE_SELINUX
+bool TWFunc::restorecon(const std::string& path, struct selabel_handle *sh)
+{
+	struct stat info;
+	char *oldcontext, *newcontext;
+	if (lgetfilecon(path.c_str(), &oldcontext) < 0 || stat(path.c_str(), &info) < 0) {
+		LOGINFO("Couldn't get selinux context and stat() for %s\n", path.c_str());
+		return false;
+	}
+	if (selabel_lookup(sh, &newcontext, path.c_str(), info.st_mode) < 0) {
+		LOGINFO("Couldn't lookup selinux context for %s\n", path.c_str());
+		return false;
+	}
+	if (strcmp(oldcontext, newcontext) != 0) {
+		LOGINFO("Relabeling %s from %s to %s\n", path.c_str(), oldcontext, newcontext);
+		if (lsetfilecon(path.c_str(), newcontext) < 0) {
+			LOGINFO("Couldn't label %s with %s: %s\n", path.c_str(), newcontext, strerror(errno));
+		}
+	}
+	freecon(oldcontext);
+	freecon(newcontext);
+	return true;
+}
+#endif
 
 #endif // ndef BUILD_TWRPTAR_MAIN

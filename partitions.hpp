@@ -112,6 +112,7 @@ private:
 	bool Find_MTD_Block_Device(string MTD_Name);                              // Finds the mtd block device based on the name from the fstab
 	void Recreate_AndSec_Folder(void);                                        // Recreates the .android_secure folder
 	void Mount_Storage_Retry(void);                                           // Tries multiple times with a half second delay to mount a device in case storage is slow to mount
+	string Get_Mount_Options_With_Defaults();                                 // Takes Mount_Options, ensures FS-specific defaults are in it and returns it
 
 private:
 	bool Can_Be_Mounted;                                                      // Indicates that the partition can be mounted
