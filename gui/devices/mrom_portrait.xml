@@ -1,3 +1,120 @@
+		<page name="multirom_f2fs_ext4_switch">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>f2fs/ext4 switch</text>
+			</object>
+
+			<object type="text" color="%text_success_color%">
+				<font resource="font" />
+				<placement x="%col1_x%" y="%row1_text_y%" />
+				<text>Select desired filesystem:</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_switch_fs_type" var2="ext4" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>ext4</text>
+				<image resource="radio_true" />
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_switch_fs_type" var2="ext4" op="!="/>
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>ext4</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_switch_fs_type=ext4</action>
+					<action function="page">multirom_f2fs_ext4_switch</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_switch_fs_type" var2="f2fs" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>f2fs</text>
+				<image resource="radio_true" />
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_switch_fs_type" var2="f2fs" op="!="/>
+				<placement x="%col2_x%" y="%row2_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>f2fs</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_switch_fs_type=f2fs</action>
+					<action function="page">multirom_f2fs_ext4_switch</action>
+				</actions>
+			</object>
+
+			<object type="partitionlist">
+				<highlight color="%fileselector_highlight_color%" />
+				<placement x="%listbox_x%" y="%row3_text_y%" w="%listbox_width%" h="%console_installdone_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Select partitions to format:</text>
+				<icon selected="checkbox_true" unselected="checkbox_false" />
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<background color="%listbox_background%" />
+				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<data name="tw_switch_list" />
+				<listtype name="f2fs_ext4_switch" />
+			</object>
+
+			<object type="text" color="%text_fail_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row14_text_y%" placement="5" />
+				<text>This action will erase all data</text>
+			</object>
+			<object type="text" color="%text_fail_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row15_text_y%" placement="5" />
+				<text>on selected partitions!!!</text>
+			</object>
+
+			<object type="slider">
+				<placement x="%slider_x%" y="%slider_y%" placement="5" />
+				<resource base="slider" used="slider-used" touch="slider-touch" />
+				<actions>
+					<action function="set">tw_back=multirom_f2fs_ext4_switch</action>
+					<action function="set">tw_action_text1=Formatting partitions...</action>
+					<action function="set">tw_complete_text1=Partitions formatted</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="set">tw_action=multirom_f2fs_ext4_switch</action>
+					<action function="page">action_page</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
+				<text>Swipe to format partitions</text>
+			</object>
+
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">advanced</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
 		<page name="multirom_msg">
 			<object type="template" name="header" />
 

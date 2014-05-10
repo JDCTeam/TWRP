@@ -2913,6 +2913,19 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<condition var1="tw_kernel_has_f2fs" var2="1" />
+				<placement x="%col1_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>f2fs/ext4 switch</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_switch_fs_type=ext4</action>
+					<action function="page">multirom_f2fs_ext4_switch</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>File Manager</text>
