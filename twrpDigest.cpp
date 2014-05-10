@@ -19,6 +19,7 @@
 extern "C"
 {
 	#include "digest/md5.h"
+	#include "gui/gui.h"
 	#include "libcrecovery/common.h"
 }
 
@@ -33,17 +34,12 @@ extern "C"
 #include <errno.h>
 #include <fcntl.h>
 #include <fstream>
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <dirent.h>
 #include <sys/mman.h>
 #include "twcommon.h"
 #include "data.hpp"
 #include "variables.h"
 #include "twrp-functions.hpp"
 #include "twrpDigest.hpp"
-#include "twcommon.h"
 
 using namespace std;
 
@@ -65,7 +61,7 @@ int twrpDigest::computeMD5(void) {
 		MD5Update(&md5c, buf, len);
 	}
 	fclose(file);
-	MD5Final(md5sum ,&md5c);
+	MD5Final(md5sum, &md5c);
 	return 0;
 }
 
@@ -76,7 +72,7 @@ int twrpDigest::write_md5digest(void) {
 	md5file = md5fn + ".md5";
 
 	for (i = 0; i < 16; ++i) {
-		snprintf(hex, 3 ,"%02x", md5sum[i]);
+		snprintf(hex, 3, "%02x", md5sum[i]);
 		md5string += hex;
 	}
 	md5string += "  ";
@@ -88,19 +84,49 @@ int twrpDigest::write_md5digest(void) {
 }
 
 int twrpDigest::read_md5digest(void) {
-	string md5file = md5fn + ".md5";
-	if (TWFunc::read_file(md5file, line) != 0)
+	int i = 0;
+	bool foundMd5File = false;
+	string md5file = "";
+	vector<string> md5ext;
+	md5ext.push_back(".md5");
+	md5ext.push_back(".md5sum");
+
+	while (i < md5ext.size()) {
+		md5file = md5fn + md5ext[i];
+		if (TWFunc::Path_Exists(md5file)) {
+			foundMd5File = true;
+			break;
+		}
+		i++;
+	}
+
+	if (!foundMd5File) {
+		gui_print("Skipping MD5 check: no MD5 file found\n");
 		return -1;
+	} else if (TWFunc::read_file(md5file, line) != 0) {
+		gui_print("Skipping MD5 check: MD5 file unreadable\n");
+		return 1;
+	}
+
 	return 0;
 }
+
+/* verify_md5digest return codes:
+	-2: md5 did not match
+	-1: no md5 file found
+	 0: md5 matches
+	 1: md5 file unreadable
+*/
 
 int twrpDigest::verify_md5digest(void) {
 	string buf;
 	char hex[3];
-	int i;
+	int i, ret;
 	string md5string;
-	if (read_md5digest() != 0)
-		return -1;
+
+	ret = read_md5digest();
+	if (ret != 0)
+		return ret;
 	stringstream ss(line);
 	vector<string> tokens;
 	while (ss >> buf)
@@ -110,7 +136,11 @@ int twrpDigest::verify_md5digest(void) {
 		snprintf(hex, 3, "%02x", md5sum[i]);
 		md5string += hex;
 	}
-	if (tokens.at(0) != md5string)
+	if (tokens.at(0) != md5string) {
+		LOGERR("MD5 does not match\n");
 		return -2;
+	}
+
+	gui_print("MD5 matched\n");
 	return 0;
 }

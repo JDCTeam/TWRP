@@ -67,10 +67,6 @@ void twrpTar::setdir(string dir) {
 	tardir = dir;
 }
 
-void twrpTar::setexcl(string exclude) {
-	tarexclude.push_back(exclude);
-}
-
 void twrpTar::setsize(unsigned long long backup_size) {
 	Total_Backup_Size = backup_size;
 }
@@ -118,13 +114,11 @@ int twrpTar::createTarFork() {
 			}
 			// Figure out the size of all data to be encrypted and create a list of unencrypted files
 			while ((de = readdir(d)) != NULL) {
-				FileName = tardir + "/";
-				FileName += de->d_name;
-				if (has_data_media == 1 && FileName.size() >= 11 && strncmp(FileName.c_str(), "/data/media", 11) == 0)
-					continue; // Skip /data/media
-				if (de->d_type == DT_BLK || de->d_type == DT_CHR)
+				FileName = tardir + "/" + de->d_name;
+
+				if (de->d_type == DT_BLK || de->d_type == DT_CHR || du.check_skip_dirs(FileName))
 					continue;
-				if (de->d_type == DT_DIR && !du.check_skip_dirs(tardir, de->d_name)) {
+				if (de->d_type == DT_DIR) {
 					item_len = strlen(de->d_name);
 					if (userdata_encryption && ((item_len >= 3 && strncmp(de->d_name, "app", 3) == 0) || (item_len >= 6 && strncmp(de->d_name, "dalvik", 6) == 0))) {
 						if (Generate_TarList(FileName, &RegularList, &target_size, &regular_thread_id) < 0) {
@@ -162,19 +156,16 @@ int twrpTar::createTarFork() {
 			}
 			// Divide up the encrypted file list for threading
 			while ((de = readdir(d)) != NULL) {
-				FileName = tardir + "/";
-				FileName += de->d_name;
-				if (has_data_media == 1 && FileName.size() >= 11 && strncmp(FileName.c_str(), "/data/media", 11) == 0)
-					continue; // Skip /data/media
-				if (de->d_type == DT_BLK || de->d_type == DT_CHR)
+				FileName = tardir + "/" + de->d_name;
+
+				if (de->d_type == DT_BLK || de->d_type == DT_CHR || du.check_skip_dirs(FileName))
 					continue;
-				if (de->d_type == DT_DIR && !du.check_skip_dirs(tardir, de->d_name)) {
+				if (de->d_type == DT_DIR) {
 					item_len = strlen(de->d_name);
 					if (userdata_encryption && ((item_len >= 3 && strncmp(de->d_name, "app", 3) == 0) || (item_len >= 6 && strncmp(de->d_name, "dalvik", 6) == 0))) {
 						// Do nothing, we added these to RegularList earlier
 					} else {
-						FileName = tardir + "/";
-						FileName += de->d_name;
+						FileName = tardir + "/" + de->d_name;
 						if (Generate_TarList(FileName, &EncryptList, &target_size, &enc_thread_id) < 0) {
 							LOGERR("Error in Generate_TarList with encrypted list!\n");
 							closedir(d);
@@ -238,6 +229,7 @@ int twrpTar::createTarFork() {
 				enc[i].ItemList = &EncryptList;
 				enc[i].thread_id = i;
 				enc[i].use_encryption = use_encryption;
+				enc[i].setpassword(password);
 				enc[i].use_compression = use_compression;
 				enc[i].split_archives = 1;
 				LOGINFO("Start encryption thread %i\n", i);
@@ -383,6 +375,7 @@ int twrpTar::extractTarFork() {
 					if (TWFunc::Path_Exists(actual_filename)) {
 						thread_count++;
 						tars[i].basefn = basefn;
+						tars[i].setpassword(password);
 						tars[i].thread_id = i;
 						LOGINFO("Creating extract thread ID %i\n", i);
 						ret = pthread_create(&tar_thread[i], &tattr, extractMulti, (void*)&tars[i]);
@@ -447,10 +440,6 @@ int twrpTar::Generate_TarList(string Path, std::vector<TarListStruct> *TarList, 
 	string FileName;
 	struct TarListStruct TarItem;
 	string::size_type i;
-	bool skip;
-
-	if (has_data_media == 1 && Path.size() >= 11 && strncmp(Path.c_str(), "/data/media", 11) == 0)
-		return 0; // Skip /data/media
 
 	d = opendir(Path.c_str());
 	if (d == NULL) {
@@ -459,27 +448,13 @@ int twrpTar::Generate_TarList(string Path, std::vector<TarListStruct> *TarList, 
 		return -1;
 	}
 	while ((de = readdir(d)) != NULL) {
-		// Skip excluded stuff
-		FileName = Path + "/";
-		FileName += de->d_name;
-		if (tarexclude.size() > 0) {
-			skip = false;
-			for (i = 0; i < tarexclude.size(); i++) {
-				if (FileName == tarexclude[i]) {
-					LOGINFO("Excluding %s\n", FileName.c_str());
-					break;
-				}
-			}
-			if (skip)
-				continue;
-		}
-		if (has_data_media == 1 && FileName.size() >= 11 && strncmp(FileName.c_str(), "/data/media", 11) == 0)
-			continue; // Skip /data/media
-		if (de->d_type == DT_BLK || de->d_type == DT_CHR)
+		FileName = Path + "/" + de->d_name;
+
+		if (de->d_type == DT_BLK || de->d_type == DT_CHR || du.check_skip_dirs(FileName))
 			continue;
 		TarItem.fn = FileName;
 		TarItem.thread_id = *thread_id;
-		if (de->d_type == DT_DIR && !du.check_skip_dirs(Path, de->d_name)) {
+		if (de->d_type == DT_DIR) {
 			TarList->push_back(TarItem);
 			if (Generate_TarList(FileName, TarList, Target_Size, thread_id) < 0)
 				return -1;
@@ -572,7 +547,7 @@ int twrpTar::tarList(std::vector<TarListStruct> *TarList, unsigned thread_id) {
 			strcpy(buf, TarList->at(i).fn.c_str());
 			lstat(buf, &st);
 			if (S_ISREG(st.st_mode)) { // item is a regular file
-				if (Archive_Current_Size + (unsigned long long)(st.st_size) > MAX_ARCHIVE_SIZE) {
+				if (split_archives && Archive_Current_Size + (unsigned long long)(st.st_size) > MAX_ARCHIVE_SIZE) {
 					if (closeTar() != 0) {
 						LOGERR("Error closing '%s' on thread %i\n", tarfn.c_str(), thread_id);
 						return -3;
@@ -681,10 +656,18 @@ int twrpTar::createTar() {
 			LOGERR("Error creating second pipe\n");
 			return -1;
 		}
+		int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		if (output_fd < 0) {
+			LOGERR("Failed to open '%s'\n", tarfn.c_str());
+			for (i = 0; i < 4; i++)
+				close(pipes[i]); // close all
+			return -1;
+		}
 		pigz_pid = fork();
 
 		if (pigz_pid < 0) {
 			LOGERR("pigz fork() failed\n");
+			close(output_fd);
 			for (i = 0; i < 4; i++)
 				close(pipes[i]); // close all
 			return -1;
@@ -698,6 +681,7 @@ int twrpTar::createTar() {
 			dup2(pipes[3], 1);
 			if (execlp("pigz", "pigz", "-", NULL) < 0) {
 				LOGERR("execlp pigz ERROR!\n");
+				close(output_fd);
 				close(pipes[0]);
 				close(pipes[3]);
 				_exit(-1);
@@ -708,18 +692,12 @@ int twrpTar::createTar() {
 
 			if (oaes_pid < 0) {
 				LOGERR("openaes fork() failed\n");
+				close(output_fd);
 				for (i = 0; i < 4; i++)
 					close(pipes[i]); // close all
 				return -1;
 			} else if (oaes_pid == 0) {
 				// openaes Child
-				int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-				if (output_fd < 0) {
-					LOGERR("Failed to open '%s'\n", tarfn.c_str());
-					for (i = 0; i < 4; i++)
-						close(pipes[i]); // close all
-					return -1;
-				}
 				close(pipes[0]);
 				close(pipes[1]);
 				close(pipes[3]);
@@ -752,27 +730,29 @@ int twrpTar::createTar() {
 		Archive_Current_Type = 1;
 		LOGINFO("Using compression...\n");
 		int pigzfd[2];
+		int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		if (output_fd < 0) {
+			LOGERR("Failed to open '%s'\n", tarfn.c_str());
+			close(pigzfd[0]);
+			return -1;
+		}
 
 		if (pipe(pigzfd) < 0) {
 			LOGERR("Error creating pipe\n");
+			close(output_fd);
 			return -1;
 		}
 		pigz_pid = fork();
 
 		if (pigz_pid < 0) {
 			LOGERR("fork() failed\n");
+			close(output_fd);
 			close(pigzfd[0]);
 			close(pigzfd[1]);
 			return -1;
 		} else if (pigz_pid == 0) {
 			// Child
 			close(pigzfd[1]);   // close unused output pipe
-			int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-			if (output_fd < 0) {
-				LOGERR("Failed to open '%s'\n", tarfn.c_str());
-				close(pigzfd[0]);
-				_exit(-1);
-			}
 			dup2(pigzfd[0], 0); // remap stdin
 			dup2(output_fd, 1); // remap stdout to output file
 			if (execlp("pigz", "pigz", "-", NULL) < 0) {
@@ -796,22 +776,27 @@ int twrpTar::createTar() {
 		Archive_Current_Type = 2;
 		LOGINFO("Using encryption...\n");
 		int oaesfd[2];
-		pipe(oaesfd);
+		int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		if (output_fd < 0) {
+			LOGERR("Failed to open '%s'\n", tarfn.c_str());
+			return -1;
+		}
+		if (pipe(oaesfd) < 0) {
+			LOGERR("Error creating pipe\n");
+			close(output_fd);
+			return -1;
+		}
 		oaes_pid = fork();
 
 		if (oaes_pid < 0) {
 			LOGERR("fork() failed\n");
+			close(output_fd);
 			close(oaesfd[0]);
 			close(oaesfd[1]);
 			return -1;
 		} else if (oaes_pid == 0) {
 			// Child
 			close(oaesfd[1]);   // close unused
-			int output_fd = open(tarfn.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-			if (output_fd < 0) {
-				LOGERR("Failed to open '%s'\n", tarfn.c_str());
-				_exit(-1);
-			}
 			dup2(oaesfd[0], 0); // remap stdin
 			dup2(output_fd, 1); // remap stdout to output file
 			if (execlp("openaes", "openaes", "enc", "--key", password.c_str(), NULL) < 0) {
@@ -850,19 +835,29 @@ int twrpTar::openTar() {
 	if (Archive_Current_Type == 3) {
 		LOGINFO("Opening encrypted and compressed backup...\n");
 		int i, pipes[4];
+		int input_fd = open(tarfn.c_str(), O_RDONLY | O_LARGEFILE);
+		if (input_fd < 0) {
+			LOGERR("Failed to open '%s'\n", tarfn.c_str());
+			return -1;
+		}
 
 		if (pipe(pipes) < 0) {
 			LOGERR("Error creating first pipe\n");
+			close(input_fd);
 			return -1;
 		}
 		if (pipe(pipes + 2) < 0) {
 			LOGERR("Error creating second pipe\n");
+			close(pipes[0]);
+			close(pipes[1]);
+			close(input_fd);
 			return -1;
 		}
 		oaes_pid = fork();
 
 		if (oaes_pid < 0) {
 			LOGERR("pigz fork() failed\n");
+			close(input_fd);
 			for (i = 0; i < 4; i++)
 				close(pipes[i]); // close all
 			return -1;
@@ -871,12 +866,6 @@ int twrpTar::openTar() {
 			close(pipes[0]); // Close pipes that are not used by this child
 			close(pipes[2]);
 			close(pipes[3]);
-			int input_fd = open(tarfn.c_str(), O_RDONLY | O_LARGEFILE);
-			if (input_fd < 0) {
-				LOGERR("Failed to open '%s'\n", tarfn.c_str());
-				close(pipes[1]);
-				_exit(-1);
-			}
 			close(0);
 			dup2(input_fd, 0);
 			close(1);
@@ -893,6 +882,7 @@ int twrpTar::openTar() {
 
 			if (pigz_pid < 0) {
 				LOGERR("openaes fork() failed\n");
+				close(input_fd);
 				for (i = 0; i < 4; i++)
 					close(pipes[i]); // close all
 				return -1;
@@ -906,6 +896,7 @@ int twrpTar::openTar() {
 				dup2(pipes[3], 1);
 				if (execlp("pigz", "pigz", "-d", "-c", NULL) < 0) {
 					LOGERR("execlp pigz ERROR!\n");
+					close(input_fd);
 					close(pipes[0]);
 					close(pipes[3]);
 					_exit(-1);
@@ -926,23 +917,28 @@ int twrpTar::openTar() {
 	} else if (Archive_Current_Type == 2) {
 		LOGINFO("Opening encrypted backup...\n");
 		int oaesfd[2];
+		int input_fd = open(tarfn.c_str(), O_RDONLY | O_LARGEFILE);
+		if (input_fd < 0) {
+			LOGERR("Failed to open '%s'\n", tarfn.c_str());
+			return -1;
+		}
 
-		pipe(oaesfd);
+		if (pipe(oaesfd) < 0) {
+			LOGERR("Error creating pipe\n");
+			close(input_fd);
+			return -1;
+		}
+
 		oaes_pid = fork();
 		if (oaes_pid < 0) {
 			LOGERR("fork() failed\n");
+			close(input_fd);
 			close(oaesfd[0]);
 			close(oaesfd[1]);
 			return -1;
 		} else if (oaes_pid == 0) {
 			// Child
 			close(oaesfd[0]); // Close unused pipe
-			int input_fd = open(tarfn.c_str(), O_RDONLY | O_LARGEFILE);
-			if (input_fd < 0) {
-				LOGERR("Failed to open '%s'\n", tarfn.c_str());
-				close(oaesfd[1]);
-				_exit(-1);
-			}
 			close(0);   // close stdin
 			dup2(oaesfd[1], 1); // remap stdout
 			dup2(input_fd, 0); // remap input fd to stdin
@@ -965,22 +961,27 @@ int twrpTar::openTar() {
 	} else if (Archive_Current_Type == 1) {
 		LOGINFO("Opening as a gzip...\n");
 		int pigzfd[2];
-		pipe(pigzfd);
+		int input_fd = open(tarfn.c_str(), O_RDONLY | O_LARGEFILE);
+		if (input_fd < 0) {
+			LOGERR("Failed to open '%s'\n", tarfn.c_str());
+			return -1;
+		}
+		if (pipe(pigzfd) < 0) {
+			LOGERR("Error creating pipe\n");
+			close(input_fd);
+			return -1;
+		}
 
 		pigz_pid = fork();
 		if (pigz_pid < 0) {
 			LOGERR("fork() failed\n");
+			close(input_fd);
 			close(pigzfd[0]);
 			close(pigzfd[1]);
 			return -1;
 		} else if (pigz_pid == 0) {
 			// Child
 			close(pigzfd[0]);
-			int input_fd = open(tarfn.c_str(), O_RDONLY | O_LARGEFILE);
-			if (input_fd < 0) {
-				LOGERR("Failed to open '%s'\n", tarfn.c_str());
-				_exit(-1);
-			}
 			dup2(input_fd, 0); // remap input fd to stdin
 			dup2(pigzfd[1], 1); // remap stdout
 			if (execlp("pigz", "pigz", "-d", "-c", NULL) < 0) {

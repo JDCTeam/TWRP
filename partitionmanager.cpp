@@ -57,6 +57,7 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 	FILE *fstabFile;
 	char fstab_line[MAX_FSTAB_LINE_LENGTH];
 	TWPartition* settings_partition = NULL;
+	TWPartition* andsec_partition = NULL;
 
 	fstabFile = fopen(Fstab_Filename.c_str(), "rt");
 	if (fstabFile == NULL) {
@@ -76,10 +77,15 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		memset(fstab_line, 0, sizeof(fstab_line));
 
 		if (partition->Process_Fstab_Line(line, Display_Error)) {
-			if (!settings_partition && partition->Is_Settings_Storage) {
+			if (!settings_partition && partition->Is_Settings_Storage && partition->Is_Present) {
 				settings_partition = partition;
 			} else {
 				partition->Is_Settings_Storage = false;
+			}
+			if (!andsec_partition && partition->Has_Android_Secure && partition->Is_Present) {
+				andsec_partition = partition;
+			} else {
+				partition->Has_Android_Secure = false;
 			}
 			Partitions.push_back(partition);
 		} else {
@@ -104,9 +110,17 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		else
 			LOGINFO("Error creating fstab\n");
 	}
+
+	if (andsec_partition) {
+		Setup_Android_Secure_Location(andsec_partition);
+	} else if (settings_partition) {
+		Setup_Android_Secure_Location(settings_partition);
+	}
+	if (settings_partition) {
+		Setup_Settings_Storage_Partition(settings_partition);
+	}
 	Update_System_Details();
 	UnMount_Main_Partitions();
-	Setup_Settings_Storage_Partition(settings_partition);
 	return true;
 }
 
@@ -142,12 +156,18 @@ int TWPartitionManager::Write_Fstab(void) {
 }
 
 void TWPartitionManager::Setup_Settings_Storage_Partition(TWPartition* Part) {
-#ifndef RECOVERY_SDCARD_ON_DATA
-	Part->Setup_AndSec();
-#endif
 	DataManager::SetValue("tw_settings_path", Part->Storage_Path);
 	DataManager::SetValue("tw_storage_path", Part->Storage_Path);
 	LOGINFO("Settings storage is '%s'\n", Part->Storage_Path.c_str());
+}
+
+void TWPartitionManager::Setup_Android_Secure_Location(TWPartition* Part) {
+	if (Part->Has_Android_Secure)
+		Part->Setup_AndSec();
+#ifndef RECOVERY_SDCARD_ON_DATA
+	else
+		Part->Setup_AndSec();
+#endif
 }
 
 void TWPartitionManager::Output_Partition_Logging(void) {
@@ -876,7 +896,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 
 					for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
 						if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == restore_part->Mount_Point) {
-							if (!(*subpart)->Check_MD5(Restore_Name))
+							if (check_md5 > 0 && !(*subpart)->Check_MD5(Restore_Name))
 								return false;
 						}
 					}
@@ -1522,21 +1542,43 @@ int TWPartitionManager::Fix_Permissions(void) {
 	return result;
 }
 
+TWPartition* TWPartitionManager::Find_Next_Storage(string Path, string Exclude) {
+	std::vector<TWPartition*>::iterator iter = Partitions.begin();
+
+	if (!Path.empty()) {
+		string Search_Path = TWFunc::Get_Root_Path(Path);
+		for (; iter != Partitions.end(); iter++) {
+			if ((*iter)->Mount_Point == Search_Path) {
+				iter++;
+				break;
+			}
+		}
+	}
+
+	for (; iter != Partitions.end(); iter++) {
+		if ((*iter)->Is_Storage && (*iter)->Is_Present && (*iter)->Mount_Point != Exclude) {
+			return (*iter);
+		}
+	}
+
+	return NULL;
+}
+
 int TWPartitionManager::Open_Lun_File(string Partition_Path, string Lun_File) {
 	TWPartition* Part = Find_Partition_By_Path(Partition_Path);
 
 	if (Part == NULL) {
-		LOGERR("Unable to locate volume information for USB storage mode.");
+		LOGERR("Unable to locate '%s' for USB storage mode.", Partition_Path.c_str());
 		return false;
 	}
-	if (!Part->UnMount(true))
+	LOGINFO("USB mount '%s', '%s' > '%s'\n", Partition_Path.c_str(), Part->Actual_Block_Device.c_str(), Lun_File.c_str());
+	if (!Part->UnMount(true) || !Part->Is_Present)
 		return false;
 
 	if (TWFunc::write_file(Lun_File, Part->Actual_Block_Device)) {
 		LOGERR("Unable to write to ums lunfile '%s': (%s)\n", Lun_File.c_str(), strerror(errno));
 		return false;
 	}
-	property_set("sys.storage.ums_enabled", "1");
 	return true;
 }
 
@@ -1546,37 +1588,48 @@ int TWPartitionManager::usb_storage_enable(void) {
 	string ext_path;
 	bool has_multiple_lun = false;
 
-	DataManager::GetValue(TW_HAS_DUAL_STORAGE, has_dual);
 	DataManager::GetValue(TW_HAS_DATA_MEDIA, has_data_media);
-	if (has_dual == 1 && has_data_media == 0) {
-		string Lun_File_str = CUSTOM_LUN_FILE;
-		size_t found = Lun_File_str.find("%");
-		if (found != string::npos) {
-			sprintf(lun_file, CUSTOM_LUN_FILE, 1);
-			if (TWFunc::Path_Exists(lun_file))
-				has_multiple_lun = true;
-		}
-		if (!has_multiple_lun) {
-			// Device doesn't have multiple lun files, mount current storage
-			sprintf(lun_file, CUSTOM_LUN_FILE, 0);
-			return Open_Lun_File(DataManager::GetCurrentStoragePath(), lun_file);
-		} else {
-			// Device has multiple lun files
-			sprintf(lun_file, CUSTOM_LUN_FILE, 0);
-			if (!Open_Lun_File(DataManager::GetSettingsStoragePath(), lun_file))
+	string Lun_File_str = CUSTOM_LUN_FILE;
+	size_t found = Lun_File_str.find("%");
+	if (found != string::npos) {
+		sprintf(lun_file, CUSTOM_LUN_FILE, 1);
+		if (TWFunc::Path_Exists(lun_file))
+			has_multiple_lun = true;
+	}
+	if (!has_multiple_lun) {
+		LOGINFO("Device doesn't have multiple lun files, mount current storage\n");
+		sprintf(lun_file, CUSTOM_LUN_FILE, 0);
+		if (TWFunc::Get_Root_Path(DataManager::GetCurrentStoragePath()) == "/data") {
+			TWPartition* Mount = Find_Next_Storage("", "/data");
+			if (Mount) {
+				if (!Open_Lun_File(Mount->Mount_Point, lun_file))
+					return false;
+			} else {
+				LOGERR("Unable to find storage partition to mount to USB\n");
 				return false;
-			DataManager::GetValue(TW_EXTERNAL_PATH, ext_path);
-			sprintf(lun_file, CUSTOM_LUN_FILE, 1);
-			return Open_Lun_File(ext_path, lun_file);
+			}
+		} else if (!Open_Lun_File(DataManager::GetCurrentStoragePath(), lun_file)) {
+			return false;
 		}
 	} else {
-		if (has_data_media == 0)
-			ext_path = DataManager::GetCurrentStoragePath();
-		else
-			DataManager::GetValue(TW_EXTERNAL_PATH, ext_path);
+		LOGINFO("Device has multiple lun files\n");
+		TWPartition* Mount1;
+		TWPartition* Mount2;
 		sprintf(lun_file, CUSTOM_LUN_FILE, 0);
-		return Open_Lun_File(ext_path, lun_file);
+		Mount1 = Find_Next_Storage("", "/data");
+		if (Mount1) {
+			if (!Open_Lun_File(Mount1->Mount_Point, lun_file))
+				return false;
+			Mount2 = Find_Next_Storage(Mount1->Mount_Point, "/data");
+			if (Mount2) {
+				Open_Lun_File(ext_path, lun_file);
+			}
+		} else {
+			LOGERR("Unable to find storage partition to mount to USB\n");
+			return false;
+		}
 	}
+	property_set("sys.storage.ums_enabled", "1");
 	return true;
 }
 
@@ -1588,8 +1641,6 @@ int TWPartitionManager::usb_storage_disable(void) {
 	for (index=0; index<2; index++) {
 		sprintf(lun_file, CUSTOM_LUN_FILE, index);
 		ret = TWFunc::write_file(lun_file, str);
-		Mount_All_Storage();
-		Update_System_Details();
 		if (ret < 0) {
 			break;
 		}

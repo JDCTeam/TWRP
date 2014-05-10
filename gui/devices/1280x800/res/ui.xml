@@ -1437,7 +1437,10 @@
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_has_data_media" var2="0" />
+				<conditions>
+					<condition var1="tw_has_android_secure" var2="1" />
+					<condition var1="fileexists" var2="/and-sec" />
+				</conditions>
 				<font resource="font" />
 				<placement x="%center_x%" y="%row2_text_y%" placement="5" />
 				<text>.android_secure</text>
@@ -1682,7 +1685,10 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Refresh Sizes</text>
 				<image resource="main_button" />
-				<action function="refreshsizes"></action>
+				<actions>
+					<action function="refreshsizes"></action>
+					<action function="page">backup</action>
+				</actions>
 			</object>
 
 			<object type="button">

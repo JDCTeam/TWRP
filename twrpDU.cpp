@@ -38,7 +38,9 @@ twrpDU::twrpDU() {
 		add_relative_dir("..");
 		add_relative_dir("lost+found");
 		add_absolute_dir("/data/data/com.google.android.music/files");
-		parent = "";
+#ifdef RECOVERY_SDCARD_ON_DATA
+		add_absolute_dir("/data/media");
+#endif
 }
 
 void twrpDU::add_relative_dir(const string& dir) {
@@ -67,10 +69,7 @@ uint64_t twrpDU::Get_Folder_Size(const string& Path) {
 	DIR* d;
 	struct dirent* de;
 	struct stat st;
-	unsigned long long dusize = 0;
-	unsigned long long dutemp = 0;
-
-	parent = Path.substr(0, Path.find_last_of('/'));
+	uint64_t dusize = 0;
 
 	d = opendir(Path.c_str());
 	if (d == NULL) {
@@ -79,14 +78,10 @@ uint64_t twrpDU::Get_Folder_Size(const string& Path) {
 		return 0;
 	}
 
-	while ((de = readdir(d)) != NULL)
-	{
-		if (de->d_type == DT_DIR && !check_skip_dirs(Path, de->d_name)) {
-			dutemp = Get_Folder_Size((Path + "/" + de->d_name));
-			dusize += dutemp;
-			dutemp = 0;
-		}
-		else if (de->d_type == DT_REG) {
+	while ((de = readdir(d)) != NULL) {
+		if (de->d_type == DT_DIR && !check_skip_dirs(Path + "/" + de->d_name)) {
+			dusize += Get_Folder_Size(Path + "/" + de->d_name);
+		} else if (de->d_type == DT_REG) {
 			stat((Path + "/" + de->d_name).c_str(), &st);
 			dusize += (uint64_t)(st.st_size);
 		}
@@ -100,12 +95,7 @@ bool twrpDU::check_relative_skip_dirs(const string& dir) {
 }
 
 bool twrpDU::check_absolute_skip_dirs(const string& path) {
-	string normalized = TWFunc::Remove_Trailing_Slashes(path);
-	return std::find(absolutedir.begin(), absolutedir.end(), normalized) != absolutedir.end();
-}
-
-bool twrpDU::check_skip_dirs(const string& parent, const string& dir) {
-	return check_relative_skip_dirs(dir) || check_absolute_skip_dirs(parent + "/" + dir);
+	return std::find(absolutedir.begin(), absolutedir.end(), path) != absolutedir.end();
 }
 
 bool twrpDU::check_skip_dirs(const string& path) {

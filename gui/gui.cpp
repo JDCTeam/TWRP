@@ -305,16 +305,18 @@ static void * input_thread(void *cookie)
 			{
 				if (!drag)
 				{
+					if (x != 0 && y != 0) {
 #ifdef _EVENT_LOGGING
-					LOGERR("TOUCH_START: %d,%d\n", x, y);
+						LOGERR("TOUCH_START: %d,%d\n", x, y);
 #endif
-					if (PageManager::NotifyTouch(TOUCH_START, x, y) > 0)
-						state = 1;
-					drag = 1;
-					touch_and_hold = 1;
-					dontwait = 1;
-					key_repeat = 0;
-					gettimeofday(&touchStart, NULL);
+						if (PageManager::NotifyTouch(TOUCH_START, x, y) > 0)
+							state = 1;
+						drag = 1;
+						touch_and_hold = 1;
+						dontwait = 1;
+						key_repeat = 0;
+						gettimeofday(&touchStart, NULL);
+					}
 #ifndef TW_NO_SCREEN_TIMEOUT
 					blankTimer.resetTimerAndUnblank();
 #endif
@@ -363,6 +365,9 @@ static void * input_thread(void *cookie)
 					{
 						cursor->GetPos(x, y);
 
+#ifdef _EVENT_LOGGING
+						LOGERR("TOUCH_RELEASE: %d,%d\n", x, y);
+#endif
 						PageManager::NotifyTouch(TOUCH_RELEASE, x, y);
 
 						touch_and_hold = 0;
@@ -381,12 +386,10 @@ static void * input_thread(void *cookie)
 					kb->KeyDown(KEY_BACK);
 				else
 					kb->KeyUp(KEY_BACK);
-			}
-			else if (ev.value != 0)
-			{
+			} else if (ev.value != 0) {
 				// This is a key press
-				if (kb->KeyDown(ev.code))
-				{
+				if (kb->KeyDown(ev.code)) {
+					// Key repeat is enabled for this key
 					key_repeat = 1;
 					touch_and_hold = 0;
 					touch_repeat = 0;
@@ -395,9 +398,7 @@ static void * input_thread(void *cookie)
 #ifndef TW_NO_SCREEN_TIMEOUT
 					blankTimer.resetTimerAndUnblank();
 #endif
-				}
-				else
-				{
+				} else {
 					key_repeat = 0;
 					touch_and_hold = 0;
 					touch_repeat = 0;
@@ -406,9 +407,7 @@ static void * input_thread(void *cookie)
 					//blankTimer.resetTimerAndUnblank();
 #endif
 				}
-			}
-			else
-			{
+			} else {
 				// This is a key release
 				kb->KeyUp(ev.code);
 				key_repeat = 0;
@@ -692,7 +691,7 @@ extern "C" int gui_loadResources(void)
 	return 0;
 
 error:
-	LOGERR("An internal error has occurred.\n");
+	LOGERR("An internal error has occurred: unable to load theme.\n");
 	gGuiInitialized = 0;
 	return -1;
 }

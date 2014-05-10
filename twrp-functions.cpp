@@ -1254,6 +1254,7 @@ bool TWFunc::loadTheme()
 		}
 	}
 
+#ifndef TW_OEM_BUILD
 	if (PartitionManager.Mount_Settings_Storage(false))
 	{
 		theme_path += getZIPThemePath(gr_get_rotation());
@@ -1267,6 +1268,7 @@ bool TWFunc::loadTheme()
 	}
 	else
 		LOGERR("Unable to mount %s during GUI startup.\n", theme_path.c_str());
+#endif
 
 	if(PageManager::LoadPackage("TWRP", base_xml, "main") != 0)
 	{
