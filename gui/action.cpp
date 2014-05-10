@@ -717,7 +717,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		// Screenshot_2014-01-01-18-21-38.png
 		strftime(path+path_len, sizeof(path)-path_len, "Screenshot_%Y-%m-%d-%H-%M-%S.png", localtime(&tm));
 
+		gui_setRenderEnabled(0);
 		int res = gr_save_screenshot(path);
+		gui_setRenderEnabled(1);
+
 		if(res == 0) {
 			chmod(path, 0666);
 			chown(path, uid, gid);
@@ -732,6 +735,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		} else {
 			LOGERR("Failed to take a screenshot!\n");
 		}
+		return 0;
 	}
 
 	if (function == "multirom")
