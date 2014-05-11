@@ -123,6 +123,7 @@ public:
 	static std::string getBootDev() { return m_boot_dev; }
 	static bool hasFirmwareDev() { return m_has_firmware; }
 	static void updateSupportedSystems();
+	static bool installLocNeedsImages(const std::string& loc);
 
 	static void clearBaseFolders();
 	static const base_folder& addBaseFolder(const std::string& name, int min, int def);

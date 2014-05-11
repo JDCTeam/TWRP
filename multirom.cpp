@@ -30,6 +30,8 @@ extern "C" {
 #include "multirom_hooks.h"
 }
 
+#include "libblkid/blkid.h"
+
 std::string MultiROM::m_path = "";
 std::string MultiROM::m_boot_dev = "";
 std::string MultiROM::m_mount_rom_paths[2] = { "", "" };
@@ -174,41 +176,35 @@ bool MultiROM::setRomsPath(std::string loc)
 std::string MultiROM::listInstallLocations()
 {
 	std::string res = INTERNAL_MEM_LOC_TXT"\n";
-
-	system("blkid > /tmp/blkid.txt");
-	FILE *f = fopen("/tmp/blkid.txt", "r");
-	if(!f)
+	blkid_probe pr;
+	const char *type;
+	struct dirent *dt;
+	char path[64];
+	DIR *d = opendir("/dev/block/");
+	if(!d)
 		return res;
 
-	char line[1024];
-	std::string blk;
-	size_t idx1, idx2;
-	while((fgets(line, sizeof(line), f)))
+	while((dt = readdir(d)))
 	{
-		if(!strstr(line, "/dev/block/sd"))
+		if(strncmp(dt->d_name, "sd", 2) != 0)
+			continue;
+		snprintf(path, sizeof(path), "/dev/block/%s", dt->d_name);
+
+		pr = blkid_new_probe_from_filename(path);
+		if(!pr)
 			continue;
 
-		blk = line;
-		idx1 = blk.find(':');
-		if(idx1 == std::string::npos)
-			continue;
-
-		res += blk.substr(0, idx1);
-
-		blk = line;
-		idx1 = blk.find("TYPE=");
-		if(idx1 == std::string::npos)
-			continue;
-
-		idx1 += strlen("TYPE=\"");
-		idx2 = blk.find('"', idx1);
-		if(idx2 == std::string::npos)
-			continue;
-
-		res += " (" + blk.substr(idx1, idx2-idx1) + ")\n";
+		blkid_do_safeprobe(pr);
+		if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) >= 0)
+		{
+			res += "/dev/block/";
+			res += dt->d_name;
+			res += " (";
+			res += type;
+			res += ")\n";
+		}
+		blkid_free_probe(pr);
 	}
-
-	fclose(f);
 	return res;
 }
 
@@ -221,6 +217,13 @@ void MultiROM::updateSupportedSystems()
 
 	snprintf(p, sizeof(p), "%s/infos/ubuntu_touch.txt", m_path.c_str());
 	DataManager::SetValue("tw_multirom_touch_supported", (access(p, F_OK) >= 0) ? 1 : 0);
+}
+
+bool MultiROM::installLocNeedsImages(const std::string& loc)
+{
+	return loc.compare(INTERNAL_MEM_LOC_TXT) != 0 &&
+		loc.find("(ext") == std::string::npos &&
+		loc.find("(f2fs)") == std::string::npos;
 }
 
 bool MultiROM::move(std::string from, std::string to)
@@ -1640,13 +1643,13 @@ bool MultiROM::disableFlashKernelAct(std::string name, std::string loc)
 
 int MultiROM::getType(int os, std::string loc)
 {
-	bool ext = loc.find("(ext") != std::string::npos;
+	bool images = installLocNeedsImages(loc);
 	switch(os)
 	{
 		case 1: // android
 			if(loc == INTERNAL_MEM_LOC_TXT)
 				return ROM_ANDROID_INTERNAL;
-			else if(ext)
+			else if(!images)
 				return ROM_ANDROID_USB_DIR;
 			else
 				return ROM_ANDROID_USB_IMG;
@@ -1654,7 +1657,7 @@ int MultiROM::getType(int os, std::string loc)
 		case 2: // ubuntu
 			if(loc == INTERNAL_MEM_LOC_TXT)
 				return ROM_UBUNTU_INTERNAL;
-			else if(ext)
+			else if(!images)
 				return ROM_UBUNTU_USB_DIR;
 			else
 				return ROM_UBUNTU_USB_IMG;
@@ -1664,7 +1667,7 @@ int MultiROM::getType(int os, std::string loc)
 		case 4:
 			if(loc == INTERNAL_MEM_LOC_TXT)
 				return ROM_UTOUCH_INTERNAL;
-			else if(ext)
+			else if(!images)
 				return ROM_UTOUCH_USB_DIR;
 			else
 				return ROM_UTOUCH_USB_IMG;

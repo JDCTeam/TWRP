@@ -853,7 +853,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	if (function == "multirom_add_file_selected")
 	{
 		std::string loc = DataManager::GetStrValue("tw_multirom_install_loc");
-		bool images = loc.compare(INTERNAL_MEM_LOC_TXT) != 0 && loc.find("(ext") == std::string::npos;
+		bool images = MultiROM::installLocNeedsImages(loc);
 		int type = DataManager::GetIntValue("tw_multirom_type");
 
 		MultiROM::clearBaseFolders();
