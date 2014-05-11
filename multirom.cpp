@@ -205,6 +205,7 @@ std::string MultiROM::listInstallLocations()
 		}
 		blkid_free_probe(pr);
 	}
+	closedir(d);
 	return res;
 }
 
