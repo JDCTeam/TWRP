@@ -1980,6 +1980,15 @@ void TWPartitionManager::Output_Storage_Fstab(void) {
 	fclose(fp);
 }
 
+TWPartition *TWPartitionManager::Get_First_Storage_Partition()
+{
+	for (std::vector<TWPartition*>::iterator iter = Partitions.begin(); iter != Partitions.end(); ++iter) {
+		if((*iter)->Is_Storage)
+			return *iter;
+	}
+	return NULL;
+}
+
 bool TWPartitionManager::Push_Context()
 {
 	sync();

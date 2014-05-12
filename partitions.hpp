@@ -217,6 +217,7 @@ public:
 	void Mount_All_Storage(void);                                             // Mounts all storage locations
 	void UnMount_Main_Partitions(void);                                       // Unmounts system and data if not data/media and boot if boot is mountable
 	int Partition_SDCard(void);                                               // Repartitions the sdcard
+	TWPartition *Get_First_Storage_Partition();                               // Returns a pointer to first partition with Is_Storage
 
 	int Fix_Permissions();
 	void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
