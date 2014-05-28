@@ -6,6 +6,7 @@
 #include <linux/capability.h>
 #include <linux/xattr.h>
 #include <sys/xattr.h>
+#include <sys/vfs.h>
 
 // clone libbootimg to /system/extras/ from
 // https://github.com/Tasssadar/libbootimg.git
@@ -907,6 +908,11 @@ static char *strstr_wildcard(const char *s, const char *find)
 
 bool MultiROM::skipLine(const char *line)
 {
+
+	if(strstr(line, "mount") && strstr(line, "ui_print"))
+		if (strstr(line, "mount") < strstr(line, "ui_print"))
+			return true;
+
 	if(strstr(line, "mount") && !strstr(line, "ui_print"))
 	{
 		if (strstr(line, "run_program") ||
@@ -925,7 +931,7 @@ bool MultiROM::skipLine(const char *line)
 		return false;
 	}
 
-	if(strstr(line, "/dev/block/platform/"))
+	if(strstr(line, "/dev/block/"))
 		return true;
 
 	if(strstr(line, "\"dd\"") && strstr(line, "run_program"))
@@ -1033,7 +1039,7 @@ bool MultiROM::prepareZIP(std::string& file)
 
 	if(changed)
 	{
-		sprintf(cmd, "cd /tmp && zip %s %s", file.c_str(), MR_UPDATE_SCRIPT_NAME);
+		sprintf(cmd, "cd /tmp && zip \"%s\" %s", file.c_str(), MR_UPDATE_SCRIPT_NAME);
 		if(system(cmd) < 0)
 			return false;
 	}
@@ -1313,20 +1319,6 @@ bool MultiROM::createImage(const std::string& base, const char *img, int size)
 	}
 
 	char cmd[256];
-	sprintf(cmd, "dd if=/dev/zero of=\"%s/%s.img\" bs=1M count=%d", base.c_str(), img, size);
-	if(system(cmd) != 0)
-	{
-		gui_print("Failed to create %s image, probably not enough space.\n", img);
-		return false;
-	}
-
-	struct stat info;
-	sprintf(cmd, "%s/%s.img", base.c_str(), img);
-	if(stat(cmd, &info) < 0)
-	{
-		gui_print("Failed to create %s image, probably not enough space.\n", img);
-		return false;
-	}
 
 	bool ctx = TWFunc::Path_Exists("/file_contexts");
 
@@ -1337,9 +1329,34 @@ bool MultiROM::createImage(const std::string& base, const char *img, int size)
 
 bool MultiROM::createImagesFromBase(const std::string& base)
 {
+	int spaceneeded = 0;
 	for(baseFolders::const_iterator itr = m_base_folders.begin(); itr != m_base_folders.end(); ++itr)
-		if(!createImage(base, itr->first.c_str(), itr->second.size))
+		spaceneeded +=itr->second.size;
+	spaceneeded *=1024; /*Covert to kb*/
+
+	struct statfs buf; /* allocate a buffer */
+	int rc;
+	long disksize, freesize;  /* computed in kb */
+	rc = statfs(base.c_str(), &buf);
+
+	if (rc == 0) {
+		/* NOTE: bfree does not include reserved space */
+		disksize = (buf.f_bsize/1024L) * buf.f_blocks; /* in kb */
+		freesize = (buf.f_bsize/1024L) * buf.f_bavail;
+		gui_print("Disk size: %li\nFreesize: %li\nSpace Required: %li\n", disksize, freesize, spaceneeded);
+		if (spaceneeded < freesize) {
+			for(baseFolders::const_iterator itr = m_base_folders.begin(); itr != m_base_folders.end(); ++itr)
+				if(!createImage(base, itr->first.c_str(), itr->second.size))
+					return false;
+		} else {
+			gui_print("Failed to create image, not enough space for images!\n");
 			return false;
+		}
+	} else {
+		gui_print("Failed to get disk size!\n");
+		return false;
+	}
+
 
 	return true;
 }
@@ -2341,7 +2358,7 @@ bool MultiROM::fakeBootPartition(const char *fakeImg)
 	}
 
 	system_args("echo '%s' > /tmp/mrom_fakebootpart", m_boot_dev.c_str());
-	system_args("mv \"%s\" \"%s\"-orig", m_boot_dev.c_str(), m_boot_dev.c_str());
+	system_args("mv \"%s\" \"%s-orig\"", m_boot_dev.c_str(), m_boot_dev.c_str());
 	system_args("ln -s \"%s\" \"%s\"", fakeImg, m_boot_dev.c_str());
 
 #ifdef BOARD_BOOTIMAGE_PARTITION_SIZE
