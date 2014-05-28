@@ -1503,17 +1503,13 @@ bool MultiROM::extractBootForROM(std::string base)
 
 bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::string dest)
 {
-	char cmd[256];
-	struct stat info;
-
 	if(img_path.find("img.gz") != std::string::npos)
 	{
 		gui_print("Decompressing the image (may take a while)...\n");
-		sprintf(cmd, "busybox gzip -d \"%s\"", img_path.c_str());
-		system(cmd);
+		system_args("busybox gzip -d \"%s\"", img_path.c_str());
 
 		img_path.erase(img_path.size()-3);
-		if(stat(img_path.c_str(), &info) < 0)
+		if(access(img_path.c_str(), F_OK) < 0)
 		{
 			gui_print("Failed to decompress the image, more space needed?");
 			return false;
@@ -1524,12 +1520,16 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 	system("umount -d /mnt_ub_img");
 
 	gui_print("Converting the image (may take a while)...\n");
-	sprintf(cmd, "simg2img \"%s\" /tmp/rootfs.img", img_path.c_str());
-	system(cmd);
+	if(system_args("simg2img \"%s\" /tmp/rootfs.img", img_path.c_str()) != 0)
+	{
+		system("rm /tmp/rootfs.img");
+		gui_print("Failed to convert the image!\n");
+		return false;
+	}
 
 	system("mount /tmp/rootfs.img /mnt_ub_img");
 
-	if(stat("/mnt_ub_img/rootfs.tar.gz", &info) < 0)
+	if(access("/mnt_ub_img/rootfs.tar.gz", F_OK) < 0)
 	{
 		system("umount -d /mnt_ub_img");
 		system("rm /tmp/rootfs.img");
@@ -1538,16 +1538,22 @@ bool MultiROM::ubuntuExtractImage(std::string name, std::string img_path, std::s
 	}
 
 	gui_print("Extracting rootfs.tar.gz (will take a while)...\n");
-	sprintf(cmd, "zcat /mnt_ub_img/rootfs.tar.gz | gnutar x --numeric-owner -C \"%s\"",  dest.c_str());
-	system(cmd);
+	if(system_args("zcat /mnt_ub_img/rootfs.tar.gz | gnutar x --numeric-owner -C \"%s\"",  dest.c_str()) != 0)
+	{
+		system("umount -d /mnt_ub_img");
+		system("rm /tmp/rootfs.img");
+		gui_print("Failed to extract rootfs.tar.gz archive!\n");
+		return false;
+	}
 
 	sync();
 
 	system("umount -d /mnt_ub_img");
 	system("rm /tmp/rootfs.img");
 
-	sprintf(cmd, "%s/boot/vmlinuz", dest.c_str());
-	if(stat(cmd, &info) < 0)
+	char buff[256];
+	snprintf(buff, sizeof(buff), "%s/boot/vmlinuz", dest.c_str());
+	if(access(buff, F_OK) < 0)
 	{
 		gui_print("Failed to extract rootfs!\n");
 		return false;
@@ -1562,35 +1568,28 @@ bool MultiROM::patchUbuntuInit(std::string rootDir)
 	std::string initPath = rootDir + "/usr/share/initramfs-tools/";
 	std::string locPath = rootDir + "/usr/share/initramfs-tools/scripts/";
 
-	struct stat info;
-	if(stat(initPath.c_str(), &info) < 0 || stat(locPath.c_str(), &info) < 0)
+	if(access(initPath.c_str(), F_OK) < 0 || access(locPath.c_str(), F_OK) < 0)
 	{
 		gui_print("init paths do not exits\n");
 		return false;
 	}
 
-	char cmd[512];
-	sprintf(cmd, "cp -a \"%s/ubuntu-init/init\" \"%s\"", m_path.c_str(), initPath.c_str());
-	system(cmd);
-	sprintf(cmd, "cp -a \"%s/ubuntu-init/local\" \"%s\"", m_path.c_str(), locPath.c_str());
-	system(cmd);
+	system_args("cp -a \"%s/ubuntu-init/init\" \"%s\"", m_path.c_str(), initPath.c_str());
+	system_args("cp -a \"%s/ubuntu-init/local\" \"%s\"", m_path.c_str(), locPath.c_str());
 
-	sprintf(cmd, "echo \"none	 /proc 	proc 	nodev,noexec,nosuid 	0 	0\" > \"%s/etc/fstab\"", rootDir.c_str());
-	system(cmd);
+	system_args("echo \"none	 /proc 	proc 	nodev,noexec,nosuid 	0 	0\" > \"%s/etc/fstab\"", rootDir.c_str());
 	return true;
 }
 
 void MultiROM::setUpChroot(bool start, std::string rootDir)
 {
-	char cmd[512];
 	static const char *dirs[] = { "dev", "sys", "proc" };
 	for(size_t i = 0; i < sizeof(dirs)/sizeof(dirs[0]); ++i)
 	{
 		if(start)
-			sprintf(cmd, "mount -o bind /%s \"%s/%s\"", dirs[i], rootDir.c_str(), dirs[i]);
+			system_args("mount -o bind /%s \"%s/%s\"", dirs[i], rootDir.c_str(), dirs[i]);
 		else
-			sprintf(cmd, "umount \"%s/%s\"", rootDir.c_str(), dirs[i]);
-		system(cmd);
+			system_args("umount \"%s/%s\"", rootDir.c_str(), dirs[i]);
 	}
 }
 
@@ -1600,20 +1599,15 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 
 	setUpChroot(true, rootDir);
 
-	char cmd[512];
-
-	sprintf(cmd, "chroot \"%s\" apt-get -y --force-yes purge ac100-tarball-installer flash-kernel", rootDir.c_str());
-	system(cmd);
+	system_args("chroot \"%s\" apt-get -y --force-yes purge ac100-tarball-installer flash-kernel", rootDir.c_str());
 
 	ubuntuDisableFlashKernel(false, rootDir);
 
 	gui_print("Updating initramfs...\n");
-	sprintf(cmd, "chroot \"%s\" update-initramfs -u", rootDir.c_str());
-	system(cmd);
+	system_args("chroot \"%s\" update-initramfs -u", rootDir.c_str());
 
 	// make proper link to initrd.img
-	sprintf(cmd, "chroot \"%s\" bash -c 'cd /boot; ln -sf $(ls initrd.img-* | head -n1) initrd.img'", rootDir.c_str());
-	system(cmd);
+	system_args("chroot \"%s\" bash -c 'cd /boot; ln -sf $(ls initrd.img-* | head -n1) initrd.img'", rootDir.c_str());
 
 	setUpChroot(false, rootDir);
 	return true;
@@ -1622,22 +1616,18 @@ bool MultiROM::ubuntuUpdateInitramfs(std::string rootDir)
 void MultiROM::ubuntuDisableFlashKernel(bool initChroot, std::string rootDir)
 {
 	gui_print("Disabling flash-kernel\n");
-	char cmd[512];
 	if(initChroot)
 	{
 		setUpChroot(true, rootDir);
-		sprintf(cmd, "chroot \"%s\" apt-get -y --force-yes purge flash-kernel", rootDir.c_str());
-		system(cmd);
+		system_args("chroot \"%s\" apt-get -y --force-yes purge flash-kernel", rootDir.c_str());
 	}
 
 	// We don't want flash-kernel to be active, ever.
-	sprintf(cmd, "chroot \"%s\" bash -c \"echo flash-kernel hold | dpkg --set-selections\"", rootDir.c_str());
-	system(cmd);
+	system_args("chroot \"%s\" bash -c \"echo flash-kernel hold | dpkg --set-selections\"", rootDir.c_str());
 
-	sprintf(cmd, "if [ \"$(grep FLASH_KERNEL_SKIP '%s/etc/environment')\" == \"\" ]; then "
+	system_args("if [ \"$(grep FLASH_KERNEL_SKIP '%s/etc/environment')\" == \"\" ]; then "
 			"chroot \"%s\" bash -c \"echo FLASH_KERNEL_SKIP=1 >> /etc/environment\"; fi;",
 			rootDir.c_str(), rootDir.c_str());
-	system(cmd);
 
 	if(initChroot)
 		setUpChroot(false, rootDir);
