@@ -685,7 +685,7 @@ int GUIListBox::NotifyTouch(TOUCH_STATE state, int x, int y)
 
 		isHighlighted = false;
 		last2Y = lastY;
-		lastY = y;	
+		lastY = y;
 		startSelection = -1;
 
 		// Handle scrolling

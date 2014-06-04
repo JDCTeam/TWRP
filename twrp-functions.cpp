@@ -581,7 +581,7 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 			if (p->d_type == DT_DIR) {
 				r = removeDir(new_path, true);
 				if (!r) {
-					if (p->d_type == DT_DIR) 
+					if (p->d_type == DT_DIR)
 						r = rmdir(new_path.c_str());
 					else
 						LOGINFO("Unable to removeDir '%s': %s\n", new_path.c_str(), strerror(errno));
@@ -595,7 +595,7 @@ int TWFunc::removeDir(const string path, bool skipParent) {
 		}
 		closedir(d);
 
-		if (!r) { 
+		if (!r) {
 			if (skipParent)
 				return 0;
 			else

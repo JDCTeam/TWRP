@@ -281,7 +281,7 @@ error:
 	string current = GetCurrentStoragePath();
 	TWPartition* Part = PartitionManager.Find_Partition_By_Path(current);
 	if(!Part)
-		Part = PartitionManager.Get_First_Storage_Partition();
+		Part = PartitionManager.Get_Default_Storage_Partition();
 	if (Part && current != Part->Storage_Path && Part->Mount(false)) {
 		LOGINFO("LoadValues setting storage path to '%s'\n", Part->Storage_Path.c_str());
 		SetValue("tw_storage_path", Part->Storage_Path);
@@ -592,7 +592,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_keyboard_vibrate", make_pair("40", 1)));
 	mValues.insert(make_pair("tw_action_vibrate", make_pair("160", 1)));
 
-	TWPartition *store = PartitionManager.Get_First_Storage_Partition();
+	TWPartition *store = PartitionManager.Get_Default_Storage_Partition();
 	if(store)
 		mValues.insert(make_pair("tw_storage_path", make_pair(store->Storage_Path.c_str(), 1)));
 	else
@@ -1011,7 +1011,7 @@ int DataManager::GetMagicValue(const string varName, string& value)
 		int tw_military_time;
 		now = time(0);
 		current = localtime(&now);
-		GetValue(TW_MILITARY_TIME, tw_military_time); 
+		GetValue(TW_MILITARY_TIME, tw_military_time);
 		if (current->tm_hour >= 12)
 		{
 			if (tw_military_time == 1)
@@ -1021,7 +1021,7 @@ int DataManager::GetMagicValue(const string varName, string& value)
 		}
 		else
 		{
-			if (tw_military_time == 1) 
+			if (tw_military_time == 1)
 				sprintf(tmp, "%d:%02d", current->tm_hour, current->tm_min);
 			else
 				sprintf(tmp, "%d:%02d AM", current->tm_hour == 0 ? 12 : current->tm_hour, current->tm_min);

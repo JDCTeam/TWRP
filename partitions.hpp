@@ -59,6 +59,8 @@ public:
 	bool Wipe(string New_File_System);                                        // Wipes the partition
 	bool Wipe();                                                              // Wipes the partition
 	bool Wipe_AndSec();                                                       // Wipes android secure
+	bool Can_Repair();                                                        // Checks to see if we have everything needed to be able to repair the current file system
+	bool Repair();                                                            // Repairs the current file system
 	bool Backup(string backup_folder);                                        // Backs up the partition to the folder specified
 	bool Check_MD5(string restore_folder);                                    // Checks MD5 of a backup
 	bool Restore(string restore_folder);                                      // Restores the partition using the backup folder provided
@@ -168,6 +170,7 @@ private:
 friend class TWPartitionManager;
 friend class DataManager;
 friend class GUIPartitionList;
+friend class GUIAction;
 friend class MultiROM;
 };
 
@@ -202,6 +205,9 @@ public:
 	int Wipe_By_Path(string Path);                                            // Wipes a partition based on path
 	int Wipe_By_Block(string Block);                                          // Wipes a partition based on block device
 	int Wipe_By_Name(string Name);                                            // Wipes a partition based on display name
+	int Wipe_By_Path(string Path, string New_File_System);                    // Wipes a partition based on path
+	int Wipe_By_Block(string Block, string New_File_System);                  // Wipes a partition based on block device
+	int Wipe_By_Name(string Name, string New_File_System);                    // Wipes a partition based on display name
 	int Factory_Reset();                                                      // Performs a factory reset
 	int Wipe_Dalvik_Cache();                                                  // Wipes dalvik cache
 	int Wipe_Rotate_Data();                                                   // Wipes rotation data --
@@ -209,6 +215,9 @@ public:
 	int Wipe_Android_Secure();                                                // Wipes android secure
 	int Format_Data();                                                        // Really formats data on /data/media devices -- also removes encryption
 	int Wipe_Media_From_Data();                                               // Removes and recreates the media folder on /data/media devices
+	int Repair_By_Path(string Path, bool Display_Error);                      // Repairs a partition based on path
+	int Repair_By_Block(string Block, bool Display_Error);                    // Repairs a partition based on block device
+	int Repair_By_Name(string Name, bool Display_Error);                      // Repairs a partition based on display name
 	void Refresh_Sizes();                                                     // Refreshes size data of partitions
 	void Update_System_Details();                                             // Updates fstab, file systems, sizes, etc.
 	int Decrypt_Device(string Password);                                      // Attempt to decrypt any encrypted partitions
@@ -217,7 +226,7 @@ public:
 	void Mount_All_Storage(void);                                             // Mounts all storage locations
 	void UnMount_Main_Partitions(void);                                       // Unmounts system and data if not data/media and boot if boot is mountable
 	int Partition_SDCard(void);                                               // Repartitions the sdcard
-	TWPartition *Get_First_Storage_Partition();                               // Returns a pointer to first partition with Is_Storage
+	TWPartition *Get_Default_Storage_Partition();                             // Returns a pointer to a default storage partition
 
 	int Fix_Permissions();
 	void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
