@@ -1040,7 +1040,7 @@ bool MultiROM::prepareZIP(std::string& file)
 	if(changed)
 	{
 		sprintf(cmd, "cd /tmp && zip \"%s\" %s", file.c_str(), MR_UPDATE_SCRIPT_NAME);
-		if(system(cmd) < 0)
+		if(system(cmd) != 0)
 			return false;
 	}
 	else
