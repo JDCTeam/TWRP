@@ -1937,18 +1937,6 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 				Partition_List->push_back(datamedia);
 			}
 		}
-	} else if(ListType == "f2fs_ext4_switch") {
-		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
-			if (!(*iter)->Wipe_Available_in_GUI || (*iter)->Is_SubPartition ||
-				((*iter)->Current_File_System != "ext4" && (*iter)->Current_File_System != "f2fs"))
-				continue;
-
-			struct PartitionList part;
-			part.Display_Name = (*iter)->Display_Name + " (" + (*iter)->Current_File_System + ")";
-			part.Mount_Point = (*iter)->Mount_Point;
-			part.selected = 0;
-			Partition_List->push_back(part);
-		}
 	} else {
 		LOGERR("Unknown list type '%s' requested for TWPartitionManager::Get_Partition_List\n", ListType.c_str());
 	}

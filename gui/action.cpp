@@ -1366,42 +1366,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			return 0;
 		}
 
-		if(function == "multirom_f2fs_ext4_switch")
-		{
-			operation_start("SwitchF2fsExt4");
-			std::vector<std::string> parts = TWFunc::Split_String(DataManager::GetStrValue("tw_switch_list"), ";");
-			std::string fs = DataManager::GetStrValue("tw_switch_fs_type");
-			int result = 0;
-			int use_rm_rf = DataManager::GetIntValue(TW_RM_RF_VAR);
-			DataManager::SetValue(TW_RM_RF_VAR, 0);
-			if (simulate) {
-				simulate_progress_bar();
-			} else {
-				for(std::vector<std::string>::iterator itr = parts.begin(); itr != parts.end(); ++itr)
-				{
-					gui_print("Formatting %s to %s...\n", (*itr).c_str(), fs.c_str());
-					TWPartition *p = PartitionManager.Find_Partition_By_Path(*itr);
-					if(!p)
-					{
-						result = 1;
-						LOGERR("Failed to find partition '%s'\n", (*itr).c_str());
-						break;
-					}
-
-					if(!p->Wipe(fs))
-					{
-						result = 1;
-						LOGERR("Failed to wipe partition '%s'\n", (*itr).c_str());
-						break;
-					}
-					p->Check_FS_Type();
-				}
-			}
-			DataManager::SetValue(TW_RM_RF_VAR, use_rm_rf);
-			operation_end(result, simulate);
-			return 0;
-		}
-
 		if(function == "system-image-upgrader")
 		{
 			operation_start("system-image-upgrader");

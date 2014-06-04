@@ -113,25 +113,6 @@ int main(int argc, char **argv) {
 	}
 	PartitionManager.Output_Partition_Logging();
 
-	// Check for F2FS support in kernel
-	{
-		FILE *f = fopen("/proc/filesystems", "r");
-		if(f)
-		{
-			char buff[256];
-			while(fgets(buff, sizeof(buff), f))
-			{
-				if(strstr(buff, "f2fs"))
-				{
-					LOGINFO("Kernel has F2FS support.\n");
-					DataManager::SetValue("tw_kernel_has_f2fs", 1);
-					break;
-				}
-			}
-			fclose(f);
-		}
-	}
-
 	DataManager::SetValue(TW_MROM_REC_VERSION_VAR, MultiROM::getRecoveryVersion());
 
 	// Load up all the resources
