@@ -1160,7 +1160,7 @@ bool TWPartition::UnMount(bool Display_Error) {
 	}
 }
 
-bool TWPartition::Wipe(string New_File_System, bool Force_Format) {
+bool TWPartition::Wipe(string New_File_System) {
 	bool wiped = false, update_crypt = false;
 	int check;
 	string Layout_Filename = Mount_Point + "/.layout_version";
@@ -1185,13 +1185,13 @@ bool TWPartition::Wipe(string New_File_System, bool Force_Format) {
 	else
 		unlink("/.layout_version");
 
-	if (Has_Data_Media && !Force_Format) {
+	if (Has_Data_Media) {
 		wiped = Wipe_Data_Without_Wiping_Media();
 	} else {
 
 		DataManager::GetValue(TW_RM_RF_VAR, check);
 
-		if ((!check || Use_Rm_Rf) && !Force_Format)
+		if (check || Use_Rm_Rf)
 			wiped = Wipe_RMRF();
 		else if (New_File_System == "ext4")
 			wiped = Wipe_EXT4();

@@ -1372,6 +1372,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			std::vector<std::string> parts = TWFunc::Split_String(DataManager::GetStrValue("tw_switch_list"), ";");
 			std::string fs = DataManager::GetStrValue("tw_switch_fs_type");
 			int result = 0;
+			int use_rm_rf = DataManager::GetIntValue(TW_RM_RF_VAR);
+			DataManager::SetValue(TW_RM_RF_VAR, 0);
 			if (simulate) {
 				simulate_progress_bar();
 			} else {
@@ -1386,7 +1388,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 						break;
 					}
 
-					if(!p->Wipe(fs, true))
+					if(!p->Wipe(fs))
 					{
 						result = 1;
 						LOGERR("Failed to wipe partition '%s'\n", (*itr).c_str());
@@ -1395,6 +1397,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					p->Check_FS_Type();
 				}
 			}
+			DataManager::SetValue(TW_RM_RF_VAR, use_rm_rf);
 			operation_end(result, simulate);
 			return 0;
 		}

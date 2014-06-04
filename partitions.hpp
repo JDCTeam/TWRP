@@ -56,7 +56,7 @@ public:
 	bool Is_Mounted();                                                        // Checks mount to see if the partition is currently mounted
 	bool Mount(bool Display_Error);                                           // Mounts the partition if it is not mounted
 	bool UnMount(bool Display_Error);                                         // Unmounts the partition if it is mounted
-	bool Wipe(string New_File_System, bool Force_Format = false);             // Wipes the partition
+	bool Wipe(string New_File_System);                                        // Wipes the partition
 	bool Wipe();                                                              // Wipes the partition
 	bool Wipe_AndSec();                                                       // Wipes android secure
 	bool Backup(string backup_folder);                                        // Backs up the partition to the folder specified
