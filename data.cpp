@@ -303,7 +303,7 @@ int DataManager::SaveValues()
 		return -1;
 
 	string mount_path = GetSettingsStoragePath();
-	PartitionManager.Mount_By_Path(mount_path.c_str(), 1);
+	PartitionManager.Mount_By_Path(mount_path.c_str(), false);
 
 	FILE* out = fopen(mBackingFile.c_str(), "wb");
 	if (!out)
