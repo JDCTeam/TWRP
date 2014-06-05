@@ -1109,6 +1109,8 @@ bool MultiROM::injectBoot(std::string img_path, bool only_if_older)
 
 	system_args("cp \"%s\" /tmp/boot/rd/init", path_trampoline.c_str());
 	system("chmod 750 /tmp/boot/rd/init");
+	system("ln -sf ../main_init /tmp/boot/rd/sbin/ueventd");
+	system("ln -sf ../main_init /tmp/boot/rd/sbin/watchdogd");
 
 #ifdef MR_USE_MROM_FSTAB
 	system_args("cp \"%s/mrom.fstab\" /tmp/boot/rd/mrom.fstab", m_path.c_str());
