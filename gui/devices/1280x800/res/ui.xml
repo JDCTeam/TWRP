@@ -274,7 +274,7 @@
 			<object type="text" color="%text_fail_color%">
 				<font resource="font" />
 				<placement x="550" y="30" />
-				<condition var1="multirom_do_backup" var2="1" />
+				<condition var1="multirom_rom_name_title" var2="1" />
 				<text>Using ROM: %tw_multirom_rom_name%</text>
 			</object>
 

@@ -338,6 +338,7 @@ bool MultiROM::initBackup(const std::string& name)
 	}
 
 	DataManager::SetValue("multirom_do_backup", 1);
+	DataManager::SetValue("multirom_rom_name_title", 1);
 	return true;
 }
 
@@ -349,6 +350,7 @@ void MultiROM::deinitBackup()
 	restoreMounts();
 
 	DataManager::SetValue("multirom_do_backup", 0);
+	DataManager::SetValue("multirom_rom_name_title", 0);
 
 	if(hadInternalStorage)
 	{
@@ -2550,6 +2552,9 @@ void MultiROM::executeCacheScripts()
 		return;
 	}
 
+	DataManager::SetValue("multirom_rom_name_title", 1);
+	DataManager::SetValue("tw_multirom_rom_name", script.name);
+
 	if(script.type & MASK_ANDROID)
 	{
 		DataManager::SetValue(TW_ORS_IS_SECONDARY_ROM, 1);
@@ -2588,6 +2593,8 @@ void MultiROM::executeCacheScripts()
 		usleep(2000000); // Sleep for 2 seconds before rebooting
 		TWFunc::tw_reboot(rb_system);
 	}
+
+	DataManager::SetValue("multirom_rom_name_title", 0);
 }
 
 void MultiROM::startSystemImageUpgrader()
