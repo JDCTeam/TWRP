@@ -196,6 +196,14 @@ case $(get_base_url) in
 esac
 
 
+# Initialize recovery SWAP
+## Without a swap some systems will fail to install the ubuntu rootfs (due its size)
+if [ ! -e /cache/recovery/SWAP.img ]; then
+    dd if=/dev/zero of=/cache/recovery/SWAP.img bs=4096 count=8192
+    mkswap /cache/recovery/SWAP.img
+fi
+swapon /cache/recovery/SWAP.img
+
 # Process the command file
 FULL_IMAGE=0
 echo "Processing the command file"
@@ -372,6 +380,10 @@ do
         ;;
     esac
 done < $COMMAND_FILE
+
+# Remove temporary SWAP
+swapoff /cache/recovery/SWAP.img
+rm -f /cache/recovery/SWAP.img
 
 # Remove the update files
 for file in $REMOVE_LIST; do
