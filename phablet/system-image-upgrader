@@ -202,7 +202,7 @@ if [ ! -e /cache/recovery/SWAP.img ]; then
     dd if=/dev/zero of=/cache/recovery/SWAP.img bs=4096 count=8192
     mkswap /cache/recovery/SWAP.img
 fi
-swapon /cache/recovery/SWAP.img
+swapon /cache/recovery/SWAP.img || echo "Temporary swap setup failed! Does the kernel support swap?"
 
 # Process the command file
 FULL_IMAGE=0
@@ -382,7 +382,7 @@ do
 done < $COMMAND_FILE
 
 # Remove temporary SWAP
-swapoff /cache/recovery/SWAP.img
+swapoff /cache/recovery/SWAP.img || true
 rm -f /cache/recovery/SWAP.img
 
 # Remove the update files
