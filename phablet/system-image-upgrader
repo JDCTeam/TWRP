@@ -125,6 +125,43 @@ install_keyring() {
     return 0
 }
 
+property_write() {
+    prop="$1"
+    prop_value="$2"
+    prop_dir="/data/android-data/property"
+    # everything is wiped after a format, let's get a skeleton going
+    mkdir -p "$prop_dir"
+    chown 0:0 "$prop_dir"
+    chmod 700 "$prop_dir"
+    echo -n "$prop_value" > "$prop_dir/$prop"
+    # properties won't be read if they aren't ro root
+    chown 0:0 "$prop_dir/$prop"
+    chmod 600 "$prop_dir/$prop"
+}
+
+usb_enable() {
+    prop_dir="/data/android-data/property"
+    prop="persist.sys.usb.config"
+    prop_val="$1"
+    # Property value ordering is important here
+    grep -q -s mtp "$prop_dir/$prop" && [ "$prop_val" == "adb" ] && prop_val="mtp,adb"
+    grep -q -s adb "$prop_dir/$prop" && [ "$prop_val" == "mtp" ] && prop_val="mtp,adb"
+    property_write "$prop" "$prop_val"
+}
+
+usb_disable() {
+    prop_dir="/data/android-data/property"
+    prop="persist.sys.usb.config"
+    prop_val="$1"
+    remain_prop=""
+    # Property value ordering is important here
+    grep -q -s mtp "$prop_dir/$prop" && [ "$prop_val" == "adb" ] && remain_prop="mtp"
+    grep -q -s adb "$prop_dir/$prop" && [ "$prop_val" == "mtp" ] && remain_prop="adb"
+    # we should not allow empty properties for the usb config
+    [ "$remain_prop" == "" ] && remain_prop="adb"
+    property_write "$prop" "$remain_prop"
+}
+
 get_base_url() {
     if [ -f /cache/recovery/base_url ]; then
         cat /cache/recovery/base_url
@@ -182,10 +219,46 @@ do
                             rm -Rf $entry
                         fi
                     done
+                    # mtp is always enabled by default
+                    usb_enable mtp
                 ;;
 
                 *)
                     echo "Unknown format target: $2"
+                ;;
+            esac
+        ;;
+
+        enable)
+            echo "Enabling: $2"
+            case "$2" in
+                developer_mode)
+                    usb_enable adb
+                ;;
+
+                mtp)
+                    usb_enable mtp
+                ;;
+
+                *)
+                    echo "Unknown enable target: $2"
+                ;;
+            esac
+        ;;
+
+        disable)
+            echo "Disabling: $2"
+            case "$2" in
+                developer_mode)
+                    usb_disable adb
+                ;;
+
+                mtp)
+                    usb_disable mtp
+                ;;
+
+                *)
+                    echo "Unknown disable target: $2"
                 ;;
             esac
         ;;
