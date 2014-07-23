@@ -378,15 +378,30 @@ for file in $REMOVE_LIST; do
     rm $file
 done
 
-# Remove SWAP file if around (not wanted/needed by default)
+# If a previous SWAP of 512MB is available, remove
 if [ -e /data/SWAP.img ]; then
-    echo "Removing SWAP device."
-    rm -f /data/SWAP.img
+    swap_size=`stat /data/SWAP.img | grep Size | awk -F' ' '{print $2}'`
+    if [ "$swap_size" = "536870912" ]; then
+        echo "Removing old 512MB swap file."
+        rm -f /data/SWAP.img
+    fi
+fi
+
+# Create the SWAP image if missing
+# Here we only want a small SWAP to be created, as we found out
+# that the kernel memory manager algorithm behaves better if swap
+# is available, even if a minimal one (not to be used by the system)
+if [ ! -e /data/SWAP.img ]; then
+    echo "Creating SWAP device (32MB)."
+    dd if=/dev/zero of=/data/SWAP.img bs=4096 count=8192
+    mkswap /data/SWAP.img
 fi
 
 # Ensure we have sane permissions
 chmod 600 /data/ubuntu.img
 chown 0:0 /data/ubuntu.img
+chmod 600 /data/SWAP.img
+chown 0:0 /data/SWAP.img
 
 touch /data/.last_update || true
 sync
