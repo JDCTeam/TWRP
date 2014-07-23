@@ -208,9 +208,12 @@ do
             case "$2" in
                 system)
                     FULL_IMAGE=1
+                    #system.img is the deprecated name for ubuntu.img, handle that too
                     rm -f /data/system.img
-                    dd if=/dev/zero of=/data/system.img seek=500K bs=4096 count=0
-                    mkfs.ext2 -F /data/system.img
+                    rm -f /data/ubuntu.img
+                    dd if=/dev/zero of=/data/ubuntu.img seek=500K bs=4096 count=0
+                    mkfs.ext2 -F /data/ubuntu.img
+                    ln /data/ubuntu.img /data/system.img
                 ;;
 
                 data)
@@ -286,7 +289,10 @@ do
             case "$2" in
                 system)
                     mkdir -p /cache/system
-                    mount -o loop /data/system.img /cache/system/
+                    if [ ! -e /data/ubuntu.img ]; then
+                        ln /data/system.img /data/ubuntu.img
+                    fi
+                    mount -o loop /data/ubuntu.img /cache/system/
                 ;;
 
                 *)
@@ -380,8 +386,8 @@ if [ ! -e /data/SWAP.img ]; then
 fi
 
 # Ensure we have sane permissions
-chmod 600 /data/system.img
-chown 0:0 /data/system.img
+chmod 600 /data/ubuntu.img
+chown 0:0 /data/ubuntu.img
 chmod 600 /data/SWAP.img
 chown 0:0 /data/SWAP.img
 
