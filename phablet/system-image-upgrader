@@ -387,7 +387,7 @@ rm -f /cache/recovery/SWAP.img
 
 # Remove the update files
 for file in $REMOVE_LIST; do
-    rm $file
+    rm -f $file
 done
 
 # If a previous SWAP of 512MB is available, remove
