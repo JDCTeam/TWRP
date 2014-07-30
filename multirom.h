@@ -181,7 +181,6 @@ private:
 	static bool compressRamdisk(const char *src, const char *dest, int cmpr);
 	static int decompressRamdisk(const char *src, const char *dest);
 	static bool installFromBackup(std::string name, std::string path, int type);
-	static bool extractBackupFile(std::string path, std::string part);
 	static int getType(int os, std::string loc);
 	static int getTrampolineVersion();
 	static int getTrampolineVersion(const std::string& path, bool silent = false);

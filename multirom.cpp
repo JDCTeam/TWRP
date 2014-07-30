@@ -1929,7 +1929,6 @@ bool MultiROM::patchInit(std::string name)
 bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 {
 	struct stat info;
-	char cmd[256];
 	std::string base = getRomsPath() + "/" + name;
 	int has_system = 0, has_data = 0;
 
@@ -1962,8 +1961,7 @@ bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 		return false;
 	}
 
-	sprintf(cmd, "cp \"%s/boot.emmc.win\" \"%s/boot.img\"", path.c_str(), base.c_str());
-	system(cmd);
+	system_args("cp \"%s/boot.emmc.win\" \"%s/boot.img\"", path.c_str(), base.c_str());
 
 	if(!extractBootForROM(base))
 		return false;
@@ -1979,81 +1977,23 @@ bool MultiROM::installFromBackup(std::string name, std::string path, int type)
 	if(path.find("/data/media") == 0)
 		path.replace(0, 5, REALDATA);
 
-	bool res = (extractBackupFile(path, "system") && (!has_data || extractBackupFile(path, "data")));
-	restoreMounts();
-	return res;
-}
-
-bool MultiROM::extractBackupFile(std::string path, std::string part)
-{
-	gui_print("Extracting backup of %s partition...\n", part.c_str());
-
-	struct stat info;
-	std::string filename;
-	std::string full_path;
-	int index = 0;
-	char split_index[5];
-	char cmd[256];
-	DIR *d;
-	struct dirent *dt;
-
-	d = opendir(path.c_str());
-	if(!d)
+	const int partCnt = has_data ? 2 : 1;
+	bool res = false;
+	TWPartition *sys_part = PartitionManager.Find_Partition_By_Path("/system");
+	TWPartition *data_part = PartitionManager.Find_Partition_By_Path("/data");
+	if(sys_part && data_part)
 	{
-		gui_print("Failed to list backup folder\n");
-		return false;
-	}
-
-	while((dt = readdir(d)))
-	{
-		if(strncmp(dt->d_name, part.c_str(), part.size()) == 0)
-		{
-			std::vector<std::string> tok = TWFunc::Split_String(dt->d_name, ".");
-			if(tok.size() < 3)
-				continue;
-			//         system  .    ext4      .win
-			filename = part + "." + tok[1] + ".win";
-			full_path = path + "/" + filename;
-			break;
-		}
-	}
-	closedir(d);
-
-	if(filename.empty())
-	{
-		gui_print("Failed to find backup's filesystem\n");
-		return false;
-	}
-
-	if (stat(full_path.c_str(), &info) < 0) // multiple archives
-	{
-		sprintf(split_index, "%03i", index);
-		full_path = path + "/" + filename + split_index;
-		while (stat(full_path.c_str(), &info) >= 0)
-		{
-			gui_print("Restoring archive #%i...\n", ++index);
-
-			sprintf(cmd, "cd / && gnutar -xf \"%s\"", full_path.c_str());
-			LOGINFO("Restore cmd: %s\n", cmd);
-			system(cmd);
-
-			sprintf(split_index, "%03i", index);
-			full_path = path + "/" + filename + split_index;
-		}
-
-		if (index == 0)
-		{
-			gui_print("Failed to locate backup file %s\n", full_path.c_str());
-			return false;
-		}
+		PartitionManager.Set_Restore_Files(path);
+		res = PartitionManager.Restore_Partition(sys_part, path, partCnt) &&
+				(!has_data || PartitionManager.Restore_Partition(data_part, path, partCnt));
 	}
 	else
 	{
-		sprintf(cmd, "cd /%s && gnutar -xf \"%s\"", part.c_str(), full_path.c_str());
-		LOGINFO("Restore cmd: %s\n", cmd);
-		system(cmd);
+		gui_print("Failed to find /system and /data partition!");
 	}
-	return true;
+
+	restoreMounts();
+	return res;
 }
 
 void MultiROM::setInstaller(MROMInstaller *i)
