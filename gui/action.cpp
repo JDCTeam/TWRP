@@ -890,6 +890,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		DataManager::SetValue("tw_multirom_int_display_name", cfg.int_display_name);
 		DataManager::SetValue("tw_multirom_rotation", cfg.rotation);
 		DataManager::SetValue("tw_multirom_force_generic_fb", cfg.force_generic_fb);
+		DataManager::SetValue("tw_anim_duration_coef_pct", cfg.anim_duration_coef_pct);
 
 		DataManager::SetValue("tw_multirom_roms", MultiROM::listRoms());
 		return gui_changePage("multirom_settings");
@@ -912,6 +913,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		cfg.int_display_name = DataManager::GetStrValue("tw_multirom_int_display_name");
 		cfg.rotation = DataManager::GetIntValue("tw_multirom_rotation");
 		cfg.force_generic_fb = DataManager::GetIntValue("tw_multirom_force_generic_fb");
+		cfg.anim_duration_coef_pct = DataManager::GetIntValue("tw_anim_duration_coef_pct");
 
 		MultiROM::saveConfig(cfg);
 		return 0;

@@ -81,6 +81,7 @@
 		<variable name="row16_text_y" value="840" />
 		<variable name="row17_text_y" value="890" />
 		<variable name="row18_text_y" value="940" />
+		<variable name="row19_text_y" value="990" />
 		<variable name="row_offsetmedium_y" value="775" />
 		<variable name="home_button_x" value="1620" />
 		<variable name="home_button_y" value="5" />

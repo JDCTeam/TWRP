@@ -836,6 +836,48 @@
 				<action function="set">tw_multirom_rotation=270</action>
 			</object>
 
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row16_text_y%" placement="5" />
+				<text>Animations duration: %tw_anim_duration_coef_pct%%</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_medium_x%" y="%row17_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>50%</text>
+				<image resource="medium_button" />
+				<action function="set">tw_anim_duration_coef_pct=50</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_medium_x%" y="%row17_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>75%</text>
+				<image resource="medium_button" />
+				<action function="set">tw_anim_duration_coef_pct=75</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_medium_x%" y="%row17_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>100%</text>
+				<image resource="medium_button" />
+				<action function="set">tw_anim_duration_coef_pct=100</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col4_medium_x%" y="%row17_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>125%</text>
+				<image resource="medium_button" />
+				<action function="set">tw_anim_duration_coef_pct=125</action>
+			</object>
+
 			<object type="action">
 				<touch key="home" />
 				<actions>

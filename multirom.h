@@ -111,6 +111,7 @@ public:
 		std::string int_display_name;
 		int rotation;
 		int force_generic_fb;
+		int anim_duration_coef_pct;
 	};
 
 	static bool folderExists();

@@ -75,6 +75,7 @@ MultiROM::config::config()
 	rotation = TW_DEFAULT_ROTATION;
 	enable_adb = 0;
 	force_generic_fb = 0;
+	anim_duration_coef_pct = 100;
 }
 
 bool MultiROM::folderExists()
@@ -518,6 +519,8 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.rotation = atoi(val.c_str());
 			else if(name == "force_generic_fb")
 				cfg.force_generic_fb = atoi(val.c_str());
+			else if(name == "anim_duration_coef_pct")
+				cfg.anim_duration_coef_pct = atoi(val.c_str());
 		}
 		fclose(f);
 	}
@@ -541,6 +544,7 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "int_display_name=%s\n", cfg.int_display_name.c_str());
 	fprintf(f, "rotation=%d\n", cfg.rotation);
 	fprintf(f, "force_generic_fb=%d\n", cfg.force_generic_fb);
+	fprintf(f, "anim_duration_coef_pct=%d\n", cfg.anim_duration_coef_pct);
 
 	fclose(f);
 }
