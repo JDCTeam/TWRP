@@ -2564,7 +2564,7 @@ bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst
 	if(!skipMedia)
 	{
 		gui_print("Copying /%s...\n", part.c_str());
-		if(system_args("cp -a \"%s/%s/\"* \"%s/%s/\".* \"%s/%s/\"", src.c_str(), part.c_str(), src.c_str(), part.c_str(), dst.c_str(), part.c_str()) != 0)
+		if(system_args("IFS=$'\n'; for f in $(find \"%s/%s\" -maxdepth 1 -mindepth 1); do cp -a \"$f\" \"%s/%s/\"; done", src.c_str(), part.c_str(), dst.c_str(), part.c_str()) != 0)
 		{
 			LOGERR("Copying failed, see log for more info!\n");
 			return false;
