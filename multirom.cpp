@@ -521,6 +521,8 @@ MultiROM::config MultiROM::loadConfig()
 				cfg.force_generic_fb = atoi(val.c_str());
 			else if(name == "anim_duration_coef_pct")
 				cfg.anim_duration_coef_pct = atoi(val.c_str());
+			else
+				cfg.unrecognized_opts += name + "=" + val + "\n";
 		}
 		fclose(f);
 	}
@@ -546,6 +548,7 @@ void MultiROM::saveConfig(const MultiROM::config& cfg)
 	fprintf(f, "force_generic_fb=%d\n", cfg.force_generic_fb);
 	fprintf(f, "anim_duration_coef_pct=%d\n", cfg.anim_duration_coef_pct);
 
+	fputs(cfg.unrecognized_opts.c_str(), f);
 	fclose(f);
 }
 

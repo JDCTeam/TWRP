@@ -892,6 +892,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		DataManager::SetValue("tw_multirom_force_generic_fb", cfg.force_generic_fb);
 		DataManager::SetValue("tw_anim_duration_coef_pct", cfg.anim_duration_coef_pct);
 
+		DataManager::SetValue("tw_multirom_unrecognized_opts", cfg.unrecognized_opts);
+
 		DataManager::SetValue("tw_multirom_roms", MultiROM::listRoms());
 		return gui_changePage("multirom_settings");
 	}
@@ -914,6 +916,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		cfg.rotation = DataManager::GetIntValue("tw_multirom_rotation");
 		cfg.force_generic_fb = DataManager::GetIntValue("tw_multirom_force_generic_fb");
 		cfg.anim_duration_coef_pct = DataManager::GetIntValue("tw_anim_duration_coef_pct");
+
+		cfg.unrecognized_opts = DataManager::GetStrValue("tw_multirom_unrecognized_opts");
 
 		MultiROM::saveConfig(cfg);
 		return 0;

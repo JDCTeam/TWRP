@@ -112,6 +112,8 @@ public:
 		int rotation;
 		int force_generic_fb;
 		int anim_duration_coef_pct;
+
+		std::string unrecognized_opts;
 	};
 
 	static bool folderExists();
