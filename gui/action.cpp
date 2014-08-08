@@ -869,6 +869,11 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			DataManager::SetValue("tw_multirom_has_bootimg", access(path.c_str(), F_OK) >= 0);
 		}
 		DataManager::SetValue("tw_multirom_has_fw_partition", MultiROM::hasFirmwareDev());
+		if(MultiROM::hasFirmwareDev())
+		{
+			std::string fw_file = MultiROM::getRomsPath() + DataManager::GetStrValue("tw_multirom_rom_name") + "/firmware.img";
+			DataManager::SetValue("tw_multirom_has_fw_image", int(access(fw_file.c_str(), F_OK) >= 0));
+		}
 		return gui_changePage("multirom_manage");
 	}
 
@@ -1456,7 +1461,23 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			std::string src = DataManager::GetStrValue("tw_filename");
 			std::string dst = MultiROM::getRomsPath() + DataManager::GetStrValue("tw_multirom_rom_name") + "/firmware.img";
 
+			gui_print("Setting ROM's radio.img to %s", src.c_str());
 			int res = TWFunc::copy_file(src, dst, 0755) == 0 ? 0 : 1;
+
+			DataManager::SetValue("tw_multirom_has_fw_image", int(access(dst.c_str(), F_OK) >= 0));
+
+			operation_end(res, simulate);
+			return 0;
+		}
+
+		if(function == "multirom_remove_fw")
+		{
+			operation_start("RemoveFW");
+
+			gui_print("Removing ROM's radio.img...");
+			std::string dst = MultiROM::getRomsPath() + DataManager::GetStrValue("tw_multirom_rom_name") + "/firmware.img";
+			int res = remove(dst.c_str()) >= 0 ? 0 : 1;
+			DataManager::SetValue("tw_multirom_has_fw_image", int(access(dst.c_str(), F_OK) >= 0));
 
 			operation_end(res, simulate);
 			return 0;
