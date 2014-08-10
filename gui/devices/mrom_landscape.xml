@@ -314,7 +314,10 @@
 				<font resource="font" color="%button_text_color%" />
 				<text>Flash ZIP</text>
 				<image resource="main_button" />
-				<action function="page">multirom_flash_select</action>
+				<actions>
+					<action functions="set">tw_mrom_flash_action=multirom_flash_zip</action>
+					<action function="page">multirom_flash_select</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -371,6 +374,19 @@
 					<action function="set">tw_slider_text=Swipe to Confirm</action>
 					<action function="set">tw_show_reboot=0</action>
 					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+ 				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_is_sailfish" var2="1" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Flash ZIP</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_mrom_flash_action=multirom_flash_zip_sailfish</action>
+					<action function="page">multirom_flash_select</action>
 				</actions>
 			</object>
 
@@ -684,7 +700,7 @@
 					<action function="set">tw_action_text1=Flashing ZIP...</action>
 					<action function="set">tw_complete_text1=ZIP flashed</action>
 					<action function="set">tw_show_reboot=1</action>
-					<action function="set">tw_action=multirom_flash_zip</action>
+					<action function="set">tw_action=%tw_mrom_flash_action%</action>
 					<action function="page">action_page</action>
 				</actions>
 			</object>
@@ -1261,15 +1277,15 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<conditions>
-					<condition var1="tw_multirom_touch_supported" var2="1" />
-					<condition var1="tw_multirom_type" var2="4" />
+					<condition var1="tw_multirom_sailfish_supported" var2="1" />
++					<condition var1="tw_multirom_type" var2="5" />
 				</conditions>
 				<placement x="%mrom_ubuntu_touch_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Ubuntu Touch</text>
+				<text>SailfishOS</text>
 				<image resource="radio_true" />
 				<actions>
-					<action function="set">tw_multirom_type=4</action>
+					<action function="set">tw_multirom_type=5</action>
 					<action function="page">multirom_add</action>
 				</actions>
 			</object>
@@ -1277,15 +1293,15 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<conditions>
-					<condition var1="tw_multirom_touch_supported" var2="1" />
-					<condition var1="tw_multirom_type" var2="4" op="!="/>
+					<condition var1="tw_multirom_sailfish_supported" var2="1" />
+					<condition var1="tw_multirom_type" var2="5" op="!="/>
 				</conditions>
 				<placement x="%mrom_ubuntu_touch_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Ubuntu Touch</text>
+				<text>SailfishOS</text>
 				<image resource="radio_false" />
 				<actions>
-					<action function="set">tw_multirom_type=4</action>
+					<action function="set">tw_multirom_type=5/action>
 					<action function="page">multirom_add</action>
 				</actions>
 			</object>
@@ -1558,13 +1574,13 @@
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
 				<conditions>
-					<condition var1="tw_multirom_type" var2="4" />
-					<condition var1="tw_multirom_touch_add_zip" var2="1" />
+					<condition var1="tw_multirom_type" var2="5" />
+					<condition var1="tw_multirom_sailfish_add_zip" var2="1" />
 				</conditions>
 				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
-				<text>Select Ubuntu file 1 (smaller):</text>
+				<text>Select CyanogenMod ZIP:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
@@ -1572,20 +1588,20 @@
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn=".zip" folders="0" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
-				<data name="tw_touch_filename_device" />
+				<data name="tw_sailfish_filename_base" />
 				<selection name="tw_file" />
 			</object>
 
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
 				<conditions>
-					<condition var1="tw_multirom_type" var2="4" />
-					<condition var1="tw_multirom_touch_add_zip" var2="2" />
+					<condition var1="tw_multirom_type" var2="5" />
+					<condition var1="tw_multirom_sailfish_add_zip" var2="2" />
 				</conditions>
 				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
-				<text>Select Ubuntu file 2 (bigger):</text>
+				<text>Select SailfishOS ZIP:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
@@ -1593,7 +1609,7 @@
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
 				<filter extn=".zip" folders="0" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
-				<data name="tw_touch_filename_core" />
+				<data name="tw_sailfish_filename_rootfs" />
 				<selection name="tw_file" />
 			</object>
 
@@ -1602,25 +1618,25 @@
 			<object type="action">
 				<conditions>
 					<condition var1="tw_filename" op="modified" />
-					<condition var1="tw_multirom_type" var2="4" op="!=" />
+					<condition var1="tw_multirom_type" var2="5" op="!=" />
 				</conditions>
 				<action function="multirom_add_file_selected" />
 			</object>
 
 			<object type="action">
 				<conditions>
-					<condition var1="tw_touch_filename_device" op="modified" />
-					<condition var1="tw_multirom_type" var2="4" />
+					<condition var1="tw_sailfish_filename_base" op="modified" />
+					<condition var1="tw_multirom_type" var2="5" />
 				</conditions>
-				<action function="page">multirom_add_touch</action>
+				<action function="page">multirom_add_sailfish</action>
 			</object>
 
 			<object type="action">
 				<conditions>
-					<condition var1="tw_touch_filename_core" op="modified" />
-					<condition var1="tw_multirom_type" var2="4" />
+					<condition var1="tw_sailfish_filename_rootfs" op="modified" />
+					<condition var1="tw_multirom_type" var2="5" />
 				</conditions>
-				<action function="page">multirom_add_touch</action>
+				<action function="page">multirom_add_sailfish</action>
 			</object>
 
 			<object type="action">
@@ -1686,15 +1702,15 @@
 			</object>
 
 			<object type="action">
-				<condition var1="tw_multirom_type" var2="4" />
+				<condition var1="tw_multirom_type" var2="5" />
 				<actions>
 					<action function="set">tw_back=multirom_add</action>
 					<action function="set">tw_action=multirom_add_rom</action>
-					<action function="set">tw_text1=Install Ubuntu touch files</action>
-					<action function="set">tw_text2=%tw_touch_filename_device%</action>
-					<action function="set">tw_text3=%tw_touch_filename_core%</action>
-					<action function="set">tw_action_text1=Installing Ubuntu Touch...</action>
-					<action function="set">tw_complete_text1=Ubuntu Touch installed</action>
+					<action function="set">tw_text1=Install SailfishOS files</action>
+					<action function="set">tw_text2=%tw_sailfish_filename_base%</action>
+					<action function="set">tw_text3=%tw_sailfish_filename_rootfs%</action>
+					<action function="set">tw_action_text1=Installing Sailfish OS..</action>
+					<action function="set">tw_complete_text1=SailfishOS installed</action>
 					<action function="set">tw_slider_text=Swipe to Confirm</action>
 					<action function="set">tw_show_reboot=1</action>
 					<action function="page">confirm_action</action>
@@ -2045,7 +2061,7 @@
 			<object type="template" name="footer" />
 		</page>
 
-		<page name="multirom_add_touch">
+		<page name="multirom_add_sailfish">
 			<object type="template" name="header" />
 
 			<object type="text" color="%text_color%">
@@ -2057,29 +2073,29 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%col2_x%" y="%row2_text_y%" />
-				<text>Select Ubuntu touch ZIPs:</text>
+				<text>Select SailfishOS ZIPs:</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
 				<placement x="%col2_x%" y="%row3_text_y%" />
-				<text>*-armel+%tw_device_name%.zip (smaller one)</text>
+				<text>CyanogenMod ZIP file</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
 				<placement x="%col2_x%" y="%row4_text_y%" />
-				<text>*-touch-armhf.zip (bigger one)</text>
+				<text>Rootfs ZIP file (sailfishos-*.zip)</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<placement x="%col2_x%" y="%row8_text_y%" />
 				<font resource="font" color="%button_text_color%" />
-				<text>*-armel+%tw_device_name%.zip</text>
+				<text>CyanogenMod ZIP file</text>
 				<image resource="main_button" />
 				<actions>
-					<action function="set">tw_multirom_touch_add_zip=1</action>
+					<action function="set">tw_multirom_sailfish_add_zip=1</action>
 					<action function="page">multirom_add_select</action>
 				</actions>
 			</object>
@@ -2088,10 +2104,10 @@
 				<highlight color="%highlight_color%" />
 				<placement x="%col3_x%" y="%row8_text_y%" />
 				<font resource="font" color="%button_text_color%" />
-				<text>*-touch-armhf.zip</text>
+				<text>Rootfs ZIP file</text>
 				<image resource="main_button" />
 				<actions>
-					<action function="set">tw_multirom_touch_add_zip=2</action>
+					<action function="set">tw_multirom_sailfish_add_zip=2</action>
 					<action function="page">multirom_add_select</action>
 				</actions>
 			</object>
@@ -2099,24 +2115,24 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%col2_x%" y="%row15_text_y%" />
-				<text>1: %tw_touch_filename_device%</text>
+				<text>1: %tw_sailfish_filename_base%</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="%col2_x%" y="%row16_text_y%" />
-				<text>2: %tw_touch_filename_core%</text>
+				<text>2: %tw_sailfish_filename_rootfs%</text>
 			</object>
 
 			<object type="text" color="%text_fail_color%">
-				<condition var1="tw_touch_filename_device" op="!="/>
+				<condition var1="tw_sailfish_filename_base" op="!="/>
 				<font resource="font" />
 				<placement x="%center_x%" y="%row17_text_y%" placement="5"/>
 				<text>Select both files to install!</text>
 			</object>
 
 			<object type="text" color="%text_fail_color%">
-				<condition var1="tw_touch_filename_core" op="!="/>
+				<condition var1="tw_sailfish_filename_rootfs" op="!="/>
 				<font resource="font" />
 				<placement x="%center_x%" y="%row17_text_y%" placement="5"/>
 				<text>Select both files to install!</text>
@@ -2124,8 +2140,8 @@
 
 			<object type="button">
 				<conditions>
-					<condition var1="tw_touch_filename_device"/>
-					<condition var1="tw_touch_filename_core"/>
+					<condition var1="tw_sailfish_filename_base"/>
+					<condition var1="tw_sailfish_filename_rootfs"/>
 				</conditions>
 				<highlight color="%highlight_color%" />
 				<placement x="%col_center_x%" y="%row17_text_y%" />
@@ -2133,7 +2149,7 @@
 				<text>Install</text>
 				<image resource="main_button" />
 				<actions>
-					<action function="set">tw_filename=%tw_touch_filename_core%</action>
+					<action function="set">tw_filename=%tw_sailfish_filename_rootfs%</action>
 					<action function="multirom_add_file_selected" />
 				</actions>
 			</object>

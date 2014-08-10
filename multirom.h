@@ -27,6 +27,7 @@ enum
 	ROM_UTOUCH_INTERNAL   = 10,
 	ROM_UTOUCH_USB_DIR    = 11,
 	ROM_UTOUCH_USB_IMG    = 12,
+	ROM_SAILFISH_INTERNAL = 13,
 
 	ROM_UNKNOWN,
 };
@@ -45,6 +46,7 @@ enum
 #define MASK_INTERNAL (M(ROM_INTERNAL_PRIMARY) | M(ROM_ANDROID_INTERNAL) | M(ROM_UBUNTU_INTERNAL) | M(ROM_INSTALLER_INTERNAL) | M(ROM_UTOUCH_INTERNAL))
 #define MASK_INSTALLER (M(ROM_INSTALLER_INTERNAL) | M(ROM_INSTALLER_USB_DIR) | M(ROM_INSTALLER_USB_IMG))
 #define MASK_UTOUCH (M(ROM_UTOUCH_INTERNAL) | M(ROM_UTOUCH_USB_IMG) | M(ROM_UTOUCH_USB_DIR))
+#define MASK_SAILFISH (M(ROM_SAILFISH_INTERNAL))
 #define MASK_ALL 0xFFFFFFFF
 
 #define INTERNAL_NAME "Internal"
@@ -70,8 +72,8 @@ enum
 #define DATA_IMG_MINSIZE 150
 #define CACHE_IMG_MINSIZE 50
 
-#define TOUCH_DATA_IMG_MINSIZE 1024
-#define TOUCH_DATA_IMG_DEFSIZE 2048
+#define SAILFISH_DATA_IMG_MINSIZE 1024
+#define SAILFISH_DATA_IMG_DEFSIZE 1536
 
 #define UB_DATA_IMG_MINSIZE 2048
 #define UB_DATA_IMG_DEFSIZE 4095
@@ -165,6 +167,8 @@ public:
 	static void startSystemImageUpgrader();
 	static bool ubuntuTouchProcessBoot(const std::string& root, const char *init_folder);
 	static bool ubuntuTouchProcess(const std::string& root, const std::string& name);
+	static bool sailfishProcessBoot(const std::string& root);
+	static bool sailfishProcess(const std::string& root, const std::string& name);
 
 	static bool copyInternal(const std::string& dest_name);
 	static bool wipeInternal();

@@ -218,8 +218,8 @@ void MultiROM::updateSupportedSystems()
 	snprintf(p, sizeof(p), "%s/infos/ubuntu.txt", m_path.c_str());
 	DataManager::SetValue("tw_multirom_ubuntu_supported", (access(p, F_OK) >= 0) ? 1 : 0);
 
-	snprintf(p, sizeof(p), "%s/infos/ubuntu_touch.txt", m_path.c_str());
-	DataManager::SetValue("tw_multirom_touch_supported", (access(p, F_OK) >= 0) ? 1 : 0);
+	snprintf(p, sizeof(p), "%s/infos/sailfishos.txt", m_path.c_str());
+	DataManager::SetValue("tw_multirom_sailfish_supported", (access(p, F_OK) >= 0) ? 1 : 0);
 }
 
 bool MultiROM::installLocNeedsImages(const std::string& loc)
@@ -385,6 +385,12 @@ int MultiROM::getType(std::string name)
 				return ROM_ANDROID_INTERNAL;
 			else
 				return ROM_UTOUCH_INTERNAL;
+		}
+
+		if (access((path + "data").c_str(), F_OK) >= 0 && 
+			access((path + "rom_info.txt").c_str(), F_OK) >= 0)
+		{
+			return ROM_SAILFISH_INTERNAL;
 		}
 
 		if(access((path + "root").c_str(), F_OK) >= 0)
@@ -1438,6 +1444,7 @@ bool MultiROM::createDirs(std::string name, int type)
 		case ROM_UBUNTU_USB_DIR:
 		case ROM_INSTALLER_INTERNAL:
 		case ROM_INSTALLER_USB_DIR:
+		case ROM_SAILFISH_INTERNAL:
 			if(!createDirsFromBase(base))
 				return false;
 			break;
@@ -1688,13 +1695,14 @@ int MultiROM::getType(int os, std::string loc)
 			break;
 		case 3: // installer
 			return m_installer->getRomType();
-		case 4:
+		case 5: // SailfishOS
 			if(loc == INTERNAL_MEM_LOC_TXT)
-				return ROM_UTOUCH_INTERNAL;
-			else if(!images)
-				return ROM_UTOUCH_USB_DIR;
+				return ROM_SAILFISH_INTERNAL;
 			else
-				return ROM_UTOUCH_USB_IMG;
+			{
+				gui_print("Installation of SailfishOS to external memory is not supported at this time.\n");
+				return ROM_UNKNOWN;
+			}
 			break;
 	}
 	return ROM_UNKNOWN;
@@ -1838,31 +1846,29 @@ bool MultiROM::addROM(std::string zip, int os, std::string loc)
 				 umountBaseImages(base);
 			break;
 		}
-		case ROM_UTOUCH_INTERNAL:
-		case ROM_UTOUCH_USB_DIR:
-		case ROM_UTOUCH_USB_IMG:
+		case ROM_SAILFISH_INTERNAL:
 		{
-			std::string device_zip = DataManager::GetStrValue("tw_touch_filename_device");
-			std::string core_zip = DataManager::GetStrValue("tw_touch_filename_core");
+			std::string base_zip = DataManager::GetStrValue("tw_sailfish_filename_base");
+			std::string rootfs_zip = DataManager::GetStrValue("tw_sailfish_filename_rootfs");
 
 			gui_print("  \n");
-			gui_print("Flashing device zip...\n");
-			if(!flashZip(name, device_zip))
+			gui_print("Flashing base zip...\n");
+			if(!flashZip(name, base_zip))
 				break;
 
 			gui_print("  \n");
-			gui_print("Flashing core zip...\n");
+			gui_print("Flashing rootfs zip...\n");
 
 			system("ln -sf /sbin/gnutar /sbin/tar");
-			bool flash_res = flashZip(name, core_zip);
+			bool flash_res = flashZip(name, rootfs_zip);
 			system("ln -sf /sbin/busybox /sbin/tar");
 			if(!flash_res)
 				break;
 
-			if(!ubuntuTouchProcessBoot(root, "ubuntu-touch-init"))
+			if(!sailfishProcessBoot(root))
 				break;
 
-			if(!ubuntuTouchProcess(root, name))
+			if(!sailfishProcess(root, name))
 				break;
 
 			res = true;
@@ -2249,6 +2255,73 @@ bool MultiROM::ubuntuTouchProcess(const std::string& root, const std::string& na
 
 	gui_print("Restoring mounts\n");
 	restoreMounts();
+	return true;
+}
+
+bool MultiROM::sailfishProcessBoot(const std::string& root)
+{
+	int rd_cmpr;
+	struct bootimg img;
+	bool res = false;
+
+	gui_print("Processing boot.img for SailfishOS\n");
+	system("rm /tmp/boot.img");
+	system_args("cp %s/boot.img /tmp/boot.img", root.c_str());
+
+	if(access("/tmp/boot.img", F_OK) < 0)
+	{
+		gui_print("boot.img was not found!\n");
+		return false;
+	}
+
+	// EXTRACT BOOTIMG
+	gui_print("Extracting boot image...\n");
+	system("rm -r /tmp/boot; mkdir /tmp/boot");
+
+	if (libbootimg_init_load(&img, "/tmp/boot.img", LIBBOOTIMG_LOAD_ALL) < 0 ||
+		libbootimg_dump_ramdisk(&img, "/tmp/boot/initrd.img") < 0 ||
+		libbootimg_dump_kernel(&img, "/tmp/boot/zImage") < 0)
+	{
+		gui_print("Failed to unpack boot img!\n");
+		goto fail_inject;
+	}
+
+	// DEPLOY
+	system_args("cp /tmp/boot/initrd.img %s/initrd.img", root.c_str());
+	system_args("cp /tmp/boot/zImage %s/zImage", root.c_str());
+
+	res = true;
+fail_inject:
+	system("rm /tmp/boot.img");
+	system("rm -r /tmp/boot");
+	libbootimg_destroy(&img);
+	return res;
+}
+
+bool MultiROM::sailfishProcess(const std::string& root, const std::string& name)
+{
+	char buff[256];
+
+	// rom_info.txt
+	if(system_args("cp %s/infos/sailfishos.txt \"%s/rom_info.txt\"", m_path.c_str(), root.c_str()) != 0)
+	{
+		gui_print("Failed to copy rom_info.txt!\n");
+		return false;
+	}
+
+	// Disable /system mounting
+	snprintf(buff, sizeof(buff), "%s/data/.stowaways/sailfishos/etc/systemd/system/local-fs.target.wants/system.mount", root.c_str());
+	remove(buff);
+	snprintf(buff, sizeof(buff), "%s/data/.stowaways/sailfishos/sailfishos/lib/systemd/system/system.mount", root.c_str());
+	remove(buff);
+
+	// Move /system to the rootfs
+	snprintf(buff, sizeof(buff), "%s/system", root.c_str());
+	if(access(buff, F_OK) >= 0 && system_args("mv \"%s/system\" \"%s/data/.stowaways/sailfishos/\"", root.c_str(), root.c_str()) != 0)
+	{
+		gui_print("Failed to move the /system to rootfs\n");
+		return false;
+	}
 	return true;
 }
 
