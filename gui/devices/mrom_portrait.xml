@@ -330,7 +330,7 @@
 				<text>Flash ZIP</text>
 				<image resource="medium_button" />
 				<actions>
-					<action functions="set">tw_mrom_flash_action=multirom_flash_zip</action>
+					<action function="set">tw_mrom_flash_action=multirom_flash_zip_sailfish</action>
 					<action function="page">multirom_flash_select</action>
 				</actions>
 			</object>
