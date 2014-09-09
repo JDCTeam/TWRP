@@ -117,6 +117,10 @@ ifeq ($(TW_CUSTOM_THEME),)
 	else ifneq ($(filter $(DEVICE_RESOLUTION), $(WATCH)),)
 		TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/watch/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
 	endif
+ifneq ($(LANDSCAPE_RESOLUTION),)
+    TWRP_LAND_THEME_LOC := $(commands_recovery_local_path)/gui/devices/$(LANDSCAPE_RESOLUTION)/res
+    TWRP_LAND_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+endif
 else
 	TWRP_THEME_LOC := $(TW_CUSTOM_THEME)
 endif
@@ -127,7 +131,7 @@ else
 	TWRP_SH_TARGET := /sbin/mksh
 endif
 
-ifeq ($(LANDSCAPE_RESOLUTION),)
+ifeq ($(TWRP_LAND_THEME_LOC),)
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
 	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
@@ -140,10 +144,12 @@ $(TWRP_RES_GEN):
 else
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
-	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/	
 	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
 	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
-	cp -fr $(TWRP_DEV_LOC)$(LANDSCAPE_RESOLUTION)/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	$(TWRP_COMMON_XML)
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	cp -fr $(TWRP_LAND_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	$(TWRP_LAND_COMMON_XML)
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
 	ln -sf $(TWRP_SH_TARGET) $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip

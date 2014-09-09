@@ -1,3 +1,6 @@
+<?xml version="1.0"?>
+<recovery>
+	<pages>
 		<page name="multirom_msg">
 			<object type="template" name="header" />
 
@@ -45,7 +48,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM</text>
 			</object>
 
@@ -76,6 +79,15 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<placement x="%col3_x%" y="%row1_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Settings</text>
+				<image resource="main_button" />
+				<action function="multirom_settings"/>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Inject boot.img file</text>
@@ -86,7 +98,6 @@
 					<action function="set">tw_action=multirom_inject</action>
 					<action function="set">tw_text1=Inject boot image </action>
 					<action function="set">tw_text3=?</action>
-					<action function="set">tw_multirom_set_fw=0</action>
 					<action function="page">multirom_inject_select</action>
 				</actions>
 			</object>
@@ -111,16 +122,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row3_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Settings</text>
-				<image resource="main_button" />
-				<action function="multirom_settings"/>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row3_y%" />
+				<placement x="%col3_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Swap ROMs</text>
 				<image resource="main_button" />
@@ -152,7 +154,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - ROM list</text>
 			</object>
 
@@ -180,16 +182,16 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row18_text_y%" />
+				<placement x="%col4_x%" y="%row3_text_y%" />
 				<text>Location: %tw_multirom_install_loc%</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col4_medium_x%" y="%row17_text_y%" />
+				<placement x="%col4_x%" y="%row5_text_y%" />
 				<font resource="font" color="%button_text_color%" />
-				<text>Change</text>
-				<image resource="medium_button" />
+				<text>Change location</text>
+				<image resource="main_button" />
 				<action function="multirom_set_list_loc"/>
 			</object>
 
@@ -218,7 +220,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - manage ROM</text>
 			</object>
 
@@ -230,8 +232,214 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row1_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Rename</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_multirom_new_rom_name=%tw_multirom_rom_name%</action>
+					<action function="set">tw_fileexists=0</action>
+					<action function="page">multirom_rename</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_x%" y="%row1_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Delete</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_list</action>
+					<action function="set">tw_action=multirom_delete</action>
+					<action function="set">tw_text1=Delete ROM "%tw_multirom_rom_name%"?</action>
+					<action function="set">tw_action_text1=Deleting ROM...</action>
+					<action function="set">tw_complete_text1=ROM deleted</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<conditions>
+					<condition var1="tw_multirom_is_android" var2="1" />
+					<condition var1="tw_multirom_has_bootimg" var2="1" />
+				</conditions>
+				<placement x="%col4_x%" y="%row1_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Backup</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_backup_rom</action>
+					<action function="set">tw_action_text1=Preparing backup...</action>
+					<action function="set">tw_complete_text1=Please wait.</action>
+					<action function="page">action_page</action>
+				</actions>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<conditions>
+					<condition var1="tw_multirom_is_android" var2="1" />
+					<condition var1="tw_multirom_has_bootimg" var2="0" />
+				</conditions>
+				<font resource="font" />
+				<placement x="%center_x%" y="%row8_text_y%" placement="5" />
+				<text>(Backup available only if ROM doesn't share kernel with Internal)</text>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="%mrom_wipe_col1_x%" y="%row3_text_y%" />
+				<placement x="%col4_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>ADB sideload</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_sideload</action>
+					<action function="set">tw_action_text1=ADB Sideload</action>
+					<action function="set">tw_action_text2=Usage: adb sideload filename.zip</action>
+					<action function="set">tw_complete_text1=ADB Sideload Complete</action>
+					<action function="set">tw_has_cancel=1</action>
+					<action function="set">tw_cancel_action=adbsideloadcancel</action>
+					<action function="set">tw_mrom_next_page=multirom_sideload_complete</action>
+					<action function="page">action_page</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_is_android" var2="1" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Flash ZIP</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_mrom_flash_action=multirom_flash_zip</action>
+					<action function="page">multirom_flash_select</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_is_ubuntu" var2="1" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Re-patch init</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_ubuntu_patch_init</action>
+					<action function="set">tw_text1=Patch ubuntu's init?</action>
+					<action function="set">tw_action_text1=Patching...</action>
+					<action function="set">tw_complete_text1=Init patched</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_is_touch" var2="1" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Re-patch init</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_touch_patch_init</action>
+					<action function="set">tw_text1=Patch Ubuntu Touch's init?</action>
+					<action function="set">tw_action_text1=Patching...</action>
+					<action function="set">tw_complete_text1=Init patched</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_is_ubuntu" var2="1" />
+				<placement x="%col3_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Disable flash-kernel</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_disable_flash_kernel</action>
+					<action function="set">tw_text1=Disable flash-kernel?</action>
+					<action function="set">tw_action_text1=Working...</action>
+					<action function="set">tw_complete_text1=Flash-kernel patched</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+ 				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_is_sailfish" var2="1" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Flash ZIP</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_mrom_flash_action=multirom_flash_zip_sailfish</action>
+					<action function="page">multirom_flash_select</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<conditions>
+					<condition var1="tw_multirom_is_android" var2="1" />
+					<condition var1="tw_multirom_has_bootimg" var2="0" />
+				</conditions>
+				<placement x="%col3_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Add boot.img</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_multirom_add_bootimg=1</action>
+					<action function="set">tw_back=multirom_list</action>
+					<action function="set">tw_action=multirom_inject</action>
+					<action function="set">tw_text1=Add/replace boot.img</action>
+					<action function="set">tw_text3=to rom %tw_multirom_rom%?</action>
+					<action function="page">multirom_inject_select</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<conditions>
+					<condition var1="tw_multirom_is_android" var2="1" />
+					<condition var1="tw_multirom_has_bootimg" var2="1" />
+				</conditions>
+				<placement x="%col3_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Remove boot.img</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_list</action>
+					<action function="set">tw_action=multirom_rm_bootimg</action>
+					<action function="set">tw_text1=Remove boot.img from ROM:</action>
+					<action function="set">tw_text2=%tw_multirom_rom_name%</action>
+					<action function="set">tw_action_text1=Removing...</action>
+					<action function="set">tw_complete_text1=boot.img was removed!</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_is_android" var2="1" />
+				<placement x="%mrom_wipe_col1_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe /data</text>
 				<image resource="medium_button" />
@@ -252,7 +460,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="%mrom_wipe_col2_x%" y="%row3_text_y%" />
+				<placement x="%mrom_wipe_col2_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe dalvik</text>
 				<image resource="medium_button" />
@@ -273,7 +481,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="%mrom_wipe_col3_x%" y="%row3_text_y%" />
+				<placement x="%mrom_wipe_col3_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe /cache</text>
 				<image resource="medium_button" />
@@ -289,273 +497,6 @@
 					<action function="set">tw_show_reboot=0</action>
 					<action function="page">confirm_action</action>
 				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row2_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Rename</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_multirom_new_rom_name=%tw_multirom_rom_name%</action>
-					<action function="set">tw_fileexists=0</action>
-					<action function="page">multirom_rename</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row2_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Delete</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=multirom_list</action>
-					<action function="set">tw_action=multirom_delete</action>
-					<action function="set">tw_text1=Delete ROM "%tw_multirom_rom_name%"?</action>
-					<action function="set">tw_action_text1=Deleting ROM...</action>
-					<action function="set">tw_complete_text1=ROM deleted</action>
-					<action function="set">tw_slider_text=Swipe to Confirm</action>
-					<action function="set">tw_show_reboot=0</action>
-					<action function="page">confirm_action</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="%col1_medium_x%" y="%row5_medium_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Flash ZIP</text>
-				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_mrom_flash_action=multirom_flash_zip</action>
-					<action function="page">multirom_flash_select</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_android" var2="1" />
-				<placement x="%col2_medium_x%" y="%row5_medium_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Sideload</text>
-				<image resource="medium_button" />
-				<actions>
-					<action function="set">tw_back=multirom_manage</action>
-					<action function="set">tw_action=multirom_sideload</action>
-					<action function="set">tw_action_text1=ADB Sideload</action>
-					<action function="set">tw_action_text2=Usage: adb sideload filename.zip</action>
-					<action function="set">tw_complete_text1=ADB Sideload Complete</action>
-					<action function="set">tw_has_cancel=1</action>
-					<action function="set">tw_cancel_action=adbsideloadcancel</action>
-					<action function="set">tw_mrom_next_page=multirom_sideload_complete</action>
-					<action function="page">action_page</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_ubuntu" var2="1" />
-				<placement x="%col1_x%" y="%row3_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Re-patch init</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=multirom_manage</action>
-					<action function="set">tw_action=multirom_ubuntu_patch_init</action>
-					<action function="set">tw_text1=Patch ubuntu's init?</action>
-					<action function="set">tw_action_text1=Patching...</action>
-					<action function="set">tw_complete_text1=Init patched</action>
-					<action function="set">tw_slider_text=Swipe to Confirm</action>
-					<action function="set">tw_show_reboot=0</action>
-					<action function="page">confirm_action</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_touch" var2="1" />
-				<placement x="%col1_x%" y="%row3_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Re-patch init</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=multirom_manage</action>
-					<action function="set">tw_action=multirom_touch_patch_init</action>
-					<action function="set">tw_text1=Patch Ubuntu Touch's init?</action>
-					<action function="set">tw_action_text1=Patching...</action>
-					<action function="set">tw_complete_text1=Init patched</action>
-					<action function="set">tw_slider_text=Swipe to Confirm</action>
-					<action function="set">tw_show_reboot=0</action>
-					<action function="page">confirm_action</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_ubuntu" var2="1" />
-				<placement x="%col2_x%" y="%row3_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Disable flash-kernel</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=multirom_manage</action>
-					<action function="set">tw_action=multirom_disable_flash_kernel</action>
-					<action function="set">tw_text1=Disable flash-kernel?</action>
-					<action function="set">tw_action_text1=Working...</action>
-					<action function="set">tw_complete_text1=Flash-kernel patched</action>
-					<action function="set">tw_slider_text=Swipe to Confirm</action>
-					<action function="set">tw_show_reboot=0</action>
-					<action function="page">confirm_action</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_is_sailfish" var2="1" />
-				<placement x="%col1_x%" y="%row3_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Flash ZIP</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_mrom_flash_action=multirom_flash_zip_sailfish</action>
-					<action function="page">multirom_flash_select</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<conditions>
-					<condition var1="tw_multirom_is_android" var2="1" />
-					<condition var1="tw_multirom_has_bootimg" var2="0" />
-				</conditions>
-				<placement x="%col2_x%" y="%row3_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Add boot.img</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_multirom_add_bootimg=1</action>
-					<action function="set">tw_back=multirom_list</action>
-					<action function="set">tw_action=multirom_inject</action>
-					<action function="set">tw_text1=Add/replace boot.img</action>
-					<action function="set">tw_text3=to rom %tw_multirom_rom%?</action>
-					<action function="set">tw_multirom_set_fw=0</action>
-					<action function="page">multirom_inject_select</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<conditions>
-					<condition var1="tw_multirom_is_android" var2="1" />
-					<condition var1="tw_multirom_has_bootimg" var2="1" />
-				</conditions>
-				<placement x="%col2_x%" y="%row3_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Remove boot.img</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=multirom_list</action>
-					<action function="set">tw_action=multirom_rm_bootimg</action>
-					<action function="set">tw_text1=Remove boot.img from ROM:</action>
-					<action function="set">tw_text2=%tw_multirom_rom_name%</action>
-					<action function="set">tw_action_text1=Removing...</action>
-					<action function="set">tw_complete_text1=boot.img was removed!</action>
-					<action function="set">tw_slider_text=Swipe to Confirm</action>
-					<action function="set">tw_show_reboot=0</action>
-					<action function="page">confirm_action</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<conditions>
-					<condition var1="tw_multirom_is_android" var2="1" />
-					<condition var1="tw_multirom_has_bootimg" var2="1" />
-				</conditions>
-				<placement x="%col1_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Backup</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=multirom_manage</action>
-					<action function="set">tw_action=multirom_backup_rom</action>
-					<action function="set">tw_action_text1=Preparing backup...</action>
-					<action function="set">tw_complete_text1=Please wait.</action>
-					<action function="page">action_page</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<conditions>
-					<condition var1="tw_multirom_has_fw_partition" var2="1" />
-					<condition var1="tw_multirom_has_fw_image" var2="0" />
-				</conditions>
-				<placement x="%col2_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Set radio.img</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_multirom_add_bootimg=0</action>
-					<action function="set">tw_back=multirom_manage</action>
-					<action function="set">tw_action=multirom_set_fw</action>
-					<action function="set">tw_text1=Set radio image</action>
-					<action function="set">tw_text3=?</action>
-					<action function="set">tw_multirom_set_fw=1</action>
-					<action function="page">multirom_inject_select</action>
-				</actions>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<conditions>
-					<condition var1="tw_multirom_has_fw_partition" var2="1" />
-					<condition var1="tw_multirom_has_fw_image" var2="1" />
-				</conditions>
-				<placement x="%col2_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Remove radio.img</text>
-				<image resource="main_button" />
-				<actions>
-					<action function="set">tw_back=multirom_manage</action>
-					<action function="set">tw_action=multirom_remove_fw</action>
-					<action function="set">tw_action_text1=Removing radio.img...</action>
-					<action function="set">tw_complete_text1=Please wait.</action>
-					<action function="page">action_page</action>
-				</actions>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<conditions>
-					<condition var1="tw_multirom_is_android" var2="1" />
-					<condition var1="tw_multirom_has_bootimg" var2="0" />
-				</conditions>
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row16_text_y%" />
-				<text>Backup is available only</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<conditions>
-					<condition var1="tw_multirom_is_android" var2="1" />
-					<condition var1="tw_multirom_has_bootimg" var2="0" />
-				</conditions>
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row17_text_y%" />
-				<text>if ROM does not share</text>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<conditions>
-					<condition var1="tw_multirom_is_android" var2="1" />
-					<condition var1="tw_multirom_has_bootimg" var2="0" />
-				</conditions>
-				<font resource="font" />
-				<placement x="%col1_x%" y="%row18_text_y%" />
-				<text>kernel with Internal.</text>
 			</object>
 
 			<object type="action">
@@ -576,7 +517,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - rename ROM</text>
 			</object>
 
@@ -587,7 +528,7 @@
 			</object>
 
 			<object type="input">
-				<placement x="%col1_x%" y="%row3_text_y%" w="%input_width%" h="%input_height%" placement="0" />
+				<placement x="%input_x%" y="%row4_text_y%" w="%input_width%" h="%input_height%" placement="0" />
 				<background color="%input_background_color%" />
 				<cursor color="%input_cursor_color%" hasfocus="1" width="%input_cursor_width%" />
 				<font resource="font" color="%text_color%" />
@@ -611,7 +552,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%row2_y%" />
+				<placement x="%col_center_x%" y="%row6_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Cancel</text>
 				<image resource="main_button" />
@@ -646,14 +587,14 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>Select Zip to Install</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<fill color="%button_fill_color%" />
-				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
+				<placement x="%button_full_center_x%" y="%zipstorage_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
@@ -664,7 +605,23 @@
 
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
-				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_folder_x%" y="%fileselector_install_y%" w="%fileselector_folder_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Folders:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="font" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter folders="1" files="0" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="select" />
+			</object>
+
+			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
+				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>%tw_zip_location%</text>
@@ -672,9 +629,9 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
-				<filter extn=".zip" folders="1" files="1" />
-				<path name="tw_zip_location" default="/sdcard" />
+				<font resource="font" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter extn=".zip" folders="0" files="1" />
+				<path name="tw_zip_location" />
 				<data name="tw_filename" />
 				<selection name="tw_file" />
 			</object>
@@ -704,13 +661,13 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - flash zip</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
+				<placement x="%center_x%" y="%row2_text_y%" placement="5" />
 				<text>ROM: %tw_multirom_rom_name%</text>
 			</object>
 
@@ -777,12 +734,12 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - settings</text>
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row1_text_y%" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Enable ADB</text>
 				<data variable="tw_multirom_enable_adb" />
@@ -790,7 +747,7 @@
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row2_text_y%" />
+				<placement x="%col2_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Hide internal ROM</text>
 				<data variable="tw_multirom_hide_internal" />
@@ -798,7 +755,7 @@
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col2_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Force using generic screen drawing code</text>
 				<data variable="tw_multirom_force_generic_fb" />
@@ -807,7 +764,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col2_x%" y="%row5_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Configure autoboot</text>
 				<image resource="main_button" />
@@ -816,7 +773,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row4_text_y%" />
+				<placement x="%col3_x%" y="%row5_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Rename internal ROM</text>
 				<image resource="main_button" />
@@ -824,7 +781,7 @@
 			</object>
 
 			<object type="slidervalue">
-				<placement x="%col1_x%" y="%row10_text_y%" w="%slidervalue_w%" />
+				<placement x="%slidervalue_x%" y="%row10_text_y%" w="%slidervalue_w%" />
 				<font resource="font" color="%text_color%" />
 				<colors line="#FFFFFF" slider="#33B5E5" />
 				<dimensions lineh="%slidervalue_lineh%" linepadding="%slidervalue_padding%" sliderw="%slidervalue_sliderw%" sliderh="%slidervalue_sliderh%" />
@@ -834,13 +791,13 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row12_text_y%" placement="5" />
+				<placement x="%center_x%" y="%row14_text_y%" placement="5" />
 				<text>Rotation (degrees, clockwise): %tw_multirom_rotation%</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_medium_x%" y="%row13_text_y%" />
+				<placement x="%col1_medium_x%" y="%row15_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>0</text>
 				<image resource="medium_button" />
@@ -849,7 +806,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col2_medium_x%" y="%row13_text_y%" />
+				<placement x="%col2_medium_x%" y="%row15_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>90</text>
 				<image resource="medium_button" />
@@ -858,7 +815,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row13_text_y%" />
+				<placement x="%col3_medium_x%" y="%row15_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>180</text>
 				<image resource="medium_button" />
@@ -867,7 +824,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col4_medium_x%" y="%row13_text_y%" />
+				<placement x="%col4_medium_x%" y="%row15_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>270</text>
 				<image resource="medium_button" />
@@ -876,13 +833,13 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row16_text_y%" placement="5" />
+				<placement x="%center_x%" y="%row18_text_y%" placement="5" />
 				<text>Animations duration: %tw_anim_duration_coef_pct%%</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_medium_x%" y="%row17_text_y%" />
+				<placement x="%col1_medium_x%" y="%row19_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>50%</text>
 				<image resource="medium_button" />
@@ -891,7 +848,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col2_medium_x%" y="%row17_text_y%" />
+				<placement x="%col2_medium_x%" y="%row19_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>75%</text>
 				<image resource="medium_button" />
@@ -900,7 +857,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col3_medium_x%" y="%row17_text_y%" />
+				<placement x="%col3_medium_x%" y="%row19_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>100%</text>
 				<image resource="medium_button" />
@@ -909,7 +866,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col4_medium_x%" y="%row17_text_y%" />
+				<placement x="%col4_medium_x%" y="%row19_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>125%</text>
 				<image resource="medium_button" />
@@ -940,12 +897,12 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - settings - autoboot</text>
 			</object>
 
 			<object type="checkbox">
-				<placement x="%col1_x%" y="%row1_text_y%" />
+				<placement x="%col3_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Enable auto-boot</text>
 				<data variable="tw_multirom_enable_auto_boot" />
@@ -954,7 +911,7 @@
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col3_x%" y="%row7_text_y%" />
 				<font resource="font"/>
 				<text>Delay: </text>
 			</object>
@@ -963,7 +920,7 @@
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
 				<condition var1="tw_multirom_delay" op=">" var2="1" />
-				<placement x="%col2_medium_x%" y="%row2_medium_y%" />
+				<placement x="%mrom_boot_delay_sub_x%" y="%mrom_boot_delay_btn_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>-</text>
 				<image resource="medium_button" />
@@ -975,7 +932,7 @@
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<placement x="%mrom_boot_delay_sec_x%" y="%row3_text_y%" />
+				<placement x="%mrom_boot_delay_sec_x%" y="%row7_text_y%" />
 				<font resource="font"/>
 				<text>%tw_multirom_delay%s</text>
 			</object>
@@ -983,7 +940,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<placement x="%mrom_boot_delay_add_x%" y="%row2_medium_y%" />
+				<placement x="%mrom_boot_delay_add_x%" y="%mrom_boot_delay_btn_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>+</text>
 				<image resource="medium_button" />
@@ -995,7 +952,7 @@
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col3_x%" y="%row10_text_y%" />
 				<font resource="font"/>
 				<text>Type:</text>
 			</object>
@@ -1003,7 +960,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_auto_boot_type" var2="0" />
-				<placement x="%col2_medium_x%" y="%row5_text_y%" />
+				<placement x="%mrom_boot_delay_sub_x%" y="%row10_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Select ROM</text>
 				<image resource="radio_true" />
@@ -1016,7 +973,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_auto_boot_type" var2="0" op="!=" />
-				<placement x="%col2_medium_x%" y="%row5_text_y%" />
+				<placement x="%mrom_boot_delay_sub_x%" y="%row10_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Select ROM</text>
 				<image resource="radio_false" />
@@ -1029,7 +986,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_auto_boot_type" var2="1" />
-				<placement x="%col2_x%" y="%row5_text_y%" />
+				<placement x="%col4_x%" y="%row10_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Use last booted ROM</text>
 				<image resource="radio_true" />
@@ -1042,7 +999,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_auto_boot_type" var2="1" op="!=" />
-				<placement x="%col2_x%" y="%row5_text_y%" />
+				<placement x="%col4_x%" y="%row10_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Use last booted ROM</text>
 				<image resource="radio_false" />
@@ -1062,7 +1019,7 @@
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select ROM to auto-boot:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
-				<placement x="%listbox_x%" y="%row6_text_y%" w="%listbox_width%" h="%mrom_boot_rom_h%" />
+				<placement x="%mrom_boot_rom_x%" y="%row3_text_y%" w="%mrom_boot_rom_w%" h="%mrom_boot_rom_h%" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -1073,28 +1030,28 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_auto_boot_type" var2="1" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row7_text_y%" placement="5" />
+				<placement x="%mrom_boot_rom_x%" y="%row5_text_y%" />
 				<text>MultiROM will remember the last ROM</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_auto_boot_type" var2="1" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row8_text_y%" placement="5" />
+				<placement x="%mrom_boot_rom_x%" y="%row6_text_y%" />
 				<text>you've booted and auto-boot it on next</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_auto_boot_type" var2="1" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row9_text_y%" placement="5" />
+				<placement x="%mrom_boot_rom_x%" y="%row7_text_y%" />
 				<text>reboot, unless you select different one.</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_auto_boot_type" var2="1" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row10_text_y%" placement="5" />
+				<placement x="%mrom_boot_rom_x%" y="%row8_text_y%" />
 				<text>Only works with ROMs in internal memory.</text>
 			</object>
 
@@ -1119,7 +1076,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - settings - rename internal</text>
 			</object>
 
@@ -1130,7 +1087,7 @@
 			</object>
 
 			<object type="input">
-				<placement x="%col1_x%" y="%row3_text_y%" w="%input_width%" h="%input_height%" placement="0" />
+				<placement x="%input_x%" y="%row5_text_y%" w="%input_width%" h="%input_height%" placement="0" />
 				<background color="%input_background_color%" />
 				<cursor color="%input_cursor_color%" hasfocus="1" width="%input_cursor_width%" />
 				<font resource="font" color="%text_color%" />
@@ -1142,7 +1099,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%row2_y%" />
+				<placement x="%col_center_x%" y="%row7_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Cancel</text>
 				<image resource="main_button" />
@@ -1171,14 +1128,14 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
-				<text>MultiROM - Select image</text>
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
+				<text>MultiROM - Inject boot.img</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<fill color="%button_fill_color%" />
-				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
+				<placement x="%button_full_center_x%" y="%zipstorage_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
@@ -1189,7 +1146,23 @@
 
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
-				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_folder_x%" y="%fileselector_install_y%" w="%fileselector_folder_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Folders:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="font" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter folders="1" files="0" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="select" />
+			</object>
+
+			<object type="fileselector">
+				<highlight color="%fileselector_highlight_color%" />
+				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>%tw_zip_location%</text>
@@ -1197,9 +1170,9 @@
 				<sort name="tw_gui_sort_order" />
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
-				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
-				<filter extn=".img" folders="1" files="1" />
-				<path name="tw_zip_location" default="/sdcard" />
+				<font resource="font" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter extn=".img" folders="0" files="1" />
+				<path name="tw_zip_location" />
 				<data name="tw_filename" />
 				<selection name="tw_file" />
 			</object>
@@ -1207,29 +1180,11 @@
 			<object type="template" name="sort_options" />
 
 			<object type="action">
-				<conditions>
-					<condition var1="tw_multirom_set_fw" var2="1" op="!=" />
-					<condition var1="tw_filename" op="modified" />
-				</conditions>
+				<condition var1="tw_filename" op="modified" />
 				<actions>
 					<action function="set">tw_text2=%tw_filename%</action>
 					<action function="set">tw_action_text1=Injecting...</action>
 					<action function="set">tw_complete_text1=Image injected</action>
-					<action function="set">tw_slider_text=Swipe to Confirm</action>
-					<action function="set">tw_show_reboot=0</action>
-					<action function="page">confirm_action</action>
-				</actions>
-			</object>
-
-			<object type="action">
-				<conditions>
-					<condition var1="tw_multirom_set_fw" var2="1" />
-					<condition var1="tw_filename" op="modified" />
-				</conditions>
-				<actions>
-					<action function="set">tw_text2=%tw_filename%</action>
-					<action function="set">tw_action_text1=Copying...</action>
-					<action function="set">tw_complete_text1=FW file copied</action>
 					<action function="set">tw_slider_text=Swipe to Confirm</action>
 					<action function="set">tw_show_reboot=0</action>
 					<action function="page">confirm_action</action>
@@ -1254,20 +1209,20 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - Add ROM</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
 				<text>Choose ROM type:</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" />
-				<placement x="%col1_x%" y="%row2_text_y%" />
+				<placement x="%col2_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Android</text>
 				<image resource="radio_true" />
@@ -1280,7 +1235,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="1" op="!="/>
-				<placement x="%col1_x%" y="%row2_text_y%" />
+				<placement x="%col2_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Android</text>
 				<image resource="radio_false" />
@@ -1296,7 +1251,7 @@
 					<condition var1="tw_multirom_ubuntu_supported" var2="1" />
 					<condition var1="tw_multirom_type" var2="2" />
 				</conditions>
-				<placement x="%mrom_ubuntu_desktop_x%" y="%row2_text_y%" />
+				<placement x="%mrom_ubuntu_desktop_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
 				<image resource="radio_true" />
@@ -1312,7 +1267,7 @@
 					<condition var1="tw_multirom_ubuntu_supported" var2="1" />
 					<condition var1="tw_multirom_type" var2="2" op="!="/>
 				</conditions>
-				<placement x="%mrom_ubuntu_desktop_x%" y="%row2_text_y%" />
+				<placement x="%mrom_ubuntu_desktop_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Ubuntu desktop</text>
 				<image resource="radio_false" />
@@ -1328,7 +1283,7 @@
 					<condition var1="tw_multirom_sailfish_supported" var2="1" />
 					<condition var1="tw_multirom_type" var2="5" />
 				</conditions>
-				<placement x="%mrom_ubuntu_touch_x%" y="%row2_text_y%" />
+				<placement x="%mrom_ubuntu_touch_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>SailfishOS</text>
 				<image resource="radio_true" />
@@ -1343,8 +1298,8 @@
 				<conditions>
 					<condition var1="tw_multirom_sailfish_supported" var2="1" />
 					<condition var1="tw_multirom_type" var2="5" op="!="/>
-				</condition>
-				<placement x="%mrom_ubuntu_touch_x%" y="%row2_text_y%" />
+				</conditions>
+				<placement x="%mrom_ubuntu_touch_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>SailfishOS</text>
 				<image resource="radio_false" />
@@ -1357,7 +1312,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="3" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col2_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>MultiROM installer (*.mrom files)</text>
 				<image resource="radio_true" />
@@ -1370,7 +1325,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_type" var2="3" op="!="/>
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col2_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>MultiROM installer (*.mrom files)</text>
 				<image resource="radio_false" />
@@ -1383,7 +1338,7 @@
 			<object type="text" color="%text_success_color%">
 				<condition var1="tw_multirom_type" var2="1" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col2_x%" y="%row5_text_y%" />
 				<text>Share kernel with Internal ROM?</text>
 			</object>
 
@@ -1393,7 +1348,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="1" />
 				</conditions>
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col2_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Share</text>
 				<image resource="radio_true" />
@@ -1409,7 +1364,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="0" />
 				</conditions>
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col2_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Share</text>
 				<image resource="radio_false" />
@@ -1425,7 +1380,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="1" />
 				</conditions>
-				<placement x="%col2_x%" y="%row5_text_y%" />
+				<placement x="%col3_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Don't share</text>
 				<image resource="radio_false" />
@@ -1441,7 +1396,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_share_kernel" var2="0" />
 				</conditions>
-				<placement x="%col2_x%" y="%row5_text_y%" />
+				<placement x="%col3_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Don't share</text>
 				<image resource="radio_true" />
@@ -1454,7 +1409,7 @@
 			<object type="text" color="#B3B2B2">
 				<condition var1="tw_multirom_type" var2="1" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
+				<placement x="%col2_x%" y="%row7_text_y%" />
 				<text>Use "Don't share" only if sharing does not work.</text>
 			</object>
 
@@ -1464,7 +1419,7 @@
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Install to:</text>
-				<placement x="%listbox_x%" y="%row7_text_y%" w="%listbox_width%" h="%mrom_install_loc_h%" />
+				<placement x="%col2_x%" y="%row8_text_y%" w="%mrom_install_loc_w%" h="%mrom_install_loc_h%" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -1474,7 +1429,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%tz_set_y%" />
+				<placement x="%col_center_x%" y="%row18_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Next</text>
 				<image resource="main_button" />
@@ -1483,7 +1438,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_medium_x%" y="%mrom_install_refresh_y%" />
+				<placement x="%col1_medium_x%" y="%row18_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Refresh</text>
 				<image resource="medium_button" />
@@ -1508,14 +1463,14 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - Add ROM</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<fill color="%button_fill_color%" />
-				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
+				<placement x="%button_full_center_x%" y="%zipstorage_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
@@ -1525,12 +1480,29 @@
 			</object>
 
 			<object type="fileselector">
+				<condition var1="tw_multirom_add_source" var2="backup" op="!=" />
+				<highlight color="%fileselector_highlight_color%" />
+				<placement x="%fileselector_folder_x%" y="%fileselector_install_y%" w="%fileselector_folder_width%" h="%fileselector_install_height%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Folders:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<sort name="tw_gui_sort_order" />
+				<icon folder="folder_icon" file="file_icon" />
+				<background color="%fileselector_background%" />
+				<font resource="font" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<filter folders="1" files="0" />
+				<path name="tw_zip_location" default="/sdcard" />
+				<data name="select" />
+			</object>
+
+			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
 				<conditions>
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_add_source" var2="zip" />
 				</conditions>
-				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select ROM's ZIP file:</text>
@@ -1539,7 +1511,7 @@
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
-				<filter extn=".zip" folders="1" files="1" />
+				<filter extn=".zip" folders="0" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
 				<selection name="tw_file" />
@@ -1551,7 +1523,7 @@
 					<condition var1="tw_multirom_type" var2="1" />
 					<condition var1="tw_multirom_add_source" var2="backup" />
 				</conditions>
-				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%col2_x%" y="%fileselector_install_y%" w="%fileselector_folderonly_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select ROM's backup:</text>
@@ -1569,7 +1541,7 @@
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
 				<condition var1="tw_multirom_type" var2="2" />
-				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select Ubuntu image file:</text>
@@ -1578,7 +1550,7 @@
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
-				<filter extn="img.gz;img" folders="1" files="1" />
+				<filter extn="img.gz;img" folders="0" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
 				<selection name="tw_file" />
@@ -1587,7 +1559,7 @@
 			<object type="fileselector">
 				<highlight color="%fileselector_highlight_color%" />
 				<condition var1="tw_multirom_type" var2="3" />
-				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select MultiROM installer file:</text>
@@ -1596,7 +1568,7 @@
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
-				<filter extn=".mrom" folders="1" files="1" />
+				<filter extn=".mrom" folders="0" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_filename" />
 				<selection name="tw_file" />
@@ -1608,7 +1580,7 @@
 					<condition var1="tw_multirom_type" var2="5" />
 					<condition var1="tw_multirom_sailfish_add_zip" var2="1" />
 				</conditions>
-				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select CyanogenMod ZIP:</text>
@@ -1617,7 +1589,7 @@
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
-				<filter extn=".zip" folders="1" files="1" />
+				<filter extn=".zip" folders="0" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_sailfish_filename_base" />
 				<selection name="tw_file" />
@@ -1629,7 +1601,7 @@
 					<condition var1="tw_multirom_type" var2="5" />
 					<condition var1="tw_multirom_sailfish_add_zip" var2="2" />
 				</conditions>
-				<placement x="%fileselector_x%" y="%row3_text_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
+				<placement x="%fileselector_file_x%" y="%fileselector_install_y%" w="%fileselector_file_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select SailfishOS ZIP:</text>
@@ -1638,7 +1610,7 @@
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
-				<filter extn=".zip" folders="1" files="1" />
+				<filter extn=".zip" folders="0" files="1" />
 				<path name="tw_zip_location" default="/sdcard" />
 				<data name="tw_sailfish_filename_rootfs" />
 				<selection name="tw_file" />
@@ -1754,45 +1726,45 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - Add ROM</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
 				<text>Install to %tw_multirom_install_loc%</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row2_text_y%" />
+				<placement x="%col2_x%" y="%row3_text_y%" />
 				<text>Set up the size of disk images.</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col2_x%" y="%row4_text_y%" />
 				<text>If FAT32 partition is used,</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col2_x%" y="%row5_text_y%" />
 				<text>size of the image is limited to 4095MB.</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image1"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%mrom_img1_text_y%" />
+				<placement x="%col2_x%" y="%row7_text_y%" />
 				<text>%tw_mrom_image1%: %tw_mrom_image1_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image1"/>
-				<placement x="%col3_medium_x%" y="%mrom_img1_btn_y%" />
+				<placement x="%col3_medium_x%" y="%row6_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -1804,14 +1776,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image2"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%mrom_img2_text_y%" />
+				<placement x="%col2_x%" y="%row10_text_y%" />
 				<text>%tw_mrom_image2%: %tw_mrom_image2_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image2"/>
-				<placement x="%col3_medium_x%" y="%mrom_img2_btn_y%" />
+				<placement x="%col3_medium_x%" y="%row9_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -1823,14 +1795,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image3"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%mrom_img3_text_y%" />
+				<placement x="%col2_x%" y="%row13_text_y%" />
 				<text>%tw_mrom_image3%: %tw_mrom_image3_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image3"/>
-				<placement x="%col3_medium_x%" y="%mrom_img3_btn_y%" />
+				<placement x="%col3_medium_x%" y="%row12_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -1842,14 +1814,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image4"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%mrom_img4_text_y%" />
+				<placement x="%col2_x%" y="%row16_text_y%" />
 				<text>%tw_mrom_image4%: %tw_mrom_image4_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image4"/>
-				<placement x="%col3_medium_x%" y="%mrom_img4_btn_y%" />
+				<placement x="%col3_medium_x%" y="%row15_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -1861,14 +1833,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_mrom_image5"/>
 				<font resource="font" />
-				<placement x="%col1_x%" y="%mrom_img5_text_y%" />
+				<placement x="%col2_x%" y="%row19_text_y%" />
 				<text>%tw_mrom_image5%: %tw_mrom_image5_size% MB</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_mrom_image5"/>
-				<placement x="%col3_medium_x%" y="%mrom_img5_btn_y%" />
+				<placement x="%col3_medium_x%" y="%row18_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -1879,7 +1851,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%tz_set_y%" />
+				<placement x="%col4_x%" y="%row11_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Next</text>
 				<image resource="main_button" />
@@ -1904,7 +1876,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - set image size</text>
 			</object>
 
@@ -1915,7 +1887,7 @@
 			</object>
 
 			<object type="input">
-				<placement x="%col1_x%" y="%row3_text_y%" w="%input_width%" h="%input_height%" placement="0" />
+				<placement x="%input_x%" y="%row4_text_y%" w="%input_width%" h="%input_height%" placement="0" />
 				<background color="%input_background_color%" />
 				<cursor color="%input_cursor_color%" hasfocus="1" width="%input_cursor_width%" />
 				<font resource="font" color="%text_color%" />
@@ -1941,7 +1913,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%row2_y%" />
+				<placement x="%col_center_x%" y="%row7_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Cancel</text>
 				<image resource="main_button" />
@@ -1970,7 +1942,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - List ROMs - Location</text>
 			</object>
 
@@ -1980,7 +1952,7 @@
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select location to list:</text>
-				<placement x="%listbox_x%" y="%row1_text_y%" w="%listbox_width%" h="%mrom_rom_loc_list_h%" />
+				<placement x="%mrom_rom_loc_list_x%" y="%row3_text_y%" w="%mrom_rom_loc_list_w%" h="%mrom_rom_loc_list_h%" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -1990,7 +1962,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%tz_set_y%" />
+				<placement x="%col4_x%" y="%row16_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Select</text>
 				<image resource="main_button" />
@@ -1999,7 +1971,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_medium_x%" y="%row16_text_y%" />
+				<placement x="%col4_x%" y="%row3_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Refresh</text>
 				<image resource="medium_button" />
@@ -2024,7 +1996,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - Add ROM - source</text>
 			</object>
 
@@ -2097,31 +2069,31 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - Add ROM - source</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
 				<text>Select SailfishOS ZIPs:</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row2_text_y%" />
+				<placement x="%col2_x%" y="%row3_text_y%" />
 				<text>CyanogenMod ZIP file</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col2_x%" y="%row4_text_y%" />
 				<text>Rootfs ZIP file (sailfishos-*.zip)</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%row5_text_y%" />
+				<placement x="%col2_x%" y="%row8_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>CyanogenMod ZIP file</text>
 				<image resource="main_button" />
@@ -2133,7 +2105,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%row10_text_y%" />
+				<placement x="%col3_x%" y="%row8_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Rootfs ZIP file</text>
 				<image resource="main_button" />
@@ -2145,13 +2117,13 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row15_text_y%" />
+				<placement x="%col2_x%" y="%row15_text_y%" />
 				<text>1: %tw_sailfish_filename_base%</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row16_text_y%" />
+				<placement x="%col2_x%" y="%row16_text_y%" />
 				<text>2: %tw_sailfish_filename_rootfs%</text>
 			</object>
 
@@ -2230,20 +2202,20 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - Swap ROMs</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row1_text_y%" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
 				<text>Choose action:</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_swap_type" var2="0" />
-				<placement x="%col1_x%" y="%row2_text_y%" />
+				<placement x="%col1_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Swap primary (Internal) ROM with secondary</text>
 				<image resource="radio_true" />
@@ -2256,7 +2228,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_swap_type" var2="0" op="!=" />
-				<placement x="%col1_x%" y="%row2_text_y%" />
+				<placement x="%col1_x%" y="%row3_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Swap primary (Internal) ROM with secondary</text>
 				<image resource="radio_false" />
@@ -2270,7 +2242,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_swap_type" var2="1" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col1_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Copy secondary ROM to primary slot</text>
 				<image resource="radio_true" />
@@ -2284,7 +2256,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_swap_type" var2="1" op="!=" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col1_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Copy secondary ROM to primary slot</text>
 				<image resource="radio_false" />
@@ -2298,7 +2270,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_swap_type" var2="2" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Copy primary ROM to secondaries</text>
 				<image resource="radio_true" />
@@ -2312,7 +2284,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_swap_type" var2="2" op="!=" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Copy primary ROM to secondaries</text>
 				<image resource="radio_false" />
@@ -2326,7 +2298,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_swap_type" var2="3" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Move primary ROM to secondaries</text>
 				<image resource="radio_true" />
@@ -2340,7 +2312,7 @@
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_multirom_swap_type" var2="3" op="!=" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Move primary ROM to secondaries</text>
 				<image resource="radio_false" />
@@ -2358,7 +2330,7 @@
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select secondary ROM to swap with:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
-				<placement x="%listbox_x%" y="%row6_text_y%" w="%listbox_width%" h="%mrom_swap_list_h%" />
+				<placement x="%col3_x%" y="%row2_text_y%" w="%listbox_width%" h="%wipe_list_height%" />
 				<icon selected="radio_true" unselected="radio_false" />
 				<background color="%listbox_background%" />
 				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
@@ -2369,14 +2341,14 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_swap_type" var2="2" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row7_text_y%" placement="5" />
+				<placement x="%col4_x%" y="%row4_text_y%" placement="5" />
 				<text>This action will create a copy of your current</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_swap_type" var2="3" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row7_text_y%" placement="5" />
+				<placement x="%col4_x%" y="%row4_text_y%" placement="5" />
 				<text>This action will remove your current</text>
 			</object>
 
@@ -2386,7 +2358,7 @@
 					<condition var1="tw_multirom_swap_type" var2="3" op="<=" />
 				</conditions>
 				<font resource="font" />
-				<placement x="%center_x%" y="%row8_text_y%" placement="5" />
+				<placement x="%col4_x%" y="%row5_text_y%" placement="5" />
 				<text>primary ROM and then add it to secondary ROMs.</text>
 			</object>
 
@@ -2396,28 +2368,28 @@
 					<condition var1="tw_multirom_swap_type" var2="3" op="<=" />
 				</conditions>
 				<font resource="font" />
-				<placement x="%center_x%" y="%row10_text_y%" placement="5" />
+				<placement x="%col4_x%" y="%row7_text_y%" placement="5" />
 				<text>You can choose name of this new ROM below.</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
 				<condition var1="tw_multirom_swap_type" var2="1" op="!=" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row14_text_y%" />
+				<placement x="%col1_x%" y="%row10_text_y%" />
 				<text>New ROM's name:</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_multirom_swap_type" var2="1" op="!=" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row15_text_y%" />
+				<placement x="%col1_x%" y="%row11_text_y%" />
 				<text>%tw_multirom_swap_internal_name%</text>
 			</object>
 
 			<object type="button">
 				<condition var1="tw_multirom_swap_type" var2="1" op="!=" />
 				<highlight color="%highlight_color%" />
-				<placement x="%col4_medium_x%" y="%row14_text_y%" />
+				<placement x="%col2_medium_x%" y="%row10_text_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Change</text>
 				<image resource="medium_button" />
@@ -2489,7 +2461,7 @@
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
-				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
 				<text>MultiROM - Swap ROMs - Set new ROM's name</text>
 			</object>
 
@@ -2500,7 +2472,7 @@
 			</object>
 
 			<object type="input">
-				<placement x="%col1_x%" y="%row3_text_y%" w="%input_width%" h="%input_height%" placement="0" />
+				<placement x="%input_x%" y="%row3_text_y%" w="%input_width%" h="%input_height%" placement="0" />
 				<background color="%input_background_color%" />
 				<cursor color="%input_cursor_color%" hasfocus="1" width="%input_cursor_width%" />
 				<font resource="font" color="%text_color%" />
@@ -2517,14 +2489,14 @@
 
 			<object type="text" color="%text_fail_color%">
 				<condition var1="tw_fileexists" var2="1" />
-				<placement x="%center_x%" y="%row5_text_y%" placement="5" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" />
 				<text>This name is already taken!</text>
 			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%row2_y%" />
+				<placement x="%col_center_x%" y="%cancel_button_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Cancel</text>
 				<image resource="main_button" />
@@ -2603,3 +2575,5 @@
 				</actions>
 			</object>
 		</page>
+	</pages>
+</recovery>

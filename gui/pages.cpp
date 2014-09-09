@@ -640,6 +640,10 @@ int PageSet::CheckInclude(ZipArchive* package, xml_document<> *parentDoc)
 		if (!package) {
 			// We can try to load the XML directly...
 			filename = "/res/";
+#ifdef TW_HAS_LANDSCAPE
+			if(gr_get_rotation()%180 != 0)
+				filename += "landscape/";
+#endif
 			filename += attr->value();
 			struct stat st;
 			if(stat(filename.c_str(),&st) != 0) {
