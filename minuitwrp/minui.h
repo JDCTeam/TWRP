@@ -54,7 +54,6 @@ unsigned int gr_get_height(gr_surface surface);
 int gr_get_surface(gr_surface* surface);
 int gr_free_surface(gr_surface surface);
 
-
 void gr_freeze_fb(int freeze);
 void gr_set_rotation(int rot);
 int gr_get_rotation(void);

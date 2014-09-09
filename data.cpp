@@ -51,6 +51,10 @@
 	#include "cutils/properties.h"
 #endif
 
+#ifndef TW_MAX_BRIGHTNESS
+#define TW_MAX_BRIGHTNESS 255
+#endif
+
 extern "C"
 {
 	#include "twcommon.h"
@@ -946,9 +950,6 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_gui_done", make_pair("0", 0)));
 	mValues.insert(make_pair("tw_encrypt_backup", make_pair("0", 0)));
 #ifdef TW_BRIGHTNESS_PATH
-#ifndef TW_MAX_BRIGHTNESS
-#define TW_MAX_BRIGHTNESS 255
-#endif
 	string findbright;
 	if (strcmp(EXPAND(TW_BRIGHTNESS_PATH), "/nobrightness") != 0) {
 		findbright = EXPAND(TW_BRIGHTNESS_PATH);
@@ -975,6 +976,17 @@ void DataManager::SetDefaultValues()
 		mConstValues.insert(make_pair("tw_brightness_max", maxVal.str()));
 		mValues.insert(make_pair("tw_brightness", make_pair(maxVal.str(), 1)));
 		mValues.insert(make_pair("tw_brightness_pct", make_pair("100", 1)));
+#ifdef TW_SECONDARY_BRIGHTNESS_PATH
+		string secondfindbright = EXPAND(TW_SECONDARY_BRIGHTNESS_PATH);
+		if (secondfindbright != "" && TWFunc::Path_Exists(secondfindbright)) {
+			LOGINFO("Will use a second brightness file at '%s'\n", secondfindbright.c_str());
+			mConstValues.insert(make_pair("tw_secondary_brightness_file", secondfindbright));
+		} else {
+			LOGINFO("Specified secondary brightness file '%s' not found.\n", secondfindbright.c_str());
+		}
+#endif
+		string max_bright = maxVal.str();
+		TWFunc::Set_Brightness(max_bright);
 	}
 #endif
 	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("0", 1)));
@@ -984,6 +996,15 @@ void DataManager::SetDefaultValues()
 #else
 	LOGINFO("TW_EXCLUDE_ENCRYPTED_BACKUPS := true\n");
 	mValues.insert(make_pair("tw_include_encrypted_backup", make_pair("0", 0)));
+#endif
+#ifdef TW_HAS_MTP
+	mConstValues.insert(make_pair("tw_has_mtp", "1"));
+	mValues.insert(make_pair("tw_mtp_enabled", make_pair("1", 1)));
+	mValues.insert(make_pair("tw_mtp_debug", make_pair("0", 1)));
+#else
+	LOGINFO("TW_EXCLUDE_MTP := true\n");
+	mConstValues.insert(make_pair("tw_has_mtp", "0"));
+	mConstValues.insert(make_pair("tw_mtp_enabled", "0"));
 #endif
 
 #if defined(TW_HAS_LANDSCAPE) && defined(TW_DEFAULT_ROTATION)
@@ -1149,10 +1170,8 @@ void DataManager::ReadSettingsFile(void)
 	PartitionManager.Mount_All_Storage();
 	update_tz_environment_variables();
 #ifdef TW_MAX_BRIGHTNESS
-	if (strcmp(EXPAND(TW_BRIGHTNESS_PATH), "/nobrightness") != 0) {
-		string brightness_path = EXPAND(TW_BRIGHTNESS_PATH);
-		string brightness_value = GetStrValue("tw_brightness");
-		TWFunc::write_file(brightness_path, brightness_value);
+	if (GetStrValue("tw_brightness_path") != "/nobrightness") {
+		TWFunc::Set_Brightness(GetStrValue("tw_brightness"));
 	}
 #endif
 }

@@ -350,6 +350,7 @@ protected:
 	int mSlideout;
 	SlideoutState mSlideoutState;
 	std::vector<std::string> rConsole;
+	std::vector<std::string> rConsoleColor;
 	bool mRender;
 
 protected:
@@ -1001,7 +1002,11 @@ protected:
 	int mFontHeight;
 	GUIAction *mAction;
 	bool mChangeOnDrag;
-	int lineW;
+	int mLineW;
+	bool mDragging;
+	Resource *mBackgroundImage;
+	Resource *mHandleImage;
+	Resource *mHandleHoverImage;
 };
 
 class MouseCursor : public RenderObject

@@ -42,7 +42,7 @@ private:
 	void setConBlank(int blank);
 	void setTimer(void);
 	timespec getTimer(void);
-	int getBrightness(void);
+	string getBrightness(void);
 	int setBrightness(int brightness);
 	int setBlankTimer(void);
 	int setClockTimer(void);
@@ -52,7 +52,7 @@ private:
 	int conblank;
 	timespec btimer;
 	unsigned long long sleepTimer;
-	int orig_brightness;
+	string orig_brightness;
 	bool screenoff;
 };
 
