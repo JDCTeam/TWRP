@@ -185,7 +185,7 @@ TWPartition *TWPartition::makePartFromFstab(const char *fmt, ...)
 	vsnprintf(line, sizeof(line), fmt, ap);
 	va_end(ap);
 
-	return new TWPartition(line);
+	return new TWPartition(NULL, line);
 }
 
 bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
@@ -454,7 +454,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 	}
 
 	// Generate MTP ID
-	if (Is_Storage) {
+	if (Is_Storage && initmtpid) {
 		(*initmtpid)++;
 		mtpid = *initmtpid;
 	}

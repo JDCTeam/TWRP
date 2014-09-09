@@ -843,7 +843,7 @@ static void * console_thread(void *cookie)
 		doRenderIteration();
 
 	gGuiConsoleRunning = 0;
-	gForceRender = 1; // this will kickstart the GUI to render again
+	gui_forceRender();
 	PageManager::EndConsole();
 	LOGINFO("Console stopping\n");
 	return NULL;
