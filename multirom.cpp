@@ -1282,6 +1282,8 @@ std::string MultiROM::getNewRomName(std::string zip, std::string def)
 	if(name.size() > MAX_ROM_NAME)
 		name.resize(MAX_ROM_NAME);
 
+	TWFunc::trim(name);
+
 	DIR *d = opendir(getRomsPath().c_str());
 	if(!d)
 		return "";
@@ -1401,7 +1403,7 @@ bool MultiROM::createDirs(std::string name, int type)
 	std::string base = getRomsPath() + "/" + name;
 	if(mkdir(base.c_str(), 0777) < 0)
 	{
-		gui_print("Failed to create ROM folder!\n");
+		gui_print("Failed to create ROM folder \"%s\" (%s)!\n", base.c_str(), strerror(errno));
 		return false;
 	}
 

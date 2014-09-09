@@ -35,6 +35,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <ctype.h>
 #include "twrp-functions.hpp"
 #include "twcommon.h"
 #ifndef BUILD_TWRPTAR_MAIN
@@ -1381,6 +1382,24 @@ void TWFunc::stringReplace(std::string& str, char before, char after)
 		if(c == before)
 			c = after;
 	}
+}
+
+void TWFunc::trim(std::string& str)
+{
+	size_t start = 0, len;
+	for(size_t i = 0; i < str.size() && isspace(str[i]); ++i)
+		++start;
+
+	if(start >= str.size())
+	{
+		str = "";
+		return;
+	}
+
+	len = str.size() - start;
+	for(size_t i = str.size() - 1; i > start && isspace(str[i]); --i)
+		--len;
+	str = str.substr(start, len);
 }
 
 #ifdef HAVE_SELINUX

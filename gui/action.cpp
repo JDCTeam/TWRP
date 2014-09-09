@@ -852,7 +852,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 	if (function == "multirom_rename")
 	{
-		MultiROM::move(DataManager::GetStrValue("tw_multirom_rom_name"), arg);
+		std::string new_name = arg;
+		TWFunc::trim(new_name);
+		MultiROM::move(DataManager::GetStrValue("tw_multirom_rom_name"), new_name);
 		return gui_changePage("multirom_list");
 	}
 

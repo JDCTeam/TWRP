@@ -93,6 +93,7 @@ public:
 	static std::string getZIPThemePath(int rotation);
 	static std::string getROMName();
 	static void stringReplace(std::string& str, char before, char after);
+	static void trim(std::string& str);
 #ifdef HAVE_SELINUX
 	static bool restorecon(const std::string& path, struct selabel_handle *sh);
 #endif
