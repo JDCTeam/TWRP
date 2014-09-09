@@ -144,8 +144,6 @@ $(TWRP_RES_GEN):
 	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
 	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
 	cp -fr $(TWRP_DEV_LOC)$(LANDSCAPE_RESOLUTION)/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
-	$(TWRP_DEV_LOC)/process_includes.sh $(TWRP_THEME_LOC)/ui.xml $(TARGET_RECOVERY_ROOT_OUT)/res/ui.xml
-	$(TWRP_DEV_LOC)/process_includes.sh $(TWRP_DEV_LOC)/$(LANDSCAPE_RESOLUTION)/res/ui.xml $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/ui.xml
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
 	ln -sf $(TWRP_SH_TARGET) $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
