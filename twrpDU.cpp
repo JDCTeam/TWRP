@@ -86,7 +86,7 @@ uint64_t twrpDU::Get_Folder_Size(const string& Path) {
 			LOGERR("Unable to stat '%s'\n", FullPath.c_str());
 			continue;
 		}
-		if ((st.st_mode & S_IFDIR) && !check_skip_dirs(FullPath) && de->d_type != DT_SOCK) {
+		if (S_ISDIR(st.st_mode) && !check_skip_dirs(FullPath) && de->d_type != DT_SOCK) {
 			dusize += Get_Folder_Size(FullPath);
 		} else if (st.st_mode & S_IFREG) {
 			dusize += (uint64_t)(st.st_size);
