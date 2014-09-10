@@ -38,6 +38,11 @@
 #include "twrpDigest.hpp"
 #include "twrpDU.hpp"
 
+#ifdef TW_HAS_MTP
+#include "mtp/mtp_MtpServer.hpp"
+#include "mtp/twrpMtp.hpp"
+#endif
+
 extern "C" {
 	#include "cutils/properties.h"
 }
@@ -51,6 +56,8 @@ extern "C" {
 #endif
 
 TWPartitionManager::TWPartitionManager(void) {
+	mtpid = 100;
+	mtp_was_enabled = false;
 }
 
 int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error) {
@@ -71,8 +78,7 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 
 		if (fstab_line[strlen(fstab_line) - 1] != '\n')
 			fstab_line[strlen(fstab_line)] = '\n';
-
-		TWPartition* partition = new TWPartition();
+		TWPartition* partition = new TWPartition(&mtpid);
 		string line = fstab_line;
 		memset(fstab_line, 0, sizeof(fstab_line));
 
@@ -604,6 +610,7 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part, string Backup_Folde
 	unsigned long total_time, remain_time, section_time;
 	int use_compression, backup_time;
 	float pos;
+	unsigned long long total_size, current_size;
 
 	if (Part == NULL)
 		return true;
@@ -620,7 +627,10 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part, string Backup_Folde
 	total_time = (*img_bytes / (unsigned long)img_bps) + (*file_bytes / (unsigned long)file_bps);
 	remain_time = (*img_bytes_remaining / (unsigned long)img_bps) + (*file_bytes_remaining / (unsigned long)file_bps);
 
-	pos = (total_time - remain_time) / (float) total_time;
+	//pos = (total_time - remain_time) / (float) total_time;
+	total_size = *file_bytes + *img_bytes;
+	current_size = *file_bytes + *img_bytes - *file_bytes_remaining - *img_bytes_remaining;
+	pos = ((float)(current_size) / (float)(total_size));
 	DataManager::SetProgress(pos);
 
 	LOGINFO("Estimated total time: %lu\nEstimated remaining time: %lu\n", total_time, remain_time);
@@ -633,17 +643,20 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part, string Backup_Folde
 
 	// Set the position
 	pos = section_time / (float) total_time;
-	DataManager::ShowProgress(pos, section_time);
+	//DataManager::ShowProgress(pos, section_time);
 
 	time(&start);
 
-	if (Part->Backup(Backup_Folder)) {
+	if (Part->Backup(Backup_Folder, &total_size, &current_size)) {
+		current_size += Part->Backup_Size;
+		pos = (float)((float)(current_size) / (float)(total_size));
+		DataManager::SetProgress(pos);
 		if (Part->Has_SubPartition) {
 			std::vector<TWPartition*>::iterator subpart;
 
 			for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
 				if ((*subpart)->Can_Be_Backed_Up && (*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == Part->Mount_Point) {
-					if (!(*subpart)->Backup(Backup_Folder))
+					if (!(*subpart)->Backup(Backup_Folder, &total_size, &current_size))
 						return false;
 					sync();
 					sync();
@@ -654,6 +667,9 @@ bool TWPartitionManager::Backup_Partition(TWPartition* Part, string Backup_Folde
 					} else {
 						*img_bytes_remaining -= (*subpart)->Backup_Size;
 					}
+					current_size += Part->Backup_Size;
+					pos = (float)(current_size / total_size);
+					DataManager::SetProgress(pos);
 				}
 			}
 		}
@@ -832,24 +848,24 @@ int TWPartitionManager::Run_Backup(void) {
 	gui_print("[%llu MB TOTAL BACKED UP]\n", actual_backup_size);
 	Update_System_Details();
 	UnMount_Main_Partitions();
-	gui_print("[BACKUP COMPLETED IN %d SECONDS]\n\n", total_time); // the end
+	gui_print_color("highlight", "[BACKUP COMPLETED IN %d SECONDS]\n\n", total_time); // the end
 	string backup_log = Full_Backup_Path + "recovery.log";
 	TWFunc::copy_file("/tmp/recovery.log", backup_log, 0644);
 	return true;
 }
 
-bool TWPartitionManager::Restore_Partition(TWPartition* Part, string Restore_Name, int partition_count) {
+bool TWPartitionManager::Restore_Partition(TWPartition* Part, string Restore_Name, int partition_count, const unsigned long long *total_restore_size, unsigned long long *already_restored_size) {
 	time_t Start, Stop;
 	time(&Start);
-	DataManager::ShowProgress(1.0 / (float)partition_count, 150);
-	if (!Part->Restore(Restore_Name))
+	//DataManager::ShowProgress(1.0 / (float)partition_count, 150);
+	if (!Part->Restore(Restore_Name, total_restore_size, already_restored_size))
 		return false;
 	if (Part->Has_SubPartition) {
 		std::vector<TWPartition*>::iterator subpart;
 
 		for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
 			if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == Part->Mount_Point) {
-				if (!(*subpart)->Restore(Restore_Name))
+				if (!(*subpart)->Restore(Restore_Name, total_restore_size, already_restored_size))
 					return false;
 			}
 		}
@@ -866,6 +882,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	time(&rStart);
 	string Restore_List, restore_path;
 	size_t start_pos = 0, end_pos;
+	unsigned long long total_restore_size = 0, already_restored_size = 0;
 
 	gui_print("\n[RESTORE STARTED]\n\n");
 	gui_print("Restore folder: '%s'\n", Restore_Name.c_str());
@@ -881,6 +898,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	} else {
 		gui_print("Skipping MD5 check based on user setting.\n");
 	}
+	gui_print("Calculating restore details...\n");
 	DataManager::GetValue("tw_restore_selected", Restore_List);
 	if (!Restore_List.empty()) {
 		end_pos = Restore_List.find(";", start_pos);
@@ -891,6 +909,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 				partition_count++;
 				if (check_md5 > 0 && !restore_part->Check_MD5(Restore_Name))
 					return false;
+				total_restore_size += restore_part->Get_Restore_Size(Restore_Name);
 				if (restore_part->Has_SubPartition) {
 					std::vector<TWPartition*>::iterator subpart;
 
@@ -898,6 +917,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 						if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == restore_part->Mount_Point) {
 							if (check_md5 > 0 && !(*subpart)->Check_MD5(Restore_Name))
 								return false;
+							total_restore_size += (*subpart)->Get_Restore_Size(Restore_Name);
 						}
 					}
 				}
@@ -915,7 +935,9 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	}
 
 	gui_print("Restoring %i partitions...\n", partition_count);
+	gui_print("Total restore size is %lluMB\n", total_restore_size / 1048576);
 	DataManager::SetProgress(0.0);
+
 	start_pos = 0;
 	if (!Restore_List.empty()) {
 		end_pos = Restore_List.find(";", start_pos);
@@ -924,7 +946,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 			restore_part = Find_Partition_By_Path(restore_path);
 			if (restore_part != NULL) {
 				partition_count++;
-				if (!Restore_Partition(restore_part, Restore_Name, partition_count))
+				if (!Restore_Partition(restore_part, Restore_Name, partition_count, &total_restore_size, &already_restored_size))
 					return false;
 			} else {
 				LOGERR("Unable to locate '%s' partition for restoring.\n", restore_path.c_str());
@@ -937,7 +959,8 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	Update_System_Details();
 	UnMount_Main_Partitions();
 	time(&rStop);
-	gui_print("[RESTORE COMPLETED IN %d SECONDS]\n\n",(int)difftime(rStop,rStart));
+	gui_print_color("highlight", "[RESTORE COMPLETED IN %d SECONDS]\n\n",(int)difftime(rStop,rStart));
+	DataManager::SetValue("tw_file_progress", "");
 	return true;
 }
 
@@ -1285,14 +1308,24 @@ int TWPartitionManager::Wipe_Media_From_Data(void) {
 			return false;
 
 		gui_print("Wiping internal storage -- /data/media...\n");
+		mtp_was_enabled = TWFunc::Toggle_MTP(false);
 		TWFunc::removeDir("/data/media", false);
-		if (mkdir("/data/media", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0)
-			return -1;
+		if (mkdir("/data/media", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0) {
+			if (mtp_was_enabled) {
+				if (!Enable_MTP())
+					Disable_MTP();
+			}
+			return false;
+		}
 		if (dat->Has_Data_Media) {
 			dat->Recreate_Media_Folder();
 			// Unmount and remount - slightly hackish way to ensure that the "/sdcard" folder is still mounted properly after wiping
 			dat->UnMount(false);
 			dat->Mount(false);
+		}
+		if (mtp_was_enabled) {
+			if (!Enable_MTP())
+				Disable_MTP();
 		}
 		return true;
 	} else {
@@ -1730,20 +1763,22 @@ int TWPartitionManager::usb_storage_enable(void) {
 		if (TWFunc::Path_Exists(lun_file))
 			has_multiple_lun = true;
 	}
+	mtp_was_enabled = TWFunc::Toggle_MTP(false);
 	if (!has_multiple_lun) {
 		LOGINFO("Device doesn't have multiple lun files, mount current storage\n");
 		sprintf(lun_file, CUSTOM_LUN_FILE, 0);
 		if (TWFunc::Get_Root_Path(DataManager::GetCurrentStoragePath()) == "/data") {
 			TWPartition* Mount = Find_Next_Storage("", "/data");
 			if (Mount) {
-				if (!Open_Lun_File(Mount->Mount_Point, lun_file))
-					return false;
+				if (!Open_Lun_File(Mount->Mount_Point, lun_file)) {
+					goto error_handle;
+				}
 			} else {
 				LOGERR("Unable to find storage partition to mount to USB\n");
-				return false;
+				goto error_handle;
 			}
 		} else if (!Open_Lun_File(DataManager::GetCurrentStoragePath(), lun_file)) {
-			return false;
+			goto error_handle;
 		}
 	} else {
 		LOGINFO("Device has multiple lun files\n");
@@ -1752,8 +1787,9 @@ int TWPartitionManager::usb_storage_enable(void) {
 		sprintf(lun_file, CUSTOM_LUN_FILE, 0);
 		Mount1 = Find_Next_Storage("", "/data");
 		if (Mount1) {
-			if (!Open_Lun_File(Mount1->Mount_Point, lun_file))
-				return false;
+			if (!Open_Lun_File(Mount1->Mount_Point, lun_file)) {
+				goto error_handle;
+			}
 			sprintf(lun_file, CUSTOM_LUN_FILE, 1);
 			Mount2 = Find_Next_Storage(Mount1->Mount_Point, "/data");
 			if (Mount2) {
@@ -1761,11 +1797,16 @@ int TWPartitionManager::usb_storage_enable(void) {
 			}
 		} else {
 			LOGERR("Unable to find storage partition to mount to USB\n");
-			return false;
+			goto error_handle;
 		}
 	}
 	property_set("sys.storage.ums_enabled", "1");
 	return true;
+error_handle:
+	if (mtp_was_enabled)
+		if (!Enable_MTP())
+			Disable_MTP();
+	return false;
 }
 
 int TWPartitionManager::usb_storage_disable(void) {
@@ -1784,6 +1825,9 @@ int TWPartitionManager::usb_storage_disable(void) {
 	Update_System_Details();
 	UnMount_Main_Partitions();
 	property_set("sys.storage.ums_enabled", "0");
+	if (mtp_was_enabled)
+		if (!Enable_MTP())
+			Disable_MTP();
 	if (ret < 0 && index == 0) {
 		LOGERR("Unable to write to ums lunfile '%s'.", lun_file);
 		return false;
@@ -2117,6 +2161,80 @@ TWPartition *TWPartitionManager::Get_Default_Storage_Partition()
 			res = *iter;
 	}
 	return res;
+}
+
+bool TWPartitionManager::Enable_MTP(void) {
+#ifdef TW_HAS_MTP
+	if (mtppid) {
+		LOGERR("MTP already enabled\n");
+		return true;
+	}
+	//Launch MTP Responder
+	LOGINFO("Starting MTP\n");
+	char vendor[PROPERTY_VALUE_MAX];
+	char product[PROPERTY_VALUE_MAX];
+	int count = 0;
+	property_set("sys.usb.config", "none");
+	property_get("usb.vendor", vendor, "18D1");
+	property_get("usb.product.mtpadb", product, "4EE2");
+	string vendorstr = vendor;
+	string productstr = product;
+	TWFunc::write_file("/sys/class/android_usb/android0/idVendor", vendorstr);
+	TWFunc::write_file("/sys/class/android_usb/android0/idProduct", productstr);
+	property_set("sys.usb.config", "mtp,adb");
+	std::vector<TWPartition*>::iterator iter;
+	/* To enable MTP debug, use the twrp command line feature to
+	 * twrp set tw_mtp_debug 1
+	 */
+	twrpMtp *mtp = new twrpMtp(DataManager::GetIntValue("tw_mtp_debug"));
+	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+		if ((*iter)->Is_Storage && (*iter)->Is_Present && (*iter)->Mount(false)) {
+			printf("twrp mtpid: %d\n", (*iter)->mtpid);
+			mtp->addStorage((*iter)->Storage_Name, (*iter)->Storage_Path, (*iter)->mtpid);
+			count++;
+		}
+	}
+	if (count) {
+		mtppid = mtp->forkserver();
+		if (mtppid) {
+			DataManager::SetValue("tw_mtp_enabled", 1);
+			return true;
+		} else {
+			LOGERR("Failed to enable MTP\n");
+			return false;
+		}
+	}
+	LOGERR("No valid storage partitions found for MTP.\n");
+#else
+	LOGERR("MTP support not included\n");
+#endif
+	DataManager::SetValue("tw_mtp_enabled", 0);
+	return false;
+}
+
+bool TWPartitionManager::Disable_MTP(void) {
+#ifdef TW_HAS_MTP
+	char vendor[PROPERTY_VALUE_MAX];
+	char product[PROPERTY_VALUE_MAX];
+	property_set("sys.usb.config", "none");
+	property_get("usb.vendor", vendor, "18D1");
+	property_get("usb.product.adb", product, "D002");
+	string vendorstr = vendor;
+	string productstr = product;
+	TWFunc::write_file("/sys/class/android_usb/android0/idVendor", vendorstr);
+	TWFunc::write_file("/sys/class/android_usb/android0/idProduct", productstr);
+	if (mtppid) {
+		kill(mtppid, SIGTERM);
+		mtppid = 0;
+	}
+	property_set("sys.usb.config", "adb");
+	DataManager::SetValue("tw_mtp_enabled", 0);
+	return true;
+#else
+	LOGERR("MTP support not included\n");
+	DataManager::SetValue("tw_mtp_enabled", 0);
+	return false;
+#endif
 }
 
 bool TWPartitionManager::Push_Context()

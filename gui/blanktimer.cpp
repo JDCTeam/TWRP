@@ -97,11 +97,11 @@ int  blanktimer::setClockTimer(void) {
 		if (sleepTimer > 2 && diff.tv_sec > (sleepTimer - 2) && conblank == 0) {
 			orig_brightness = getBrightness();
 			setConBlank(1);
-			setBrightness(5);
+			TWFunc::Set_Brightness("5");
 		}
 		if (sleepTimer && diff.tv_sec > sleepTimer && conblank < 2) {
 			setConBlank(2);
-			setBrightness(0);
+			TWFunc::Set_Brightness("0");
 			screenoff = true;
 			TWFunc::check_and_run_script("/sbin/postscreenblank.sh", "blank");
 			PageManager::ChangeOverlay("lock");
@@ -121,42 +121,23 @@ void blanktimer::blankScreen()
 	{
 		orig_brightness = getBrightness();
 		setConBlank(2);
-		setBrightness(0);
+		TWFunc::Set_Brightness("0");
 		PageManager::ChangeOverlay("lock");
 	}
 }
 
-int blanktimer::getBrightness(void) {
-	string results;
+string blanktimer::getBrightness(void) {
+	string result;
 	string brightness_path;
 	DataManager::GetValue("tw_brightness_file", brightness_path);
-	if ((TWFunc::read_file(brightness_path, results)) != 0)
-		return -1;
-	int result = atoi(results.c_str());
-	if (result == 0) {
-		int tw_brightness;
-		DataManager::GetValue("tw_brightness", tw_brightness);
-		if (tw_brightness) {
-			result = tw_brightness;
-		} else {
-			result = 255;
-		}
+	if (brightness_path == "/nobrightness")
+		return brightness_path;
+	DataManager::GetValue("tw_brightness", result);
+	if (result == "") {
+		result = "255";
 	}
 	return result;
 
-}
-
-int blanktimer::setBrightness(int brightness) {
-	string brightness_path;
-	string bstring;
-	char buff[100];
-	DataManager::GetValue("tw_brightness_file", brightness_path);
-	sprintf(buff, "%d", brightness);
-	bstring = buff;
-	if ((TWFunc::write_file(brightness_path, bstring)) != 0)
-		return -1;
-	gui_forceRender();
-	return 0;
 }
 
 void blanktimer::resetTimerAndUnblank(void) {
@@ -176,7 +157,8 @@ void blanktimer::resetTimerAndUnblank(void) {
 			screenoff = false;
 			// No break here, we want to keep going
 		case 1:
-			setBrightness(orig_brightness);
+			if (orig_brightness != "/nobrightness")
+				TWFunc::Set_Brightness(orig_brightness);
 			setConBlank(0);
 			break;
 	}

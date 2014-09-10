@@ -167,11 +167,33 @@ static int vk_init(struct ev *e)
     printf("Event object: %s\n", e->deviceName);
 #endif
 
-    // Blacklist these "input" devices
-    if (strcmp(e->deviceName, "bma250") == 0 || strcmp(e->deviceName, "bma150") == 0 || strcmp(e->deviceName, "accelerometer") == 0)
+#ifdef WHITELIST_INPUT
+    if (strcmp(e->deviceName, EXPAND(WHITELIST_INPUT)) != 0)
     {
         e->ignored = 1;
     }
+#else
+#ifndef TW_INPUT_BLACKLIST
+    // Blacklist these "input" devices
+    if (strcmp(e->deviceName, "bma250") == 0 || strcmp(e->deviceName, "bma150") == 0)
+    {
+        printf("blacklisting %s input device\n", e->deviceName);
+        e->ignored = 1;
+    }
+#else
+    char* bl = strdup(EXPAND(TW_INPUT_BLACKLIST));
+    char* blacklist = strtok(bl, "\n");
+
+    while (blacklist != NULL) {
+        if (strcmp(e->deviceName, blacklist) == 0) {
+            printf("blacklisting %s input device\n", blacklist);
+            e->ignored = 1;
+        }
+        blacklist = strtok(NULL, "\n");
+    }
+    free(bl);
+#endif
+#endif
 
     strcat(vk_path, e->deviceName);
 

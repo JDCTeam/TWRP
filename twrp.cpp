@@ -1,6 +1,4 @@
 /*
-
-ccdd
 		TWRP is free software: you can redistribute it and/or modify
 		it under the terms of the GNU General Public License as published by
 		the Free Software Foundation, either version 3 of the License, or
@@ -80,6 +78,15 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
+	char crash_prop_val[PROPERTY_VALUE_MAX];
+	int crash_counter;
+	property_get("twrp.crash_counter", crash_prop_val, "-1");
+	crash_counter = atoi(crash_prop_val) + 1;
+	snprintf(crash_prop_val, sizeof(crash_prop_val), "%d", crash_counter);
+	property_set("twrp.crash_counter", crash_prop_val);
+	property_set("ro.twrp.boot", "1");
+	property_set("ro.twrp.version", TW_VERSION_STR);
+
 	time_t StartupTime = time(NULL);
 	printf("Starting TWRP %s on %s", TW_VERSION_STR, ctime(&StartupTime));
 
@@ -149,14 +156,14 @@ int main(int argc, char **argv) {
 			lgetfilecon("/sbin/teamwin", &contexts);
 		}
 		if (!contexts) {
-			gui_print("Kernel does not have support for reading SELinux contexts.\n");
+			gui_print_color("warning", "Kernel does not have support for reading SELinux contexts.\n");
 		} else {
 			free(contexts);
 			gui_print("Full SELinux support is present.\n");
 		}
 	}
 #else
-	gui_print("No SELinux support (no libselinux).\n");
+	gui_print_color("warning", "No SELinux support (no libselinux).\n");
 #endif
 
 	PartitionManager.Mount_By_Path("/cache", true);
@@ -218,14 +225,14 @@ int main(int argc, char **argv) {
 				}
 			}
 		}
+		printf("\n");
 	}
 
-	char twrp_booted[PROPERTY_VALUE_MAX];
-	property_get("ro.twrp.boot", twrp_booted, "0");
-	if (strcmp(twrp_booted, "0") == 0) {
+	if(crash_counter == 0) {
 		property_list(Print_Prop, NULL);
 		printf("\n");
-		property_set("ro.twrp.boot", "1");
+	} else {
+		printf("twrp.crash_counter=%d\n", crash_counter);
 	}
 
 	// Check for and run startup script if script exists
@@ -277,12 +284,20 @@ int main(int argc, char **argv) {
 	}
 
 	// Read the settings file
+#ifdef TW_HAS_MTP
+	// We unmount partitions sometimes during early boot which may override
+	// the default of MTP being enabled by auto toggling MTP off. This
+	// will force it back to enabled then get overridden by the settings
+	// file, assuming that an entry for tw_mtp_enabled is set.
+	DataManager::SetValue("tw_mtp_enabled", 1);
+#endif
 	DataManager::ReadSettingsFile();
 
 	gui_rotate(DataManager::GetIntValue(TW_ROTATION));
 
 	// Fixup the RTC clock on devices which require it
-	TWFunc::Fixup_Time_On_Boot();
+	if(crash_counter == 0)
+		TWFunc::Fixup_Time_On_Boot();
 
 	// Run any outstanding OpenRecoveryScript
 	if(DataManager::GetIntValue(TW_IS_ENCRYPTED) == 0)
@@ -293,13 +308,41 @@ int main(int argc, char **argv) {
 			MultiROM::executeCacheScripts();
 	}
 
+#ifdef TW_HAS_MTP
+	// Enable MTP?
+	char mtp_crash_check[PROPERTY_VALUE_MAX];
+	property_get("mtp.crash_check", mtp_crash_check, "0");
+	if (strcmp(mtp_crash_check, "0") == 0) {
+		property_set("mtp.crash_check", "1");
+		if (DataManager::GetIntValue(TW_IS_ENCRYPTED) != 0) {
+			if (DataManager::GetIntValue(TW_IS_DECRYPTED) != 0 && DataManager::GetIntValue("tw_mtp_enabled") == 1) {
+				LOGINFO("Enabling MTP during startup\n");
+				if (!PartitionManager.Enable_MTP())
+					PartitionManager.Disable_MTP();
+				else
+					gui_print("MTP Enabled\n");
+			}
+		} else if (DataManager::GetIntValue("tw_mtp_enabled") == 1) {
+			LOGINFO("Enabling MTP during startup\n");
+			if (!PartitionManager.Enable_MTP())
+				PartitionManager.Disable_MTP();
+			else
+				gui_print("MTP Enabled\n");
+		}
+		property_set("mtp.crash_check", "0");
+	} else {
+		gui_print_color("warning", "MTP Crashed, not starting MTP on boot.\n");
+		DataManager::SetValue("tw_mtp_enabled", 0);
+	}
+#endif
+
 	// Launch the main GUI
 	gui_start();
 
 	// Check for su to see if the device is rooted or not
 	if (PartitionManager.Mount_By_Path("/system", false)) {
 		// Disable flashing of stock recovery
-		if (TWFunc::Path_Exists("/system/recovery-from-boot.p")) {
+		if (TWFunc::Path_Exists("/system/recovery-from-boot.p") && TWFunc::Path_Exists("/system/etc/install-recovery.sh")) {
 			rename("/system/recovery-from-boot.p", "/system/recovery-from-boot.bak");
 			gui_print("Renamed stock recovery file in /system to prevent\nthe stock ROM from replacing TWRP.\n");
 		}
