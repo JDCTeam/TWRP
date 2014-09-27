@@ -948,16 +948,86 @@
 				<text>MultiROM - settings - autoboot</text>
 			</object>
 
-			<object type="checkbox">
-				<placement x="%col1_x%" y="%row1_text_y%" />
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="0" />
+				<placement x="%col1_medium_x%" y="%row1_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>Enable auto-boot</text>
-				<data variable="tw_multirom_enable_auto_boot" />
-				<image checked="checkbox_true" unchecked="checkbox_false" />
+				<text>Disabled</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_trigger=0</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!=" />
+				<placement x="%col1_medium_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Disabled</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_trigger=0</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="1" />
+				<placement x="%col2_medium_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Time-based</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_trigger=1</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="1" op="!=" />
+				<placement x="%col2_medium_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Time-based</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_trigger=1</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="2" />
+				<placement x="%col2_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Keypress-based</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_trigger=2</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="2" op="!=" />
+				<placement x="%col2_x%" y="%row1_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Keypress-based</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_auto_boot_trigger=2</action>
+					<action function="page">multirom_settings_autoboot</action>
+				</actions>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="1" />
 				<placement x="%col1_x%" y="%row3_text_y%" />
 				<font resource="font"/>
 				<text>Delay: </text>
@@ -965,8 +1035,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
-				<condition var1="tw_multirom_delay" op=">" var2="1" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="1" />
+					<condition var1="tw_multirom_delay" op=">" var2="1" />
+				</conditions>
 				<placement x="%col2_medium_x%" y="%row2_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>-</text>
@@ -978,7 +1050,7 @@
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="1" />
 				<placement x="%mrom_boot_delay_sec_x%" y="%row3_text_y%" />
 				<font resource="font"/>
 				<text>%tw_multirom_delay%s</text>
@@ -986,7 +1058,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="1" />
 				<placement x="%mrom_boot_delay_add_x%" y="%row2_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>+</text>
@@ -998,7 +1070,21 @@
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+				<condition var1="tw_multirom_auto_boot_trigger" var2="2" />
+				<font resource="font" />
+				<placement x="%center_x%" y="%row2_text_y%" placement="5" />
+				<text>Press and hold volume up or down</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_auto_boot_trigger" var2="2" />
+				<font resource="font" />
+				<placement x="%center_x%" y="%row3_text_y%" placement="5" />
+				<text>during boot to enter the MultiROM menu.</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
 				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font"/>
 				<text>Type:</text>
@@ -1006,7 +1092,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_auto_boot_type" var2="0" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
+					<condition var1="tw_multirom_auto_boot_type" var2="0" />
+				</conditions>
 				<placement x="%col2_medium_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Select ROM</text>
@@ -1019,7 +1108,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_auto_boot_type" var2="0" op="!=" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
+					<condition var1="tw_multirom_auto_boot_type" var2="0" op="!=" />
+				</conditions>
 				<placement x="%col2_medium_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Select ROM</text>
@@ -1032,7 +1124,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!=" />
+					<condition var1="tw_multirom_auto_boot_type" var2="1"/>
+				</conditions>
 				<placement x="%col2_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Use last booted ROM</text>
@@ -1045,7 +1140,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<condition var1="tw_multirom_auto_boot_type" var2="1" op="!=" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
+					<condition var1="tw_multirom_auto_boot_type" var2="1" op="!=" />
+				</conditions>
 				<placement x="%col2_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>Use last booted ROM</text>
@@ -1058,7 +1156,7 @@
 
 			<object type="listbox">
 				<conditions>
-					<condition var1="tw_multirom_enable_auto_boot" var2="1" />
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
 					<condition var1="tw_multirom_auto_boot_type" var2="0" />
 				</conditions>
 				<highlight color="%fileselector_highlight_color%" />
@@ -1075,28 +1173,40 @@
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
+					<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				</conditions>
 				<font resource="font" />
 				<placement x="%center_x%" y="%row7_text_y%" placement="5" />
 				<text>MultiROM will remember the last ROM</text>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
+					<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				</conditions>
 				<font resource="font" />
 				<placement x="%center_x%" y="%row8_text_y%" placement="5" />
 				<text>you've booted and auto-boot it on next</text>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
+					<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				</conditions>
 				<font resource="font" />
 				<placement x="%center_x%" y="%row9_text_y%" placement="5" />
 				<text>reboot, unless you select different one.</text>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				<conditions>
+					<condition var1="tw_multirom_auto_boot_trigger" var2="0" op="!="/>
+					<condition var1="tw_multirom_auto_boot_type" var2="1" />
+				</conditions>
 				<font resource="font" />
 				<placement x="%center_x%" y="%row10_text_y%" placement="5" />
 				<text>Only works with ROMs in internal memory.</text>

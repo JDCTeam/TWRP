@@ -888,14 +888,21 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	if (function == "multirom_settings")
 	{
 		MultiROM::config cfg = MultiROM::loadConfig();
-		DataManager::SetValue("tw_multirom_enable_auto_boot", cfg.auto_boot_seconds > 0);
+
+		if(cfg.auto_boot_type & MROM_AUTOBOOT_CHECK_KEYS)
+			DataManager::SetValue("tw_multirom_auto_boot_trigger", MROM_AUTOBOOT_TRIGGER_KEYS);
+		else if(cfg.auto_boot_seconds > 0)
+			DataManager::SetValue("tw_multirom_auto_boot_trigger", MROM_AUTOBOOT_TRIGGER_TIME);
+		else
+			DataManager::SetValue("tw_multirom_auto_boot_trigger", MROM_AUTOBOOT_TRIGGER_DISABLED);
+
 		if(cfg.auto_boot_seconds <= 0)
 			DataManager::SetValue("tw_multirom_delay", 5);
 		else
 			DataManager::SetValue("tw_multirom_delay", cfg.auto_boot_seconds);
 		DataManager::SetValue("tw_multirom_current", cfg.current_rom);
 		DataManager::SetValue("tw_multirom_auto_boot_rom", cfg.auto_boot_rom);
-		DataManager::SetValue("tw_multirom_auto_boot_type", cfg.auto_boot_type);
+		DataManager::SetValue("tw_multirom_auto_boot_type", (cfg.auto_boot_type & MROM_AUTOBOOT_LAST));
 		DataManager::SetValue("tw_multirom_colors", cfg.colors);
 		DataManager::SetValue("tw_multirom_brightness", cfg.brightness);
 		DataManager::SetValue("tw_multirom_enable_adb", cfg.enable_adb);
@@ -915,12 +922,20 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	{
 		MultiROM::config cfg;
 		cfg.current_rom = DataManager::GetStrValue("tw_multirom_current");
-		if(DataManager::GetIntValue("tw_multirom_enable_auto_boot"))
-			cfg.auto_boot_seconds = DataManager::GetIntValue("tw_multirom_delay");
-		else
-			cfg.auto_boot_seconds = 0;
-		cfg.auto_boot_rom = DataManager::GetStrValue("tw_multirom_auto_boot_rom");
 		cfg.auto_boot_type = DataManager::GetIntValue("tw_multirom_auto_boot_type");
+		switch(DataManager::GetIntValue("tw_multirom_auto_boot_trigger"))
+		{
+			case MROM_AUTOBOOT_TRIGGER_DISABLED:
+				cfg.auto_boot_seconds = 0;
+				break;
+			case MROM_AUTOBOOT_TRIGGER_TIME:
+				cfg.auto_boot_seconds = DataManager::GetIntValue("tw_multirom_delay");
+				break;
+			case MROM_AUTOBOOT_TRIGGER_KEYS:
+				cfg.auto_boot_type |= MROM_AUTOBOOT_CHECK_KEYS;
+				break;
+		}
+		cfg.auto_boot_rom = DataManager::GetStrValue("tw_multirom_auto_boot_rom");
 		cfg.colors = DataManager::GetIntValue("tw_multirom_colors");
 		cfg.brightness = DataManager::GetIntValue("tw_multirom_brightness");
 		cfg.enable_adb = DataManager::GetIntValue("tw_multirom_enable_adb");

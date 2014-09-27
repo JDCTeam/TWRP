@@ -83,6 +83,13 @@ enum
 #define MROM_SWAP_COPY_INTERNAL  2
 #define MROM_SWAP_MOVE_INTERNAL  3
 
+#define MROM_AUTOBOOT_LAST       0x01
+#define MROM_AUTOBOOT_CHECK_KEYS 0x04
+
+#define MROM_AUTOBOOT_TRIGGER_DISABLED 0
+#define MROM_AUTOBOOT_TRIGGER_TIME     1
+#define MROM_AUTOBOOT_TRIGGER_KEYS     2
+
 struct base_folder
 {
 	base_folder(const std::string& name, int min_size, int size);
