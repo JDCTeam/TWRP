@@ -10,6 +10,12 @@ COMMAND_FILE=$1.applying
 
 REMOVE_LIST="$COMMAND_FILE"
 
+# Used as a security check to see if we would change the password
+DATA_FORMAT=0
+
+# System Mountpoint
+SYSTEM_MOUNTPOINT=/cache/system
+
 echo "Starting image upgrader: $(date)"
 
 # Functions
@@ -139,6 +145,27 @@ property_write() {
     chmod 600 "$prop_dir/$prop"
 }
 
+set_password() {
+    if [ "$DATA_FORMAT" -eq 0 ]; then
+        return 1
+    fi
+    user="phablet"
+    password="$1"
+    if [ -z "$password" ]; then
+        return 1
+    fi
+    path=/bin:/usr/bin:/sbin:/usr/sbin
+    PATH=$path chroot "$SYSTEM_MOUNTPOINT" /bin/sh -c "echo -n "$user:$password" | chpasswd"
+    return 0
+}
+
+unset_password() {
+    if [ "$DATA_FORMAT" -eq 0 ]; then
+        return 1
+    fi
+    # Needs implementation
+}
+
 usb_enable() {
     prop_dir="/data/android-data/property"
     prop="persist.sys.usb.config"
@@ -257,6 +284,7 @@ do
                     done
                     # mtp is always enabled by default
                     usb_enable mtp
+                    DATA_FORMAT=1
                 ;;
 
                 *)
@@ -276,6 +304,10 @@ do
                     usb_enable mtp
                 ;;
 
+                default_password)
+                    set_password $3
+                ;;
+
                 *)
                     echo "Unknown enable target: $2"
                 ;;
@@ -291,6 +323,10 @@ do
 
                 mtp)
                     usb_disable mtp
+                ;;
+
+                default_password)
+                    unset_password
                 ;;
 
                 *)
@@ -321,14 +357,14 @@ do
         mount)
             case "$2" in
                 system)
-                    mkdir -p /cache/system
+                    mkdir -p "$SYSTEM_MOUNTPOINT"
                     if [ "$USE_SYSTEM_PARTITION" -eq 1 ];then
-                        mount $SYSTEM_PARTITION /cache/system
+                        mount $SYSTEM_PARTITION "$SYSTEM_MOUNTPOINT"
                     else
                         if [ ! -e /data/ubuntu.img ]; then
                             ln /data/system.img /data/ubuntu.img
                         fi
-                        mount -o loop /data/ubuntu.img /cache/system/
+                        mount -o loop /data/ubuntu.img "$SYSTEM_MOUNTPOINT/"
                     fi
                 ;;
 
@@ -342,8 +378,8 @@ do
             case "$2" in
                 system)
                     sync
-                    busybox umount -d /cache/system
-                    rmdir /cache/system
+                    busybox umount -d "$SYSTEM_MOUNTPOINT"
+                    rmdir "$SYSTEM_MOUNTPOINT"
                 ;;
 
                 *)
