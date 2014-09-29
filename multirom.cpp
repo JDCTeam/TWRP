@@ -159,8 +159,10 @@ bool MultiROM::setRomsPath(std::string loc)
 	char cmd[256];
 	if(loc.find("(ntfs") != std::string::npos)
 		sprintf(cmd, "ntfs-3g %s /mnt", dev.c_str());
+#ifndef TW_NO_EXFAT_FUSE
 	else if(loc.find("(exfat)") != std::string::npos)
 		sprintf(cmd, "exfat-fuse -o big_writes,max_read=131072,max_write=131072,nonempty %s /mnt", dev.c_str());
+#endif
 	else
 		sprintf(cmd, "mount %s /mnt", dev.c_str());
 
@@ -188,7 +190,7 @@ std::string MultiROM::listInstallLocations()
 
 	while((dt = readdir(d)))
 	{
-		if(strncmp(dt->d_name, "sd", 2) != 0)
+		if(strncmp(dt->d_name, "mmcblk0", 7) == 0 || strncmp(dt->d_name, "dm-", 3) == 0)
 			continue;
 		snprintf(path, sizeof(path), "/dev/block/%s", dt->d_name);
 
