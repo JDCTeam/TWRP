@@ -82,6 +82,9 @@ public:
 	bool Is_Present;                                                          // Indicates if the partition is currently present as a block device
 	string Mount_Point;                                                       // Mount point for this partition (e.g. /system or /data)
 
+protected:
+	bool Has_Data_Media;                                                      // Indicates presence of /data/media, may affect wiping and backup methods
+
 private:
 	bool Process_Fstab_Line(string Line, bool Display_Error);                 // Processes a fstab line
 	void Find_Actual_Block_Device();                                          // Determines the correct block device and stores it in Actual_Block_Device
@@ -155,7 +158,6 @@ private:
 	Backup_Method_enum Backup_Method;                                         // Method used for backup
 	bool Can_Encrypt_Backup;                                                  // Indicates if this item can be encrypted during backup
 	bool Use_Userdata_Encryption;                                             // Indicates if we will use userdata encryption splitting on an encrypted backup
-	bool Has_Data_Media;                                                      // Indicates presence of /data/media, may affect wiping and backup methods
 	bool Has_Android_Secure;                                                  // Indicates the presence of .android_secure on this partition
 	bool Is_Storage;                                                          // Indicates if this partition is used for storage for backup, restore, and installing zips
 	bool Is_Settings_Storage;                                                 // Indicates that this storage partition is the location of the .twrps settings file and the location that is used for custom themes
