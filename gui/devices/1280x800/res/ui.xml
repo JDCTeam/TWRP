@@ -15,7 +15,7 @@
 	</include>
 
 	<resources>
-		<resource name="font" type="font" filename="Roboto-Regular-20" />
+		<resource name="font" type="font" filename="RobotoCondensed-Regular.ttf" size="20" fallback="Roboto-Regular-20" />
 		<resource name="base" type="image" filename="background.jpg" />
 		<resource name="main_button" type="image" filename="button" />
 		<resource name="file_icon" type="image" filename="file" />
@@ -270,6 +270,15 @@
 				<font resource="font" />
 				<placement x="450" y="30" />
 				<text>%tw_time%</text>
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="850" y="30" />
+				<conditions>
+					<condition var1="tw_no_cpu_temp" var2="0" />
+				</conditions>
+				<text>CPU: %tw_cpu_temp% C</text>
 			</object>
 
 			<object type="text" color="%text_color%">

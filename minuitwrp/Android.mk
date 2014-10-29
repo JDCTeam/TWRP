@@ -107,12 +107,20 @@ ifneq ($(TW_WHITELIST_INPUT),)
   LOCAL_CFLAGS += -DWHITELIST_INPUT=$(TW_WHITELIST_INPUT)
 endif
 
+ifeq ($(TW_DISABLE_TTF), true)
+    LOCAL_CFLAGS += -DTW_DISABLE_TTF
+else
+    LOCAL_SHARED_LIBRARIES += libft2
+    LOCAL_C_INCLUDES += external/freetype/include
+    LOCAL_SRC_FILES += truetype.c
+endif
+
 ifneq ($(LANDSCAPE_RESOLUTION),)
   LOCAL_CFLAGS += -DTW_HAS_LANDSCAPE
 endif
 
-LOCAL_SHARED_LIBRARIES += libz libc libcutils libjpeg
-LOCAL_STATIC_LIBRARIES += libpng libpixelflinger_static
+LOCAL_SHARED_LIBRARIES += libz libc libcutils libjpeg libpng
+LOCAL_STATIC_LIBRARIES += libpixelflinger_static
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE := libminuitwrp
 

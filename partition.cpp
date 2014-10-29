@@ -73,6 +73,7 @@ extern "C" {
 using namespace std;
 
 extern struct selabel_handle *selinux_handle;
+extern bool datamedia;
 
 struct flag_list {
 	const char *name;
@@ -107,8 +108,7 @@ static struct flag_list mount_flags[] = {
 	{ 0,            0 },
 };
 
-TWPartition::TWPartition(int *id, const string& fstab_line) {
-	initmtpid = id;
+TWPartition::TWPartition(const string& fstab_line) {
 	Can_Be_Mounted = false;
 	Can_Be_Wiped = false;
 	Can_Be_Backed_Up = false;
@@ -294,27 +294,8 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Can_Be_Backed_Up = true;
 			Can_Encrypt_Backup = true;
 			Use_Userdata_Encryption = true;
-#ifdef RECOVERY_SDCARD_ON_DATA
-			Storage_Name = "Internal Storage";
-			Has_Data_Media = true;
-			Is_Storage = true;
-			Is_Settings_Storage = true;
-			Storage_Path = "/data/media";
-			Symlink_Path = Storage_Path;
-			if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
-				Make_Dir("/emmc", Display_Error);
-				Symlink_Mount_Point = "/emmc";
-			} else {
-				Make_Dir("/sdcard", Display_Error);
-				Symlink_Mount_Point = "/sdcard";
-			}
-			if (Mount(false) && TWFunc::Path_Exists("/data/media/0")) {
-				Storage_Path = "/data/media/0";
-				Symlink_Path = Storage_Path;
-				DataManager::SetValue(TW_INTERNAL_PATH, "/data/media/0");
-				UnMount(true);
-			}
-#endif
+			if (datamedia)
+				Setup_Data_Media();
 #ifdef TW_INCLUDE_CRYPTO
 			Can_Be_Encrypted = true;
 			char crypto_blkdev[255];
@@ -365,14 +346,11 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				// unmounted state
 				UnMount(false);
 			}
-	#ifdef RECOVERY_SDCARD_ON_DATA
-			if (!Is_Encrypted || (Is_Encrypted && Is_Decrypted))
+			if (datamedia && (!Is_Encrypted || (Is_Encrypted && Is_Decrypted)))
 				Recreate_Media_Folder();
-	#endif
 #else
-	#ifdef RECOVERY_SDCARD_ON_DATA
-			Recreate_Media_Folder();
-	#endif
+			if (datamedia)
+				Recreate_Media_Folder();
 #endif
 		} else if (Mount_Point == "/cache") {
 			Display_Name = "Cache";
@@ -451,12 +429,6 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Display_Name = "Recovery";
 			Backup_Display_Name = Display_Name;
 		}
-	}
-
-	// Generate MTP ID
-	if (Is_Storage && initmtpid) {
-		(*initmtpid)++;
-		mtpid = *initmtpid;
 	}
 
 	// Process any custom flags
@@ -731,6 +703,32 @@ void TWPartition::Setup_AndSec(void) {
 	Make_Dir("/and-sec", true);
 	Recreate_AndSec_Folder();
 	Mount_Storage_Retry();
+}
+
+void TWPartition::Setup_Data_Media() {
+	LOGINFO("Setting up '%s' as data/media emulated storage.\n", Mount_Point.c_str());
+	Storage_Name = "Internal Storage";
+	Has_Data_Media = true;
+	Is_Storage = true;
+	Is_Settings_Storage = true;
+	Storage_Path = "/data/media";
+	Symlink_Path = Storage_Path;
+	if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
+		Make_Dir("/emmc", false);
+		Symlink_Mount_Point = "/emmc";
+	} else {
+		Make_Dir("/sdcard", false);
+		Symlink_Mount_Point = "/sdcard";
+	}
+	if (Mount(false) && TWFunc::Path_Exists("/data/media/0")) {
+		Storage_Path = "/data/media/0";
+		Symlink_Path = Storage_Path;
+		DataManager::SetValue(TW_INTERNAL_PATH, "/data/media/0");
+		UnMount(true);
+	}
+	DataManager::SetValue("tw_has_internal", 1);
+	DataManager::SetValue("tw_has_data_media", 1);
+	du.add_absolute_dir("/data/media");
 }
 
 void TWPartition::Find_Real_Block_Device(string& Block, bool Display_Error) {
@@ -1399,6 +1397,8 @@ bool TWPartition::Check_MD5(string restore_folder) {
 	int index = 0;
 	twrpDigest md5sum;
 
+	sync();
+
 	memset(split_filename, 0, sizeof(split_filename));
 	Full_Filename = restore_folder + "/" + Backup_FileName;
 	if (!TWFunc::Path_Exists(Full_Filename)) {
@@ -1599,6 +1599,11 @@ bool TWPartition::Wipe_EXT23(string File_System) {
 }
 
 bool TWPartition::Wipe_EXT4() {
+	Find_Actual_Block_Device();
+	if (!Is_Present) {
+		LOGERR("Block device not present, cannot wipe %s.\n", Display_Name.c_str());
+		return false;
+	}
 	if (!UnMount(true))
 		return false;
 
@@ -1829,10 +1834,6 @@ bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 			}
 		}
 		closedir(d);
-
-		#ifdef HAVE_SELINUX
-		perms.fixDataInternalContexts();
-		#endif
 
 		gui_print("Done.\n");
 		return true;
@@ -2178,9 +2179,9 @@ void TWPartition::Recreate_Media_Folder(void) {
 		PartitionManager.Mount_By_Path(Symlink_Mount_Point, true);
 		LOGINFO("Recreating /data/media folder.\n");
 		mkdir("/data/media", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-		#ifdef HAVE_SELINUX
+#ifdef HAVE_SELINUX
 		perms.fixDataInternalContexts();
-		#endif
+#endif
 		// Toggle mount to ensure that "internal sdcard" gets mounted
 		PartitionManager.UnMount_By_Path(Symlink_Mount_Point, true);
 		PartitionManager.Mount_By_Path(Symlink_Mount_Point, true);
