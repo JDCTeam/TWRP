@@ -185,7 +185,7 @@ TWPartition *TWPartition::makePartFromFstab(const char *fmt, ...)
 	vsnprintf(line, sizeof(line), fmt, ap);
 	va_end(ap);
 
-	return new TWPartition(NULL, line);
+	return new TWPartition(line);
 }
 
 bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
