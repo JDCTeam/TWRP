@@ -1063,23 +1063,6 @@ bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
 		return false;
 	}
 
-	if(info.st_size < 450*1024*1024)
-	{
-		gui_print("Copying ZIP to /tmp...\n");
-		sprintf(cmd, "cp \"%s\" /tmp/mr_update.zip", file.c_str());
-		system(cmd);
-		file = "/tmp/mr_update.zip";
-	}
-	else
-	{
-		gui_print(" \n");
-		gui_print("=================================\n");
-		LOGERR("WARN: Modifying the real ZIP, it is too big!\n");
-		LOGERR("The ZIP file is now unusable for non-MultiROM flashing!\n");
-		gui_print("=================================\n");
-		gui_print(" \n");
-	}
-
 	sprintf(cmd, "mkdir -p /tmp/%s", MR_UPDATE_SCRIPT_PATH);
 	system(cmd);
 
@@ -1166,9 +1149,29 @@ bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
 
 	if(changed)
 	{
+		if(info.st_size < 450*1024*1024)
+		{
+			gui_print("Copying ZIP to /tmp...\n");
+			sprintf(cmd, "cp \"%s\" /tmp/mr_update.zip", file.c_str());
+			system(cmd);
+			file = "/tmp/mr_update.zip";
+		}
+		else
+		{
+			gui_print(" \n");
+			gui_print("=================================\n");
+			LOGERR("WARN: Modifying the real ZIP, it is too big!\n");
+			LOGERR("The ZIP file is now unusable for non-MultiROM flashing!\n");
+			gui_print("=================================\n");
+			gui_print(" \n");
+		}
+
 		sprintf(cmd, "cd /tmp && zip \"%s\" %s", file.c_str(), MR_UPDATE_SCRIPT_NAME);
 		if(system(cmd) != 0)
+		{
+			system("rm /tmp/mr_update.zip");
 			return false;
+		}
 	}
 	else
 		gui_print("No need to change ZIP.\n");
