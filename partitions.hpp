@@ -74,6 +74,7 @@ public:
 	unsigned long long GetSizeUsed() { return Used; }
 	unsigned long long GetSizeFree() { return Free; }
 	unsigned long long GetSizeBackup() { return Backup_Size; }
+	unsigned long long GetSizeTotal() { return Size; }
 
 public:
 	string Current_File_System;                                               // Current file system
@@ -196,6 +197,7 @@ public:
 	int Mount_Current_Storage(bool Display_Error);                            // Mounts the current storage location
 	int Mount_Settings_Storage(bool Display_Error);                           // Mounts the settings file storage location (usually internal)
 	TWPartition* Find_Partition_By_Path(string Path);                         // Returns a pointer to a partition based on path
+	TWPartition* Find_Original_Partition_By_Path(string Path);				  // Returns a pointer to a partition from the lower-most context based on path
 	int Check_Backup_Name(bool Display_Error);                                // Checks the current backup name to ensure that it is valid
 	int Run_Backup();                                                         // Initiates a backup in the current storage
 	bool Restore_Partition(TWPartition* Part, string Restore_Name, int partition_count, const unsigned long long *total_restore_size, unsigned long long *already_restored_size);
@@ -233,6 +235,7 @@ public:
 	bool Push_Context();
 	void Copy_And_Push_Context();
 	bool Pop_Context();
+	bool Has_Extra_Contexts() const { return !Contexts.empty(); }
 
 private:
 	void Setup_Settings_Storage_Partition(TWPartition* Part);                 // Sets up settings storage

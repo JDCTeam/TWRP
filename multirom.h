@@ -167,7 +167,7 @@ public:
 	static bool disableFlashKernelAct(std::string name, std::string loc);
 	static bool fakeBootPartition(const char *fakeImg);
 	static void restoreBootPartition();
-	static void failsafeCheckBootPartition();
+	static void failsafeCheckPartition(const char *path);
 	static bool compareFiles(const char *path1, const char *path2);
 
 	static void executeCacheScripts();
@@ -187,7 +187,7 @@ private:
 	static void findPath();
 	static bool changeMounts(std::string base);
 	static void restoreMounts();
-	static bool prepareZIP(std::string& file);
+	static bool prepareZIP(std::string& file, bool &has_block_update);
 	static bool verifyZIP(const std::string& file, int &verify_status);
 	static bool skipLine(const char *line);
 	static std::string getNewRomName(std::string zip, std::string def);
@@ -211,6 +211,7 @@ private:
 	static bool createDirsFromBase(const std::string& base);
 	static bool mountBaseImages(std::string base, std::string& dest);
 	static void umountBaseImages(const std::string& base);
+	static bool createFakeSystemImg();
 
 	static int system_args(const char *fmt, ...);
 	static void translateToRealdata(std::string& path);

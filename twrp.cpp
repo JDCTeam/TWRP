@@ -102,7 +102,8 @@ int main(int argc, char **argv) {
 
 	// MultiROM _might_ have crashed the recovery while the boot device was redirected.
 	// It would be bad to let that as is.
-	MultiROM::failsafeCheckBootPartition();
+	MultiROM::failsafeCheckPartition("/tmp/mrom_fakebootpart");
+	MultiROM::failsafeCheckPartition("/tmp/mrom_fakesyspart");
 
 	// Load default values to set DataManager constants and handle ifdefs
 	DataManager::SetDefaultValues();

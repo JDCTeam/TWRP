@@ -2061,3 +2061,18 @@ bool TWPartitionManager::Pop_Context()
 	Contexts.pop_back();
 	return true;
 }
+
+TWPartition* TWPartitionManager::Find_Original_Partition_By_Path(string Path) {
+	std::vector<TWPartition*>::iterator iter;
+	string Local_Path = TWFunc::Get_Root_Path(Path);
+
+	std::vector<TWPartition*> *parts = &Partitions;
+	if(!Contexts.empty())
+		parts = &Contexts.front();
+
+	for (iter = parts->begin(); iter != parts->end(); iter++) {
+		if ((*iter)->Mount_Point == Local_Path || (!(*iter)->Symlink_Mount_Point.empty() && (*iter)->Symlink_Mount_Point == Local_Path))
+			return (*iter);
+	}
+	return NULL;
+}
