@@ -51,6 +51,7 @@
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	#include "openaes/inc/oaes_lib.h"
 #endif
+#include "cutils/android_reboot.h"
 
 extern "C" {
 	#include "libcrecovery/common.h"
@@ -556,10 +557,22 @@ int TWFunc::tw_reboot(RebootCommand command)
 			return reboot(RB_AUTOBOOT);
 		case rb_recovery:
 			check_and_run_script("/sbin/rebootrecovery.sh", "reboot recovery");
+#ifdef ANDROID_RB_PROPERTY
+			property_set(ANDROID_RB_PROPERTY, "reboot,recovery");
+#else
 			return __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2, (void*) "recovery");
+#endif
+			sleep(5);
+			return 0;
 		case rb_bootloader:
 			check_and_run_script("/sbin/rebootbootloader.sh", "reboot bootloader");
+#ifdef ANDROID_RB_PROPERTY
+			property_set(ANDROID_RB_PROPERTY, "reboot,bootloader");
+#else
 			return __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2, (void*) "bootloader");
+#endif
+			sleep(5);
+			return 0;
 		case rb_poweroff:
 			check_and_run_script("/sbin/poweroff.sh", "power off");
 #ifdef ANDROID_RB_POWEROFF
@@ -568,7 +581,13 @@ int TWFunc::tw_reboot(RebootCommand command)
 			return reboot(RB_POWER_OFF);
 		case rb_download:
 			check_and_run_script("/sbin/rebootdownload.sh", "reboot download");
+#ifdef ANDROID_RB_PROPERTY
+			property_set(ANDROID_RB_PROPERTY, "reboot,download");
+#else
 			return __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2, (void*) "download");
+#endif
+			sleep(5);
+			return 0;
 		default:
 			return -1;
 	}

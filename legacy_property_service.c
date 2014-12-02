@@ -25,12 +25,15 @@
 #include <limits.h>
 #include <errno.h>
 
+#include "../../bionic/libc/private/bionic_futex.h"
+
 #include <cutils/properties.h>
 
 #include "legacy_properties.h"
 
 #include <sys/mman.h>
-#include <sys/atomics.h>
+// Not available in 5.0
+//#include <sys/atomics.h>
 #include "legacy_property_service.h"
 
 static int persistent_properties_loaded = 0;
@@ -180,7 +183,7 @@ static int legacy_property_set(const char *name, const char *value)
         memcpy(pi->value, value, valuelen + 1);
 
         pa->toc[pa->count] =
-            (namelen << 24) | (((unsigned) pi) - ((unsigned) pa));
+            (namelen << 24) | (((unsigned long) pi) - ((unsigned long) pa));
 
         pa->count++;
         pa->serial++;

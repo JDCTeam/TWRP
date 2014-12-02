@@ -51,6 +51,8 @@ extern "C" {
 #ifdef TW_INCLUDE_CRYPTO
 	#ifdef TW_INCLUDE_JB_CRYPTO
 		#include "crypto/jb/cryptfs.h"
+	#elif defined(TW_INCLUDE_L_CRYPTO)
+		#include "crypto/lollipop/cryptfs.h"
 	#else
 		#include "crypto/ics/cryptfs.h"
 	#endif
@@ -137,6 +139,24 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 	if (settings_partition) {
 		Setup_Settings_Storage_Partition(settings_partition);
 	}
+#ifdef TW_INCLUDE_L_CRYPTO
+	TWPartition* Decrypt_Data = Find_Partition_By_Path("/data");
+	if (Decrypt_Data && Decrypt_Data->Is_Encrypted && !Decrypt_Data->Is_Decrypted) {
+		int password_type = cryptfs_get_password_type();
+		if (password_type == CRYPT_TYPE_DEFAULT) {
+			LOGINFO("Device is encrypted with the default password, attempting to decrypt.\n");
+			if (Decrypt_Device("default_password") == 0) {
+				gui_print("Successfully decrypted with default password.\n");
+				DataManager::SetValue(TW_IS_ENCRYPTED, 0);
+			} else {
+				LOGERR("Unable to decrypt with default password.");
+				LOGERR("You may need to perform a Format Data.\n");
+			}
+		} else {
+			DataManager::SetValue("TW_CRYPTO_TYPE", password_type);
+		}
+	}
+#endif
 	Update_System_Details();
 	UnMount_Main_Partitions();
 	return true;
@@ -1346,7 +1366,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 	size_t result;
 
 	property_set("ro.crypto.state", "encrypted");
-#ifdef TW_INCLUDE_JB_CRYPTO
+#if defined(TW_INCLUDE_JB_CRYPTO) || defined(TW_INCLUDE_L_CRYPTO)
 	// No extra flags needed
 #else
 	property_set("ro.crypto.fs_type", CRYPTO_FS_TYPE);
@@ -1385,6 +1405,10 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 #endif
 
 	strcpy(cPassword, Password.c_str());
+#ifdef TW_INCLUDE_L_CRYPTO
+	Mount_By_Path("/vendor", false); // if exists, mount vendor partition as we may need some proprietary files
+	Mount_By_Path("/firmware", false); // if exists, mount firmware partition as we may need some proprietary files
+#endif
 	int pwret = cryptfs_check_passwd(cPassword);
 
 	if (pwret != 0) {
@@ -1450,6 +1474,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 				dat->Storage_Path = "/data/media/0";
 				dat->Symlink_Path = dat->Storage_Path;
 				DataManager::SetValue("tw_storage_path", "/data/media/0");
+				DataManager::SetValue("tw_settings_path", "/data/media/0");
 				dat->UnMount(false);
 				Output_Partition(dat);
 			}

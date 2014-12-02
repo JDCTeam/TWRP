@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 	property_set("ro.twrp.version", TW_VERSION_STR);
 
 	time_t StartupTime = time(NULL);
-	printf("Starting TWRP %s on %s", TW_VERSION_STR, ctime(&StartupTime));
+	printf("Starting TWRP %s on %s (pid %d)", TW_VERSION_STR, ctime(&StartupTime), getpid());
 
 #ifdef HAVE_SELINUX
 	printf("Setting SELinux to permissive\n");
@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 	PartitionManager.Mount_By_Path("/cache", true);
 
 	string Zip_File, Reboot_Value;
-	bool Cache_Wipe = false, Factory_Reset = false, Perform_Backup = false;
+	bool Cache_Wipe = false, Factory_Reset = false, Perform_Backup = false, Shutdown = false;
 
 	{
 		TWPartition* misc = PartitionManager.Find_Partition_By_Path("/misc");
@@ -221,6 +221,8 @@ int main(int argc, char **argv) {
 					Cache_Wipe = true;
 			} else if (*argptr == 'n') {
 				Perform_Backup = true;
+			} else if (*argptr == 'p') {
+				Shutdown = true;
 			} else if (*argptr == 's') {
 				ptr = argptr;
 				index2 = 0;
@@ -348,7 +350,7 @@ int main(int argc, char **argv) {
 	// Check for su to see if the device is rooted or not
 	if (PartitionManager.Mount_By_Path("/system", false)) {
 		// Disable flashing of stock recovery
-		if (TWFunc::Path_Exists("/system/recovery-from-boot.p") && TWFunc::Path_Exists("/system/etc/install-recovery.sh")) {
+		if (TWFunc::Path_Exists("/system/recovery-from-boot.p")) {
 			rename("/system/recovery-from-boot.p", "/system/recovery-from-boot.bak");
 			gui_print("Renamed stock recovery file in /system to prevent\nthe stock ROM from replacing TWRP.\n");
 		}

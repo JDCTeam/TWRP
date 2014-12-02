@@ -55,6 +55,8 @@ extern "C" {
 #ifdef TW_INCLUDE_CRYPTO
 	#ifdef TW_INCLUDE_JB_CRYPTO
 		#include "crypto/jb/cryptfs.h"
+	#elif defined(TW_INCLUDE_L_CRYPTO)
+		#include "crypto/lollipop/cryptfs.h"
 	#else
 		#include "crypto/ics/cryptfs.h"
 	#endif
@@ -309,7 +311,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				LOGINFO("Data already decrypted, new block device: '%s'\n", crypto_blkdev);
 			} else if (!Mount(false)) {
 				if (Is_Present) {
-#ifdef TW_INCLUDE_JB_CRYPTO
+#if defined(TW_INCLUDE_JB_CRYPTO) || defined(TW_INCLUDE_L_CRYPTO)
 					// No extra flags needed
 #else
 					property_set("ro.crypto.fs_type", CRYPTO_FS_TYPE);

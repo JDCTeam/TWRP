@@ -256,7 +256,7 @@ static void usb_adb_init()
         close_on_exec(fd);
     }
 
-    D("[ usb_init - starting thread ]\n");
+    printf("[ usb_init - starting thread ]\n");
     if(adb_thread_create(&tid, usb_adb_open_thread, h)){
         fatal_errno("cannot create usb thread");
         fprintf(stderr, "cannot create the usb thread()\n");
@@ -388,7 +388,7 @@ static int bulk_read(int bulk_out, char *buf, size_t length)
         ret = adb_read(bulk_out, buf + count, length - count);
         if (ret < 0) {
             if (errno != EINTR) {
-                D("[ bulk_read failed fd=%d length=%d count=%d ]\n",
+                D("[ bulk_read failed fd=%d length=%zu count=%zu ]\n",
                                            bulk_out, length, count);
                 return ret;
             }

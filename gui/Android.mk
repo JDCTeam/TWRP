@@ -33,7 +33,7 @@ else
   LOCAL_SRC_FILES += hardwarekeyboard.cpp
 endif
 
-LOCAL_SHARED_LIBRARIES += libminuitwrp libc libstdc++
+LOCAL_SHARED_LIBRARIES += libminuitwrp libc libstdc++ libminzip
 LOCAL_MODULE := libguitwrp
 
 # Use this flag to create a build that simulates threaded actions like installing zips, backups, restores, and wipes for theme testing
@@ -88,6 +88,11 @@ ifeq ($(TW_CUSTOM_THEME),)
 	$(warning ********************************************************************************)
 	$(error stopping)
 	endif
+endif
+
+# Auto filled build flag
+ifeq ($(PLATFORM_VERSION), 5.0)
+    LOCAL_CFLAGS += -DANDROID_VERSION=5
 endif
 
 LOCAL_C_INCLUDES += bionic external/stlport/stlport $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)
@@ -145,7 +150,9 @@ $(TWRP_RES_GEN):
 	$(TWRP_COMMON_XML)
 	$(TWRP_REMOVE_FONT)
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+ifneq ($(TW_USE_TOOLBOX), true)
 	ln -sf $(TWRP_SH_TARGET) $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
+endif
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
 	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
 else
