@@ -23,13 +23,14 @@
 #if (ANDROID_VERSION >= 5)
 #include "minzip/SysUtil.h"
 #include "minzip/Zip.h"
+#include "verifier.h"
 #else
 #include "minzipold/SysUtil.h"
 #include "minzipold/Zip.h"
+#include "verifierold.h"
 #endif
 #include "variables.h"
 #include "openrecoveryscript.hpp"
-#include "verifier.h"
 
 extern "C" {
 #include "twcommon.h"
