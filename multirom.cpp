@@ -1032,7 +1032,7 @@ bool MultiROM::skipLine(const char *line)
 		if (strstr(line, "mount") < strstr(line, "ui_print"))
 			return true;
 
-	if(strstr(line, "mount") && !strstr(line, "ui_print"))
+	if(strstr(line, "mount(") && !strstr(line, "ui_print"))
 	{
 		if (strstr(line, "run_program") ||
 			(!strstr_wildcard(line, "/system/?bin/?mount") && !strstr(line, "symlink(")))
