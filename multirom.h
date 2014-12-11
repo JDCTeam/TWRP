@@ -190,6 +190,7 @@ private:
 	static bool prepareZIP(std::string& file, bool &has_block_update);
 	static bool verifyZIP(const std::string& file, int &verify_status);
 	static bool skipLine(const char *line);
+	static void appendBraces(FILE *out, const char *line);
 	static std::string getNewRomName(std::string zip, std::string def);
 	static bool createDirs(std::string name, int type);
 	static bool compressRamdisk(const char *src, const char *dest, int cmpr);

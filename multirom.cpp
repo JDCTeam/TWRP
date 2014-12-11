@@ -1025,6 +1025,7 @@ static char *strstr_wildcard(const char *s, const char *find)
 	return NULL;
 }
 
+// This needs to fucking go.
 bool MultiROM::skipLine(const char *line)
 {
 
@@ -1032,7 +1033,7 @@ bool MultiROM::skipLine(const char *line)
 		if (strstr(line, "mount") < strstr(line, "ui_print"))
 			return true;
 
-	if(strstr(line, "mount(") && !strstr(line, "ui_print"))
+	if((strstr(line, "mount(") || strstr(line, "mount\"")) && !strstr(line, "ui_print"))
 	{
 		if (strstr(line, "run_program") ||
 			(!strstr_wildcard(line, "/system/?bin/?mount") && !strstr(line, "symlink(")))
@@ -1057,6 +1058,40 @@ bool MultiROM::skipLine(const char *line)
 		return true;
 
 	return false;
+}
+
+void MultiROM::appendBraces(FILE *out, const char *line)
+{
+	int counter = 0;
+	int tildas = 0;
+	for(; *line; ++line)
+	{
+		if(*line == '(')
+			++counter;
+		else if(*line == ')')
+		{
+			--counter;
+			tildas = 0;
+		}
+		else if(*line == ';')
+			++tildas;
+	}
+
+	char c = '(';
+	if(counter < 0)
+	{
+		c = ')';
+		counter *= -1;
+	}
+	else
+		tildas = 0;
+
+	for(int i = 0; i < counter; ++i)
+		fputc(c, out);
+
+	if(tildas)
+		fputc(';', out);
+	fputc('\n', out);
 }
 
 bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
@@ -1140,6 +1175,8 @@ bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
 		else
 		{
 			changed = true;
+
+			appendBraces(new_script, p);
 
 			if (strstr(p, "format(") == p && strstr(p, "/system"))
 			{
