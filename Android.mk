@@ -526,7 +526,8 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/mtp/Android.mk \
     $(commands_recovery_local_path)/minzip/Android.mk \
     $(commands_recovery_local_path)/dosfstools/Android.mk \
-    $(commands_recovery_local_path)/phablet/Android.mk
+    $(commands_recovery_local_path)/phablet/Android.mk \
+    $(commands_recovery_local_path)/simg2img/Android.mk
 
 ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/lollipop/Android.mk

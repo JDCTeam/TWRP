@@ -8,13 +8,8 @@
 #define statvfs statfs
 
 #include "mrominstaller.h"
-#if (ANDROID_VERSION >= 5)
 #include "minzip/SysUtil.h"
 #include "minzip/Zip.h"
-#else
-#include "minzipold/SysUtil.h"
-#include "minzipold/Zip.h"
-#endif
 #include "common.h"
 #include "multirom.h"
 #include "cutils/properties.h"
@@ -50,7 +45,6 @@ std::string MROMInstaller::open(const std::string& file)
 	const ZipEntry *script_entry;
 	ZipArchive zip;
 
-#if (ANDROID_VERSION >= 5)
 	MemMapping map;
 	if (sysMapFile(file.c_str(), &map) != 0) {
 		LOGERR("Failed to sysMapFile '%s'\n", file.c_str());
@@ -58,27 +52,20 @@ std::string MROMInstaller::open(const std::string& file)
 	}
 
 	if (mzOpenZipArchive(map.addr, map.length, &zip) != 0)
-#else
-	if (mzOpenZipArchive(file.c_str(), &zip) != 0)
-#endif
 		return "Failed to open installer file!";
 
 	script_entry = mzFindZipEntry(&zip, "manifest.txt");
 	if(!script_entry)
 	{
 		mzCloseZipArchive(&zip);
-#if (ANDROID_VERSION >= 5)
 		sysReleaseMap(&map);
-#endif
 		return "Failed to find manifest.txt";
 	}
 
 	int res = read_data(&zip, script_entry, &manifest, NULL);
 
 	mzCloseZipArchive(&zip);
-#if (ANDROID_VERSION >= 5)
 	sysReleaseMap(&map);
-#endif
 
 	if(res < 0)
 		return "Failed to read manifest.txt!";
@@ -312,7 +299,6 @@ bool MROMInstaller::extractDir(const std::string& name, const std::string& dest)
 {
 	ZipArchive zip;
 
-#if (ANDROID_VERSION >= 5)
 	MemMapping map;
 	if (sysMapFile(m_file.c_str(), &map) != 0) {
 		LOGERR("Failed to sysMapFile '%s'\n", m_file.c_str());
@@ -320,14 +306,9 @@ bool MROMInstaller::extractDir(const std::string& name, const std::string& dest)
 	}
 
 	if (mzOpenZipArchive(map.addr, map.length, &zip) != 0)
-#else
-	if (mzOpenZipArchive(m_file.c_str(), &zip) != 0)
-#endif
 	{
 		gui_print("Failed to open ZIP file %s\n", m_file.c_str());
-#if (ANDROID_VERSION >= 5)
 		sysReleaseMap(&map);
-#endif
 		return false;
 	}
 
@@ -336,9 +317,7 @@ bool MROMInstaller::extractDir(const std::string& name, const std::string& dest)
 	bool success = mzExtractRecursive(&zip, name.c_str(), dest.c_str(), MZ_EXTRACT_FILES_ONLY, &timestamp, NULL, NULL, NULL);
 
 	mzCloseZipArchive(&zip);
-#if (ANDROID_VERSION >= 5)
 	sysReleaseMap(&map);
-#endif
 
 	if(!success)
 	{
@@ -351,7 +330,6 @@ bool MROMInstaller::extractDir(const std::string& name, const std::string& dest)
 bool MROMInstaller::extractFile(const std::string& name, const std::string& dest)
 {
 	ZipArchive zip;
-#if (ANDROID_VERSION >= 5)
 	MemMapping map;
 	if (sysMapFile(m_file.c_str(), &map) != 0) {
 		LOGERR("Failed to sysMapFile '%s'\n", m_file.c_str());
@@ -359,14 +337,9 @@ bool MROMInstaller::extractFile(const std::string& name, const std::string& dest
 	}
 
 	if (mzOpenZipArchive(map.addr, map.length, &zip) != 0)
-#else
-	if (mzOpenZipArchive(m_file.c_str(), &zip) != 0)
-#endif
 	{
 		gui_print("Failed to open ZIP file %s\n", m_file.c_str());
-#if (ANDROID_VERSION >= 5)
-	sysReleaseMap(&map);
-#endif
+		sysReleaseMap(&map);
 		return false;
 	}
 
@@ -393,16 +366,13 @@ bool MROMInstaller::extractFile(const std::string& name, const std::string& dest
 	fclose(f);
 exit:
 	mzCloseZipArchive(&zip);
-#if (ANDROID_VERSION >= 5)
 	sysReleaseMap(&map);
-#endif
 	return res;
 }
 
 bool MROMInstaller::hasEntry(const std::string& name)
 {
 	ZipArchive zip;
-#if (ANDROID_VERSION >= 5)
 	MemMapping map;
 	if (sysMapFile(m_file.c_str(), &map) != 0) {
 		LOGERR("Failed to sysMapFile '%s'\n", m_file.c_str());
@@ -410,14 +380,9 @@ bool MROMInstaller::hasEntry(const std::string& name)
 	}
 
 	if (mzOpenZipArchive(map.addr, map.length, &zip) != 0)
-#else
-	if (mzOpenZipArchive(m_file.c_str(), &zip) != 0)
-#endif
 	{
 		gui_print("Failed to open ZIP file %s\n", m_file.c_str());
-#if (ANDROID_VERSION >= 5)
-	sysReleaseMap(&map);
-#endif
+		sysReleaseMap(&map);
 		return false;
 	}
 
@@ -427,9 +392,7 @@ bool MROMInstaller::hasEntry(const std::string& name)
 	const ZipEntry *entry2 = mzFindZipEntry(&zip, (name + "/").c_str());
 
 	mzCloseZipArchive(&zip);
-#if (ANDROID_VERSION >= 5)
 	sysReleaseMap(&map);
-#endif
 
 	return entry1 || entry2;
 }

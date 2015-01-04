@@ -1020,7 +1020,7 @@ void TWFunc::Fixup_Time_On_Boot()
 
 	}
 
-	LOGINFO("TWFunc::Fixup_Time: will attempt to use the ats files now.\n", sepoch.c_str());
+	LOGINFO("TWFunc::Fixup_Time: will attempt to use the ats files now.\n");
 
 	// Devices with Qualcomm Snapdragon 800 do some shenanigans with RTC.
 	// They never set it, it just ticks forward from 1970-01-01 00:00,
