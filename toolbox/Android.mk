@@ -1,7 +1,7 @@
 LOCAL_PATH:= system/core/toolbox/
 
 
-ifeq ($(PLATFORM_VERSION), 5.0)
+ifeq ($(PLATFORM_SDK_VERSION), 21)
 
 # Rule for lollipop
 common_cflags := \
@@ -107,7 +107,7 @@ ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
 OUR_TOOLS += r
 endif
 
-ALL_TOOLS = $(BSD_TOOLS) $(OUR_TOOLS)
+ALL_TOOLS = $(BSD_TOOLS) $(OUR_TOOLS) setenforce
 
 LOCAL_SRC_FILES := \
     upstream-netbsd/lib/libc/gen/getbsize.c \
@@ -119,6 +119,10 @@ LOCAL_SRC_FILES := \
     pwcache.c \
     $(patsubst %,%.c,$(OUR_TOOLS)) \
     toolbox.c \
+
+ifeq (,$(filter $(LOCAL_SRC_FILES),setenforce.c))
+    LOCAL_SRC_FILES += setenforce.c
+endif
 
 LOCAL_CFLAGS += $(common_cflags)
 
@@ -336,6 +340,15 @@ $(SYMLINKS): $(LOCAL_INSTALLED_MODULE) $(LOCAL_PATH)/Android.mk
 	@mkdir -p $(dir $@)
 	@rm -rf $@
 	$(hide) ln -sf $(TOOLBOX_BINARY) $@
+
+ifneq (,$(filter $(PLATFORM_SDK_VERSION),16 17 18))
+ALL_DEFAULT_INSTALLED_MODULES += $(SYMLINKS)
+
+# We need this so that the installed files could be picked up based on the
+# local module name
+ALL_MODULES.$(LOCAL_MODULE).INSTALLED := \
+	$(ALL_MODULES.$(LOCAL_MODULE).INSTALLED) $(SYMLINKS)
+endif
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := toolbox_symlinks

@@ -1,5 +1,5 @@
 LOCAL_PATH := $(call my-dir)
-ifeq ($(TW_INCLUDE_L_CRYPTO), true)
+ifeq ($(TW_INCLUDE_CRYPTO), true)
 include $(CLEAR_VARS)
 
 common_c_includes := \
@@ -8,7 +8,7 @@ common_c_includes := \
 	external/openssl/include \
 	external/stlport/stlport \
 	bionic \
-	external/scrypt/lib/crypto \
+	$(commands_recovery_local_path)/crypto/scrypt/lib/crypto \
 	frameworks/native/include \
 	system/security/keystore \
 	hardware/libhardware/include/hardware \
@@ -21,15 +21,16 @@ common_shared_libraries := \
 	libcutils \
 	liblog \
 	libdiskconfig \
-	libhardware_legacy \
 	liblogwrap \
 	libext4_utils \
 	libf2fs_sparseblock \
 	libcrypto \
 	libselinux \
 	libutils \
-	libhardware \
+	libminhardware \
 	libsoftkeymaster
+
+common_shared_libraries := libcrypto libselinux libhardware libsoftkeymaster libcutils
 
 LOCAL_MODULE := libcryptfslollipop
 LOCAL_MODULE_TAGS := eng optional
@@ -44,9 +45,10 @@ LOCAL_SRC_FILES = cryptfs.c
 #    hardware/libhardware/include/hardware \
 #	system/security/softkeymaster/include/keymaster
 #LOCAL_SHARED_LIBRARIES += libc liblog libcutils libcrypto libext4_utils
-LOCAL_SHARED_LIBRARIES := $(common_shared_libraries) libmincrypttwrp liblogwrap
+LOCAL_SHARED_LIBRARIES := $(common_shared_libraries) libmincrypttwrp
 LOCAL_C_INCLUDES := external/openssl/include $(common_c_includes)
-LOCAL_WHOLE_STATIC_LIBRARIES += libfs_mgr libscrypt_static
+LOCAL_WHOLE_STATIC_LIBRARIES += libscrypttwrp_static
 
 include $(BUILD_SHARED_LIBRARY)
+
 endif
