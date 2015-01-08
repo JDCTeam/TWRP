@@ -1081,7 +1081,9 @@ void MultiROM::appendBraces(FILE *out, const char *line)
 
 	if(tildas)
 		fputc(';', out);
-	fputc('\n', out);
+
+	if(counter || tildas)
+		fputc('\n', out);
 }
 
 bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
@@ -1166,8 +1168,7 @@ bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
 				fputs("run_program(\"/sbin/sh\", \"-c\", \"chattr -R -i /system/*\");\n", new_script);
 				fputs("run_program(\"/sbin/sh\", \"-c\", \"rm -rf /system/*\");\n", new_script);
 			}
-
-			if(strstr(p, "block_image_update(") == p)
+			else if(strstr(p, "block_image_update(") == p)
 			{
 				has_block_update = true;
 
@@ -1180,6 +1181,11 @@ bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
 					fprintf(new_script, "run_program(\"/sbin/sh\", \"-c\", \"mkdir -p /tmpsystem && mount -t ext4 $(readlink -f -n %s) /tmpsystem && cp -a /tmpsystem/* /system/\");\n",
 							sys->Actual_Block_Device.c_str());
 				}
+			}
+			else
+			{
+				// Add dummy line, because ifs need to have something in them
+				fprintf(new_script, "ui_print(\"\"); # orig: \"%s\" - removed by multirom\n", p);
 			}
 		}
 		token = strtok_r(NULL, "\n", &saveptr);
