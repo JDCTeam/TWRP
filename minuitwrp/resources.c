@@ -77,7 +77,7 @@ static int open_png(const char* name, png_structp* png_ptr, png_infop* info_ptr,
             snprintf(resPath, sizeof(resPath)-1, "/res/landscape/images/%s.png", name);
         resPath[sizeof(resPath)-1] = '\0';
         fp = fopen(resPath, "rb");
-        if (fp == NULL && (gr_get_rotation()%180 == 0 || !(fp = fopen(name, "rb"))) {
+        if (fp == NULL && (gr_get_rotation()%180 == 0 || !(fp = fopen(name, "rb")))) {
             result = -1;
             goto exit;
         }
