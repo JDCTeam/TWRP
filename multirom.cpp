@@ -32,7 +32,7 @@ extern "C" {
 #include "multirom_hooks.h"
 }
 
-#include "libblkid/blkid.h"
+#include "libblkid/include/blkid.h"
 
 std::string MultiROM::m_path = "";
 std::string MultiROM::m_boot_dev = "";
@@ -2796,7 +2796,7 @@ void MultiROM::executeCacheScripts()
 void MultiROM::startSystemImageUpgrader()
 {
 	DataManager::SetValue("tw_back", "main");
-	DataManager::SetValue("tw_action", "system-image-upgrader");
+	DataManager::SetValue("tw_action", "system_image_upgrader");
 	DataManager::SetValue("tw_has_action2", "0");
 	DataManager::SetValue("tw_action2", "");
 	DataManager::SetValue("tw_action2_param", "");

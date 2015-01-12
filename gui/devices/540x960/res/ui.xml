@@ -78,6 +78,7 @@
 		<variable name="row17_text_y" value="780" />
 		<variable name="row18_text_y" value="820" />
 		<variable name="zip_status_y" value="696" />
+		<variable name="flash_list_height" value="260" />
 		<variable name="tz_selected_y" value="110" />
 		<variable name="tz_set_y" value="720" />
 		<variable name="tz_current_y" value="895" />
@@ -344,7 +345,7 @@
 
 			<object type="button">
 				<placement x="%sort_col1_button_x%" y="%sort_asc_button_y%" />
-				<font resource="UItext" color="%button_text_color%" />
+				<font resource="mediumfont" color="%button_text_color%" />
 				<text>Name</text>
 				<image resource="sort_button" />
 				<action function="set">tw_gui_sort_order=1</action>
@@ -352,7 +353,7 @@
 
 			<object type="button">
 				<placement x="%sort_col2_button_x%" y="%sort_asc_button_y%" />
-				<font resource="UItext" color="%button_text_color%" />
+				<font resource="mediumfont" color="%button_text_color%" />
 				<text>Date</text>
 				<image resource="sort_button" />
 				<action function="set">tw_gui_sort_order=2</action>
@@ -360,7 +361,7 @@
 
 			<object type="button">
 				<placement x="%sort_col3_button_x%" y="%sort_asc_button_y%" />
-				<font resource="UItext" color="%button_text_color%" />
+				<font resource="mediumfont" color="%button_text_color%" />
 				<text>Size</text>
 				<image resource="sort_button" />
 				<action function="set">tw_gui_sort_order=3</action>
@@ -374,7 +375,7 @@
 
 			<object type="button">
 				<placement x="%sort_col1_button_x%" y="%sort_desc_button_y%" />
-				<font resource="UItext" color="%button_text_color%" />
+				<font resource="mediumfont" color="%button_text_color%" />
 				<text>Name</text>
 				<image resource="sort_button" />
 				<action function="set">tw_gui_sort_order=-1</action>
@@ -382,7 +383,7 @@
 
 			<object type="button">
 				<placement x="%sort_col2_button_x%" y="%sort_desc_button_y%" />
-				<font resource="UItext" color="%button_text_color%" />
+				<font resource="mediumfont" color="%button_text_color%" />
 				<text>Date</text>
 				<image resource="sort_button" />
 				<action function="set">tw_gui_sort_order=-2</action>
@@ -390,7 +391,7 @@
 
 			<object type="button">
 				<placement x="%sort_col3_button_x%" y="%sort_desc_button_y%" />
-				<font resource="UItext" color="%button_text_color%" />
+				<font resource="mediumfont" color="%button_text_color%" />
 				<text>Size</text>
 				<image resource="sort_button" />
 				<action function="set">tw_gui_sort_order=-3</action>

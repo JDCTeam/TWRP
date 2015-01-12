@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "cutils/properties.h"
 extern "C" {
@@ -74,8 +75,11 @@ int main(int argc, char **argv) {
 	freopen(TMP_LOG_FILE, "a", stderr);
 	setbuf(stderr, NULL);
 
+	signal(SIGPIPE, SIG_IGN);
+
 	// Handle ADB sideload
 	if (argc == 3 && strcmp(argv[1], "--adbd") == 0) {
+		property_set("ctl.stop", "adbd");
 		adb_main(argv[2]);
 		return 0;
 	}
@@ -94,7 +98,7 @@ int main(int argc, char **argv) {
 	property_set("ro.twrp.version", TW_VERSION_STR);
 
 	time_t StartupTime = time(NULL);
-	printf("Starting TWRP %s on %s (pid %d)", TW_VERSION_STR, ctime(&StartupTime), getpid());
+	printf("Starting TWRP %s on %s (pid %d)\n", TW_VERSION_STR, ctime(&StartupTime), getpid());
 
 #ifdef HAVE_SELINUX
 	printf("Setting SELinux to permissive\n");
@@ -323,32 +327,31 @@ int main(int argc, char **argv) {
 			MultiROM::executeCacheScripts();
 	}
 
+#if 0
 #ifdef TW_HAS_MTP
 	// Enable MTP?
 	char mtp_crash_check[PROPERTY_VALUE_MAX];
 	property_get("mtp.crash_check", mtp_crash_check, "0");
 	if (strcmp(mtp_crash_check, "0") == 0) {
 		property_set("mtp.crash_check", "1");
-		if (DataManager::GetIntValue(TW_IS_ENCRYPTED) != 0) {
-			if (DataManager::GetIntValue(TW_IS_DECRYPTED) != 0 && DataManager::GetIntValue("tw_mtp_enabled") == 1) {
-				LOGINFO("Enabling MTP during startup\n");
-				if (!PartitionManager.Enable_MTP())
-					PartitionManager.Disable_MTP();
-				else
-					gui_print("MTP Enabled\n");
-			}
-		} else if (DataManager::GetIntValue("tw_mtp_enabled") == 1) {
+		if (DataManager::GetIntValue("tw_mtp_enabled") == 1 && ((DataManager::GetIntValue(TW_IS_ENCRYPTED) != 0 && DataManager::GetIntValue(TW_IS_DECRYPTED) != 0) || DataManager::GetIntValue(TW_IS_ENCRYPTED) == 0)) {
 			LOGINFO("Enabling MTP during startup\n");
 			if (!PartitionManager.Enable_MTP())
 				PartitionManager.Disable_MTP();
 			else
 				gui_print("MTP Enabled\n");
+		} else {
+			PartitionManager.Disable_MTP();
 		}
 		property_set("mtp.crash_check", "0");
 	} else {
 		gui_print_color("warning", "MTP Crashed, not starting MTP on boot.\n");
 		DataManager::SetValue("tw_mtp_enabled", 0);
+		PartitionManager.Disable_MTP();
 	}
+#else
+	PartitionManager.Disable_MTP();
+#endif
 #endif
 
 	// Launch the main GUI
