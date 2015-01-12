@@ -1737,8 +1737,8 @@ int GUIAction::timeout(std::string arg)
 {
 #ifndef TW_NO_SCREEN_TIMEOUT
 	blankTimer.blankScreen();
-	return 0;
 #endif
+	return 0;
 }
 
 int GUIAction::multirom(std::string arg)
