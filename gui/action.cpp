@@ -536,10 +536,7 @@ int GUIAction::page(std::string arg)
 
 int GUIAction::reload(std::string arg)
 {
-	operation_start("Reload Theme");
-	int ret_val = !TWFunc::reloadTheme();
-	operation_end(ret_val);
-	return 0;
+	return !TWFunc::reloadTheme();
 }
 
 int GUIAction::readBackup(std::string arg)

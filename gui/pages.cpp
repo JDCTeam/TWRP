@@ -562,11 +562,11 @@ PageSet::~PageSet()
 {
 	for (std::vector<Page*>::iterator itr = mPages.begin(); itr != mPages.end(); ++itr)
 		delete *itr;
-	for (std::vector<xml_node<>*>::iterator itr2 = templates.begin(); itr2 != templates.end(); ++itr2)
-		delete *itr2;
 
 	delete mResources;
 	free(mXmlFile);
+
+	mDoc.clear();
 }
 
 int PageSet::Load(ZipArchive* package)
@@ -669,6 +669,7 @@ int PageSet::CheckInclude(ZipArchive* package, xml_document<> *parentDoc)
 				return -1;
 
 			read(fd, xmlFile, len);
+			xmlFile[len] = 0;
 			close(fd);
 		} else {
 			filename += attr->value();
@@ -690,6 +691,7 @@ int PageSet::CheckInclude(ZipArchive* package, xml_document<> *parentDoc)
 				LOGERR("Unable to extract '%s'\n", filename.c_str());
 				return -1;
 			}
+			xmlFile[len] = 0;
 		}
 		doc.parse<0>(xmlFile);
 
