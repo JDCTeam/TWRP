@@ -196,6 +196,7 @@ GUIAction::GUIAction(xml_node<>* node)
 		mf["multirom_exit_backup"] = &GUIAction::multirom_exit_backup;
 		mf["multirom_create_internal_rom_name"] = &GUIAction::multirom_create_internal_rom_name;
 		mf["multirom_list_roms_for_swap"] = &GUIAction::multirom_list_roms_for_swap;
+		ADD_ACTION(multirom_swap_calc_space);
 
 		// remember actions that run in the caller thread
 		for (mapFunc::const_iterator it = mf.begin(); it != mf.end(); ++it)
@@ -237,7 +238,6 @@ GUIAction::GUIAction(xml_node<>* node)
 		ADD_ACTION(multirom_rm_bootimg);
 		ADD_ACTION(multirom_backup_rom);
 		ADD_ACTION(multirom_sideload);
-		ADD_ACTION(multirom_swap_calc_space);
 		ADD_ACTION(multirom_execute_swap);
 		ADD_ACTION(multirom_set_fw);
 		ADD_ACTION(multirom_remove_fw);
