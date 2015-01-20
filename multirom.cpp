@@ -795,7 +795,12 @@ bool MultiROM::createFakeSystemImg()
 		return false;
 	}
 
-	if(!createImage(sysimg, "system", sys->GetSizeTotal()/1024/1024 + 32))
+	uint64_t size = sys->GetSizeRaw();
+	if(size == 0)
+		size = sys->GetSizeTotal();
+	size = size/1024/1024 + 32;
+
+	if(!createImage(sysimg, "system", size))
 	{
 		LOGERR("Failed to create system.img!");
 		return false;

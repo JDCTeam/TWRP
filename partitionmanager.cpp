@@ -226,6 +226,7 @@ void TWPartitionManager::Output_Partition(TWPartition* Part) {
 	if (Part->Can_Be_Mounted) {
 		printf(" Used: %iMB Free: %iMB Backup Size: %iMB", (int)(Part->Used / mb), (int)(Part->Free / mb), (int)(Part->Backup_Size / mb));
 	}
+	printf(" Raw size: %llu\n", Part->Size_Raw);
 	printf("\n   Flags: ");
 	if (Part->Can_Be_Mounted)
 		printf("Can_Be_Mounted ");

@@ -78,6 +78,7 @@ public:
 	unsigned long long GetSizeFree() { return Free; }
 	unsigned long long GetSizeBackup() { return Backup_Size; }
 	unsigned long long GetSizeTotal() { return Size; }
+	unsigned long long GetSizeRaw() { return Size_Raw; }
 
 public:
 	string Current_File_System;                                               // Current file system
@@ -148,11 +149,12 @@ private:
 	string Decrypted_Block_Device;                                            // Decrypted block device available after decryption
 	bool Removable;                                                           // Indicates if this partition is removable -- affects how often we check overall size, if present, etc.
 	int Length;                                                               // Used by make_ext4fs to leave free space at the end of the partition block for things like a crypto footer
-	unsigned long long Size;                                                  // Overall size of the partition
+	unsigned long long Size;                                                  // Overall size of the filesystem on the partition
 	unsigned long long Used;                                                  // Overall used space
 	unsigned long long Free;                                                  // Overall free space
 	unsigned long long Backup_Size;                                           // Backup size -- may be different than used space especially when /data/media is present
 	unsigned long long Restore_Size;                                          // Restore size of the current restore operation
+	unsigned long long Size_Raw;                                              // Total size of the underlaying partition (without fs)
 	bool Can_Be_Encrypted;                                                    // This partition might be encrypted, affects error handling, can only be true if crypto support is compiled in
 	bool Is_Encrypted;                                                        // This partition is thought to be encrypted -- it wouldn't mount for some reason, only avialble with crypto support
 	bool Is_Decrypted;                                                        // This partition has successfully been decrypted

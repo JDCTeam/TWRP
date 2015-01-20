@@ -156,6 +156,7 @@ TWPartition::TWPartition(const string& fstab_line) {
 	MTP_Storage_ID = 0;
 	Can_Flash_Img = false;
 	Is_ImageMount = false;
+	Size_Raw = 0;
 
 	if(!fstab_line.empty())
 		Process_Fstab_Line(fstab_line, true);
@@ -1513,6 +1514,10 @@ void TWPartition::Check_FS_Type() {
 		LOGINFO("Can't probe device %s\n", Actual_Block_Device.c_str());
 		return;
 	}
+
+	blkid_loff_t size = blkid_get_dev_size(blkid_probe_get_fd(pr));
+	if(size > 0)
+		Size_Raw = size;
 
 	if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0) {
 		blkid_free_probe(pr);
