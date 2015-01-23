@@ -94,7 +94,7 @@ LOCAL_C_INCLUDES += bionic external/stlport/stlport external/openssl/include $(L
 LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
-LOCAL_STATIC_LIBRARIES += libguitwrp
+LOCAL_STATIC_LIBRARIES += libguitwrp libcp_xattrs
 LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libminzip libaosprecovery
 LOCAL_SHARED_LIBRARIES += libgccdemangle libcrecovery
 
@@ -528,7 +528,8 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/minzip/Android.mk \
     $(commands_recovery_local_path)/dosfstools/Android.mk \
     $(commands_recovery_local_path)/phablet/Android.mk \
-    $(commands_recovery_local_path)/simg2img/Android.mk
+    $(commands_recovery_local_path)/simg2img/Android.mk \
+    $(commands_recovery_local_path)/cp_xattrs/Android.mk
 
 ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/lollipop/Android.mk

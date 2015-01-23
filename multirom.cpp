@@ -33,6 +33,7 @@ extern "C" {
 }
 
 #include "libblkid/include/blkid.h"
+#include "cp_xattrs/libcp_xattrs.h"
 
 std::string MultiROM::m_path = "";
 std::string MultiROM::m_boot_dev = "";
@@ -895,11 +896,7 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 		gui_print("ZIP successfully installed\n");
 
 	if(has_block_update)
-	{
-		if(status == INSTALL_SUCCESS)
-			copyXAttrs("/tmpsystem", "/system", DT_DIR);
 		system_args("busybox umount -d /tmpsystem");
-	}
 
 exit:
 	if(has_block_update)
@@ -953,8 +950,6 @@ bool MultiROM::flashORSZip(std::string file, int *wipe_cache)
 
 	if(has_block_update)
 	{
-		if(status == INSTALL_SUCCESS)
-			copyXAttrs("/tmpsystem", "/system", DT_DIR);
 		system_args("busybox umount -d /tmpsystem");
 		failsafeCheckPartition("/tmp/mrom_fakesyspart");
 	}
@@ -1183,7 +1178,10 @@ bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
 				TWPartition *sys = PartitionManager.Find_Original_Partition_By_Path("/system");
 				if(sys)
 				{
-					fprintf(new_script, "run_program(\"/sbin/sh\", \"-c\", \"mkdir -p /tmpsystem && mount -t ext4 $(readlink -f -n %s) /tmpsystem && cp -a /tmpsystem/* /system/\");\n",
+					fprintf(new_script, "run_program(\"/sbin/sh\", \"-c\", \""
+						"mkdir -p /tmpsystem && mount -t ext4 $(readlink -f -n %s) /tmpsystem && "
+						"(cp -a /tmpsystem/* /system/ || true) && cp_xattrs /tmpsystem /system"
+						"\");\n",
 							sys->Actual_Block_Device.c_str());
 				}
 			}
@@ -2824,7 +2822,7 @@ bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst
 			return false;
 		}
 
-		if(!copyXAttrs(src + "/" + part, dst + "/" + part, DT_DIR))
+		if(!cp_xattrs_recursive(src + "/" + part, dst + "/" + part, DT_DIR))
 			return false;
 
 		return true;
@@ -2842,7 +2840,7 @@ bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst
 		snprintf(path1, sizeof(path1), "%s/%s", src.c_str(), part.c_str());
 		snprintf(path2, sizeof(path2), "%s/%s", dst.c_str(), part.c_str());
 
-		if(!copySingleXAttr(path1, path2))
+		if(!cp_xattrs_single_file(path1, path2))
 			return false;
 
 		d = opendir(path1);
@@ -2867,7 +2865,7 @@ bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst
 				if(stat(path1, &st) >= 0)
 				{
 					mkdir(path2, st.st_mode);
-					copySingleXAttr(path1, path2);
+					cp_xattrs_single_file(path1, path2);
 				}
 				continue;
 			}
@@ -2882,7 +2880,7 @@ bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst
 			snprintf(path1, sizeof(path1), "%s/%s/%s", src.c_str(), part.c_str(), dt->d_name);
 			snprintf(path2, sizeof(path2), "%s/%s/%s", dst.c_str(), part.c_str(), dt->d_name);
 
-			if(!copyXAttrs(path1, path2, dt->d_type))
+			if(!cp_xattrs_recursive(path1, path2, dt->d_type))
 			{
 				res = false;
 				break;
@@ -2892,75 +2890,6 @@ bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst
 		closedir(d);
 		return res;
 	}
-}
-
-bool MultiROM::copySingleXAttr(const char *from, const char *to)
-{
-	ssize_t res;
-	char selabel[512];
-	struct vfs_cap_data cap_data;
-
-	res = lgetxattr(from, "security.capability", &cap_data, sizeof(struct vfs_cap_data));
-	if (res == sizeof(struct vfs_cap_data))
-	{
-		res = lsetxattr(to, "security.capability", &cap_data, sizeof(struct vfs_cap_data), 0);
-		if(res < 0 && errno != ENOENT)
-		{
-			LOGERR("Failed to lsetxattr capability on %s: %d (%s)\n", to, errno, strerror(errno));
-			return false;
-		}
-	}
-
-	res = lgetxattr(from, "security.selinux", selabel, sizeof(selabel));
-	if(res > 0)
-	{
-		selabel[sizeof(selabel)-1] = 0;
-		res = lsetxattr(to, "security.selinux", selabel, strlen(selabel)+1, 0);
-		if(res < 0 && errno != ENOENT)
-		{
-			LOGERR("Failed to lsetxattr selinux on %s: %d (%s)\n", to, errno, strerror(errno));
-			return false;
-		}
-	}
-	else if(res < 0 && errno == ERANGE)
-		LOGERR("lgetxattr selinux on %s failed: label is too long\n", from);
-
-	return true;
-}
-
-bool MultiROM::copyXAttrs(const std::string& from, const std::string& to, unsigned char type)
-{
-	if(!copySingleXAttr(from.c_str(), to.c_str()))
-		return false;
-
-	if(type != DT_DIR)
-		return true;
-
-	DIR *d;
-	struct dirent *dt;
-
-	d = opendir(from.c_str());
-	if(!d)
-	{
-		LOGERR("Failed to open dir %s\n", from.c_str());
-		return false;
-	}
-
-	while((dt = readdir(d)))
-	{
-		if (dt->d_type == DT_DIR && dt->d_name[0] == '.' &&
-			(dt->d_name[1] == '.' || dt->d_name[1] == 0))
-			continue;
-
-		if(!copyXAttrs(from + "/" + dt->d_name, to + "/" + dt->d_name, dt->d_type))
-		{
-			closedir(d);
-			return false;
-		}
-	}
-
-	closedir(d);
-	return true;
 }
 
 bool MultiROM::copyInternal(const std::string& dest_name)
