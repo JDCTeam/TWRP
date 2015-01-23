@@ -132,6 +132,7 @@ int main(int argc, char **argv) {
 	PartitionManager.Output_Partition_Logging();
 
 	DataManager::SetValue(TW_MROM_REC_VERSION_VAR, MultiROM::getRecoveryVersion());
+	printf("MultiROM Recovery version: %s\n", DataManager::GetStrValue(TW_MROM_REC_VERSION_VAR).c_str());
 
 	// Load up all the resources
 	gui_loadResources();
