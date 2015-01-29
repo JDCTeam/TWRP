@@ -96,7 +96,7 @@
 		<variable name="row2_medium_y" value="459" />
 		<variable name="row3_medium_y" value="521" />
 		<variable name="row4_medium_y" value="858" />
-		<variable name="row5_medium_y" value="1057" />
+		<variable name="row5_medium_y" value="1293" />
 		<variable name="row6_medium_y" value="1676" />
 		<variable name="row7_medium_y" value="971" />
 		<variable name="slider_x" value="40" />
@@ -201,6 +201,31 @@
 		<variable name="slidervalue_padding" value="30" />
 		<variable name="slidervalue_sliderw" value="15" />
 		<variable name="slidervalue_sliderh" value="90" />
+		
+		<variable name="mrom_inject_txt_x" value="1170" />
+		<variable name="mrom_inject_txt_y" value="1370" />
+		<variable name="mrom_wipe_col1_x" value="248" />
+		<variable name="mrom_wipe_col2_x" value="602" />
+		<variable name="mrom_wipe_col3_x" value="958" />
+		<variable name="mrom_boot_delay_sec_x" value="793" />
+		<variable name="mrom_boot_delay_add_x" value="910" />
+		<variable name="mrom_boot_rom_h" value="1064" />
+		<variable name="mrom_ubuntu_desktop_x" value="390" />
+		<variable name="mrom_ubuntu_touch_x" value="910" />
+		<variable name="mrom_install_loc_h" value="691" />
+		<variable name="mrom_install_refresh_y" value="1782" />
+		<variable name="mrom_img1_text_y" value="798" />
+		<variable name="mrom_img2_text_y" value="1037" />
+		<variable name="mrom_img3_text_y" value="1277" />
+		<variable name="mrom_img4_text_y" value="1516" />
+		<variable name="mrom_img5_text_y" value="1755" />
+		<variable name="mrom_img1_btn_y" value="698" />
+		<variable name="mrom_img2_btn_y" value="937" />
+		<variable name="mrom_img3_btn_y" value="1177" />
+		<variable name="mrom_img4_btn_y" value="1416" />
+		<variable name="mrom_img5_btn_y" value="1656" />
+		<variable name="mrom_rom_loc_list_h" value="1144" />
+		<variable name="mrom_swap_list_h" value="691" />
 	</variables>
 
 	<mousecursor>
