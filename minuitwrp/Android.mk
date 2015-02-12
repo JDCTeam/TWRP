@@ -123,6 +123,8 @@ else
     LOCAL_SRC_FILES += truetype.c
 endif
 
+LOCAL_CFLAGS += -DTWRES=\"$(TWRES_PATH)\"
+
 ifneq ($(LANDSCAPE_RESOLUTION),)
   LOCAL_CFLAGS += -DTW_HAS_LANDSCAPE
 endif

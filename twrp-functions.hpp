@@ -89,6 +89,8 @@ public:
 	static bool Toggle_MTP(bool enable);                                        // Disables MTP if enable is false and re-enables MTP if enable is true and it was enabled the last time it was toggled off
 	static std::string to_string(unsigned long value); //convert ul to string
 	static void SetPerformanceMode(bool mode); // support recovery.perf.mode
+	static void Disable_Stock_Recovery_Replace(); // Disable stock ROMs from replacing TWRP with stock recovery
+
 	static bool loadTheme();
 	static bool reloadTheme();
 	static std::string getDefaultThemePath(int rotation);

@@ -439,45 +439,56 @@ int OpenRecoveryScript::Install_Command(string Zip) {
 	std::vector<PartitionList> Storage_List;
 	string Full_Path;
 
-	PartitionManager.Mount_All_Storage();
-	PartitionManager.Get_Partition_List("storage", &Storage_List);
-	int listSize = Storage_List.size();
-	for (int i = 0; i < listSize; i++) {
-		if (PartitionManager.Is_Mounted_By_Path(Storage_List.at(i).Mount_Point)) {
-			Full_Path = Storage_List.at(i).Mount_Point + "/" + Zip;
-			if (TWFunc::Path_Exists(Full_Path)) {
-				Zip = Full_Path;
-				break;
-			}
-			Full_Path = Zip;
-			LOGINFO("Trying to find zip '%s' on '%s'...\n", Full_Path.c_str(), Storage_List.at(i).Mount_Point.c_str());
-			ret_string = Locate_Zip_File(Full_Path, Storage_List.at(i).Mount_Point);
-			if (!ret_string.empty()) {
-				Zip = ret_string;
-				break;
+	if (Zip.substr(0, 1) == "@") {
+		// This is a special file that contains a map of blocks on the data partition
+		Full_Path = Zip.substr(1);
+		if (!PartitionManager.Mount_By_Path(Full_Path, true) || !TWFunc::Path_Exists(Full_Path)) {
+			gui_print("Unable to install via mapped zip '%s'\n", Full_Path.c_str());
+			return 1;
+		}
+		gui_print("Installing mapped zip file '%s'\n", Full_Path.c_str());
+	} else if (!TWFunc::Path_Exists(Zip)) {
+		PartitionManager.Mount_All_Storage();
+		PartitionManager.Get_Partition_List("storage", &Storage_List);
+		int listSize = Storage_List.size();
+		for (int i = 0; i < listSize; i++) {
+			if (PartitionManager.Is_Mounted_By_Path(Storage_List.at(i).Mount_Point)) {
+				Full_Path = Storage_List.at(i).Mount_Point + "/" + Zip;
+				if (TWFunc::Path_Exists(Full_Path)) {
+					Zip = Full_Path;
+					break;
+				}
+				Full_Path = Zip;
+				LOGINFO("Trying to find zip '%s' on '%s'...\n", Full_Path.c_str(), Storage_List.at(i).Mount_Point.c_str());
+				ret_string = Locate_Zip_File(Full_Path, Storage_List.at(i).Mount_Point);
+				if (!ret_string.empty()) {
+					Zip = ret_string;
+					break;
+				}
 			}
 		}
-	}
-
-	if (!TWFunc::Path_Exists(Zip)) {
-		// zip file doesn't exist
-		gui_print("Unable to locate zip file '%s'.\n", Zip.c_str());
-		ret_val = 1;
-	} else {
-		if(DataManager::GetIntValue(TW_ORS_IS_SECONDARY_ROM) == 1)
-			ret_val = !MultiROM::flashORSZip(Zip, &wipe_cache);
-		else
-		{
+		if (!TWFunc::Path_Exists(Zip)) {
+			// zip file doesn't exist
+			gui_print("Unable to locate zip file '%s'.\n", Zip.c_str());
+			ret_val = 1;
+		} else
 			gui_print("Installing zip file '%s'\n", Zip.c_str());
-			ret_val = TWinstall_zip(Zip.c_str(), &wipe_cache);
+	}
 
-			if(DataManager::GetIntValue(TW_AUTO_INJECT_MROM) == 1 && MultiROM::folderExists())
-			{
-				gui_print("Injecting boot.img with MultiROM...\n");
-				MultiROM::injectBoot(MultiROM::getBootDev(), true);
-			}
+	if(DataManager::GetIntValue(TW_ORS_IS_SECONDARY_ROM) == 1)
+		ret_val = !MultiROM::flashORSZip(Zip, &wipe_cache);
+	else
+	{
+		gui_print("Installing zip file '%s'\n", Zip.c_str());
+		ret_val = TWinstall_zip(Zip.c_str(), &wipe_cache);
+
+		if(DataManager::GetIntValue(TW_AUTO_INJECT_MROM) == 1 && MultiROM::folderExists())
+		{
+			gui_print("Injecting boot.img with MultiROM...\n");
+			MultiROM::injectBoot(MultiROM::getBootDev(), true);
 		}
 	}
+
 	if (ret_val != 0) {
 		LOGERR("Error installing zip file '%s'\n", Zip.c_str());
 		ret_val = 1;
@@ -579,7 +590,7 @@ void OpenRecoveryScript::Run_OpenRecoveryScript(void) {
 	DataManager::SetValue("tw_complete_text1", "OpenRecoveryScript Complete");
 	DataManager::SetValue("tw_has_cancel", 0);
 	DataManager::SetValue("tw_show_reboot", 0);
-	if (gui_startPage("action_page") != 0) {
+	if (gui_startPage("action_page", 0, 1) != 0) {
 		LOGERR("Failed to load OpenRecoveryScript GUI page.\n");
 	}
 }

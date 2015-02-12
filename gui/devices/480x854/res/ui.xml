@@ -26,10 +26,10 @@
 		<resource name="progress" type="animation" filename="indeterminate" />
 		<resource name="progress_empty" type="image" filename="progress_empty" />
 		<resource name="progress_full" type="image" filename="progress_fill" />
-		<resource name="checkbox_false" type="image" filename="checkbox_empty" />
-		<resource name="checkbox_true" type="image" filename="checkbox_checked" />
-		<resource name="radio_false" type="image" filename="radio_empty" />
-		<resource name="radio_true" type="image" filename="radio_selected" />
+		<resource name="checkbox_false" type="image" filename="checkbox_empty" retainaspect="1" />
+		<resource name="checkbox_true" type="image" filename="checkbox_checked" retainaspect="1" />
+		<resource name="radio_false" type="image" filename="radio_empty" retainaspect="1" />
+		<resource name="radio_true" type="image" filename="radio_selected" retainaspect="1" />
 		<resource name="medium_button" type="image" filename="medium-button" />
 		<resource name="sort_button" type="image" filename="sort-button" />
 		<resource name="minus_button" type="image" filename="minus-button" />
@@ -44,13 +44,14 @@
 		<resource name="keyboard2" type="image" filename="keyboard2" />
 		<resource name="keyboard3" type="image" filename="keyboard3" />
 		<resource name="keyboard4" type="image" filename="keyboard4" />
-		<resource name="cursor" type="image" filename="cursor" />
+		<resource name="cursor" type="image" filename="cursor" retainaspect="1" />
 	</resources>
 
 	<variables>
 		<variable name="col1_x" value="10" />
 		<variable name="col2_x" value="240" />
 		<variable name="col_center_x" value="128" />
+		<variable name="col_center_medium_x" value="183" />
 		<variable name="center_x" value="240" />
 		<variable name="row1_y" value="140" />
 		<variable name="row2_y" value="290" />

@@ -63,6 +63,7 @@ extern "C" {
 
 #include "rapidxml.hpp"
 #include "objects.hpp"
+#include "../tw_atomic.hpp"
 
 void curtainClose(void);
 
@@ -73,11 +74,36 @@ static int zip_queue_index;
 static pthread_t terminal_command;
 pid_t sideload_child_pid;
 
-static ActionThread action_thread;
+static void *ActionThread_work_wrapper(void *data);
+
+class ActionThread
+{
+public:
+	ActionThread();
+	~ActionThread();
+
+	void threadActions(GUIAction *act);
+	void run(void *data);
+private:
+	friend void *ActionThread_work_wrapper(void*);
+	struct ThreadData
+	{
+		ActionThread *this_;
+		GUIAction *act;
+		ThreadData(ActionThread *this_, GUIAction *act) : this_(this_), act(act) {}
+	};
+
+	pthread_t m_thread;
+	bool m_thread_running;
+	pthread_mutex_t m_act_lock;
+};
+
+static ActionThread action_thread;	// for all kinds of longer running actions
+static ActionThread cancel_thread;	// for longer running "cancel" actions
 
 static void *ActionThread_work_wrapper(void *data)
 {
-	action_thread.run(data);
+	static_cast<ActionThread::ThreadData*>(data)->this_->run(data);
 	return NULL;
 }
 
@@ -109,9 +135,7 @@ void ActionThread::threadActions(GUIAction *act)
 	} else {
 		m_thread_running = true;
 		pthread_mutex_unlock(&m_act_lock);
-		ThreadData *d = new ThreadData;
-		d->act = act;
-
+		ThreadData *d = new ThreadData(this, act);
 		pthread_create(&m_thread, NULL, &ActionThread_work_wrapper, d);
 	}
 }
@@ -142,60 +166,61 @@ GUIAction::GUIAction(xml_node<>* node)
 
 #define ADD_ACTION(n) mf[#n] = &GUIAction::n
 	if (mf.empty()) {
+#define ADD_ACTION(n) mf[#n] = &GUIAction::n
+#define ADD_ACTION_EX(name, func) mf[name] = &GUIAction::func
 		// These actions will be run in the caller's thread
-		mf["reboot"] = &GUIAction::reboot;
-		mf["home"] = &GUIAction::home;
-		mf["key"] = &GUIAction::key;
-		mf["page"] = &GUIAction::page;
-		mf["reload"] = &GUIAction::reload;
-		mf["readBackup"] = &GUIAction::readBackup;
-		mf["set"] = &GUIAction::set;
-		mf["clear"] = &GUIAction::clear;
-		mf["mount"] = &GUIAction::mount;
-		mf["unmount"] = &GUIAction::unmount;
-		mf["umount"] = &GUIAction::unmount;
-		mf["restoredefaultsettings"] = &GUIAction::restoredefaultsettings;
-		mf["copylog"] = &GUIAction::copylog;
-		mf["compute"] = &GUIAction::compute;
-		mf["addsubtract"] = &GUIAction::compute;
-		mf["setguitimezone"] = &GUIAction::setguitimezone;
-		mf["overlay"] = &GUIAction::overlay;
-		mf["queuezip"] = &GUIAction::queuezip;
-		mf["cancelzip"] = &GUIAction::cancelzip;
-		mf["queueclear"] = &GUIAction::queueclear;
-		mf["sleep"] = &GUIAction::sleep;
-		mf["appenddatetobackupname"] = &GUIAction::appenddatetobackupname;
-		mf["generatebackupname"] = &GUIAction::generatebackupname;
-		mf["checkpartitionlist"] = &GUIAction::checkpartitionlist;
-		mf["getpartitiondetails"] = &GUIAction::getpartitiondetails;
-		mf["screenshot"] = &GUIAction::screenshot;
-		mf["setbrightness"] = &GUIAction::setbrightness;
-		mf["fileexists"] = &GUIAction::fileexists;
-		mf["killterminal"] = &GUIAction::killterminal;
-		mf["checkbackupname"] = &GUIAction::checkbackupname;
-		mf["adbsideloadcancel"] = &GUIAction::adbsideloadcancel;
-		mf["fixsu"] = &GUIAction::fixsu;
-		mf["startmtp"] = &GUIAction::startmtp;
-		mf["stopmtp"] = &GUIAction::stopmtp;
-		mf["rotation"] = &GUIAction::rotation;
-		mf["timeout"] = &GUIAction::timeout;
+		ADD_ACTION(reboot);
+		ADD_ACTION(home);
+		ADD_ACTION(key);
+		ADD_ACTION(page);
+		ADD_ACTION(reload);
+		ADD_ACTION(readBackup);
+		ADD_ACTION(set);
+		ADD_ACTION(clear);
+		ADD_ACTION(mount);
+		ADD_ACTION(unmount);
+		ADD_ACTION_EX("umount", unmount);
+		ADD_ACTION(restoredefaultsettings);
+		ADD_ACTION(copylog);
+		ADD_ACTION(compute);
+		ADD_ACTION_EX("addsubtract", compute);
+		ADD_ACTION(setguitimezone);
+		ADD_ACTION(overlay);
+		ADD_ACTION(queuezip);
+		ADD_ACTION(cancelzip);
+		ADD_ACTION(queueclear);
+		ADD_ACTION(sleep);
+		ADD_ACTION(appenddatetobackupname);
+		ADD_ACTION(generatebackupname);
+		ADD_ACTION(checkpartitionlist);
+		ADD_ACTION(getpartitiondetails);
+		ADD_ACTION(screenshot);
+		ADD_ACTION(setbrightness);
+		ADD_ACTION(fileexists);
+		ADD_ACTION(killterminal);
+		ADD_ACTION(checkbackupname);
+		ADD_ACTION(adbsideloadcancel);
+		ADD_ACTION(fixsu);
+		ADD_ACTION(startmtp);
+		ADD_ACTION(stopmtp);
+		ADD_ACTION(cancelbackup);
 
-		mf["multirom"] = &GUIAction::multirom;
-		mf["multirom_reset_roms_paths"] = &GUIAction::multirom_reset_roms_paths;
-		mf["multirom_rename"] = &GUIAction::multirom_rename;
-		mf["multirom_manage"] = &GUIAction::multirom_manage;
-		mf["multirom_settings"] = &GUIAction::multirom_settings;
-		mf["multirom_settings_save"] = &GUIAction::multirom_settings_save;
-		mf["multirom_add"] = &GUIAction::multirom_add;
-		mf["multirom_add_second"] = &GUIAction::multirom_add_second;
-		mf["multirom_add_file_selected"] = &GUIAction::multirom_add_file_selected;
-		mf["multirom_change_img_size"] = &GUIAction::multirom_change_img_size;
-		mf["multirom_change_img_size_act"] = &GUIAction::multirom_change_img_size_act;
-		mf["multirom_set_list_loc"] = &GUIAction::multirom_set_list_loc;
-		mf["multirom_list_loc_selected"] = &GUIAction::multirom_list_loc_selected;
-		mf["multirom_exit_backup"] = &GUIAction::multirom_exit_backup;
-		mf["multirom_create_internal_rom_name"] = &GUIAction::multirom_create_internal_rom_name;
-		mf["multirom_list_roms_for_swap"] = &GUIAction::multirom_list_roms_for_swap;
+		ADD_ACTION(multirom);
+		ADD_ACTION(multirom_reset_roms_paths);
+		ADD_ACTION(multirom_rename);
+		ADD_ACTION(multirom_manage);
+		ADD_ACTION(multirom_settings);
+		ADD_ACTION(multirom_settings_save);
+		ADD_ACTION(multirom_add);
+		ADD_ACTION(multirom_add_second);
+		ADD_ACTION(multirom_add_file_selected);
+		ADD_ACTION(multirom_change_img_size);
+		ADD_ACTION(multirom_change_img_size_act);
+		ADD_ACTION(multirom_set_list_loc);
+		ADD_ACTION(multirom_list_loc_selected);
+		ADD_ACTION(multirom_exit_backup);
+		ADD_ACTION(multirom_create_internal_rom_name);
+		ADD_ACTION(multirom_list_roms_for_swap);
 		ADD_ACTION(multirom_swap_calc_space);
 
 		// remember actions that run in the caller thread
@@ -203,27 +228,27 @@ GUIAction::GUIAction(xml_node<>* node)
 			setActionsRunningInCallerThread.insert(it->first);
 
 		// These actions will run in a separate thread
-		mf["flash"] = &GUIAction::flash;
-		mf["wipe"] = &GUIAction::wipe;
-		mf["refreshsizes"] = &GUIAction::refreshsizes;
-		mf["nandroid"] = &GUIAction::nandroid;
-		mf["fixpermissions"] = &GUIAction::fixpermissions;
-		mf["dd"] = &GUIAction::dd;
-		mf["partitionsd"] = &GUIAction::partitionsd;
-		mf["installhtcdumlock"] = &GUIAction::installhtcdumlock;
-		mf["htcdumlockrestoreboot"] = &GUIAction::htcdumlockrestoreboot;
-		mf["htcdumlockreflashrecovery"] = &GUIAction::htcdumlockreflashrecovery;
-		mf["cmd"] = &GUIAction::cmd;
-		mf["terminalcommand"] = &GUIAction::terminalcommand;
-		mf["reinjecttwrp"] = &GUIAction::reinjecttwrp;
-		mf["decrypt"] = &GUIAction::decrypt;
-		mf["adbsideload"] = &GUIAction::adbsideload;
-		mf["openrecoveryscript"] = &GUIAction::openrecoveryscript;
-		mf["installsu"] = &GUIAction::installsu;
-		mf["decrypt_backup"] = &GUIAction::decrypt_backup;
-		mf["repair"] = &GUIAction::repair;
-		mf["changefilesystem"] = &GUIAction::changefilesystem;
-		mf["flashimage"] = &GUIAction::flashimage;
+		ADD_ACTION(flash);
+		ADD_ACTION(wipe);
+		ADD_ACTION(refreshsizes);
+		ADD_ACTION(nandroid);
+		ADD_ACTION(fixpermissions);
+		ADD_ACTION(dd);
+		ADD_ACTION(partitionsd);
+		ADD_ACTION(installhtcdumlock);
+		ADD_ACTION(htcdumlockrestoreboot);
+		ADD_ACTION(htcdumlockreflashrecovery);
+		ADD_ACTION(cmd);
+		ADD_ACTION(terminalcommand);
+		ADD_ACTION(reinjecttwrp);
+		ADD_ACTION(decrypt);
+		ADD_ACTION(adbsideload);
+		ADD_ACTION(openrecoveryscript);
+		ADD_ACTION(installsu);
+		ADD_ACTION(decrypt_backup);
+		ADD_ACTION(repair);
+		ADD_ACTION(changefilesystem);
+		ADD_ACTION(flashimage);
 
 		ADD_ACTION(multirom_delete);
 		ADD_ACTION(multirom_flash_zip);
@@ -360,6 +385,13 @@ void GUIAction::simulate_progress_bar(void)
 	gui_print("Simulating actions...\n");
 	for (int i = 0; i < 5; i++)
 	{
+		if (PartitionManager.stop_backup.get_value()) {
+			DataManager::SetValue("tw_cancel_backup", 1);
+			gui_print("Backup Canceled.\n");
+			DataManager::SetValue("ui_progress", 0);
+			PartitionManager.stop_backup.set_value(0);
+			return;
+		}
 		usleep(500000);
 		DataManager::SetValue("ui_progress", i * 20);
 	}
@@ -405,9 +437,17 @@ int GUIAction::flash_zip(std::string filename, int* wipe_cache)
 	return ret_val;
 }
 
-bool GUIAction::needsToRunInSeparateThread(const GUIAction::Action& action)
+GUIAction::ThreadType GUIAction::getThreadType(const GUIAction::Action& action)
 {
-	return setActionsRunningInCallerThread.find(gui_parse_text(action.mFunction)) == setActionsRunningInCallerThread.end();
+	string func = gui_parse_text(action.mFunction);
+	bool needsThread = setActionsRunningInCallerThread.find(func) == setActionsRunningInCallerThread.end();
+	if (needsThread) {
+		if (func == "cancelbackup")
+			return THREAD_CANCEL;
+		else
+			return THREAD_ACTION;
+	}
+	return THREAD_NONE;
 }
 
 int GUIAction::doActions()
@@ -415,25 +455,40 @@ int GUIAction::doActions()
 	if (mActions.size() < 1)
 		return -1;
 
-	bool needThread = false;
+	// Determine in which thread to run the actions.
+	// Do it for all actions at once before starting, so that we can cancel the whole batch if the thread is already busy.
+	ThreadType threadType = THREAD_NONE;
 	std::vector<Action>::iterator it;
-	for (it = mActions.begin(); it != mActions.end(); ++it)
-	{
-		if (needsToRunInSeparateThread(*it))
-		{
-			needThread = true;
+	for (it = mActions.begin(); it != mActions.end(); ++it) {
+		ThreadType tt = getThreadType(*it);
+		if (tt == THREAD_NONE)
+			continue;
+		if (threadType == THREAD_NONE)
+			threadType = tt;
+		else if (threadType != tt) {
+			LOGERR("Can't mix normal and cancel actions in the same list.\n"
+				"Running the whole batch in the cancel thread.\n");
+			threadType = THREAD_CANCEL;
 			break;
 		}
 	}
-	if (needThread)
-	{
-		action_thread.threadActions(this);
-	}
-	else
-	{
-		const size_t cnt = mActions.size();
-		for (size_t i = 0; i < cnt; ++i)
-			doAction(mActions[i]);
+
+	// Now run the actions in the desired thread.
+	switch (threadType) {
+		case THREAD_ACTION:
+			action_thread.threadActions(this);
+			break;
+
+		case THREAD_CANCEL:
+			cancel_thread.threadActions(this);
+			break;
+
+		default: {
+			// no iterators here because theme reloading might kill our object
+			const size_t cnt = mActions.size();
+			for (size_t i = 0; i < cnt; ++i)
+				doAction(mActions[i]);
+		}
 	}
 
 	return 0;
@@ -938,7 +993,6 @@ int GUIAction::fileexists(std::string arg)
 void GUIAction::reinject_after_flash()
 {
 	if (DataManager::GetIntValue(TW_HAS_INJECTTWRP) == 1 && DataManager::GetIntValue(TW_INJECT_AFTER_ZIP) == 1) {
-		operation_start("ReinjectTWRP");
 		gui_print("Injecting TWRP into boot image...\n");
 		if (simulate) {
 			simulate_progress_bar();
@@ -1085,7 +1139,7 @@ int GUIAction::wipe(std::string arg)
 			}
 		} else
 			ret_val = PartitionManager.Wipe_By_Path(arg);
-#ifdef TW_OEM_BUILD
+#ifndef TW_OEM_BUILD
 		if (arg == DataManager::GetSettingsStoragePath()) {
 			// If we wiped the settings storage path, recreate the TWRP folder and dump the settings
 			string Storage_Path = DataManager::GetSettingsStoragePath();
@@ -1123,13 +1177,15 @@ int GUIAction::refreshsizes(std::string arg)
 
 int GUIAction::nandroid(std::string arg)
 {
-	operation_start("Nandroid");
-	int ret = 0;
-
 	if (simulate) {
+		PartitionManager.stop_backup.set_value(0);
 		DataManager::SetValue("tw_partition", "Simulation");
 		simulate_progress_bar();
+		operation_end(0);
 	} else {
+		operation_start("Nandroid");
+		int ret = 0;
+
 		if (arg == "backup") {
 			string Backup_Name;
 			DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
@@ -1139,7 +1195,6 @@ int GUIAction::nandroid(std::string arg)
 			else {
 				operation_end(1);
 				return -1;
-
 			}
 			DataManager::SetValue(TW_BACKUP_NAME, "(Auto Generate)");
 		} else if (arg == "restore") {
@@ -1148,30 +1203,54 @@ int GUIAction::nandroid(std::string arg)
 			ret = PartitionManager.Run_Restore(Restore_Name);
 		} else {
 			operation_end(1);
-					return -1;
-				}
-			}
-			DataManager::SetValue("tw_encrypt_backup", 0);
+			return -1;
+		}
+		DataManager::SetValue("tw_encrypt_backup", 0);
+		if (!PartitionManager.stop_backup.get_value()) {
 			if (ret == false)
 				ret = 1; // 1 for failure
 			else
 				ret = 0; // 0 for success
-			operation_end(ret);
-			return 0;
+			DataManager::SetValue("tw_cancel_backup", 0);
+		}
+		else {
+			DataManager::SetValue("tw_cancel_backup", 1);
+			gui_print("Backup Canceled.\n");
+			ret = 0;
+		}
+		operation_end(ret);
+		return ret;
+	}
+	return 0;
+}
+
+int GUIAction::cancelbackup(std::string arg) {
+	if (simulate) {
+		PartitionManager.stop_backup.set_value(1);
+	}
+	else {
+		int op_status = PartitionManager.Cancel_Backup();
+		if (op_status != 0)
+			op_status = 1; // failure
+	}
+
+	return 0;
 }
 
 int GUIAction::fixpermissions(std::string arg)
 {
+	int op_status = 0;
+
 	operation_start("Fix Permissions");
 	LOGINFO("fix permissions started!\n");
 	if (simulate) {
 		simulate_progress_bar();
 	} else {
-		int op_status = PartitionManager.Fix_Permissions();
+		op_status = PartitionManager.Fix_Permissions();
 		if (op_status != 0)
 			op_status = 1; // failure
-		operation_end(op_status);
 	}
+	operation_end(op_status);
 	return 0;
 }
 
@@ -1399,7 +1478,7 @@ int GUIAction::decrypt(std::string arg)
 			DataManager::GetValue(TW_HAS_DATA_MEDIA, has_datamedia);
 			if (has_datamedia != 0) {
 				if (tw_get_default_metadata(DataManager::GetSettingsStoragePath().c_str()) != 0) {
-					LOGERR("Failed to get default contexts and file mode for storage files.\n");
+					LOGINFO("Failed to get default contexts and file mode for storage files.\n");
 				} else {
 					LOGINFO("Got default contexts and file mode for storage files.\n");
 				}
@@ -1481,7 +1560,6 @@ int GUIAction::adbsideloadcancel(std::string arg)
 	LOGINFO("Waiting for child sideload process to exit.\n");
 	waitpid(sideload_child_pid, &status, 0);
 	sideload_child_pid = 0;
-	operation_end(1);
 	DataManager::SetValue("tw_page_done", "1"); // For OpenRecoveryScript support
 	return 0;
 }
@@ -1510,7 +1588,10 @@ int GUIAction::openrecoveryscript(std::string arg)
 				reboot = 1;
 			}
 		}
+
 		if (reboot && DataManager::GetIntValue(TW_ORS_IS_SECONDARY_ROM) != 1) {
+			// Disable stock recovery reflashing
+			TWFunc::Disable_Stock_Recovery_Replace();
 			usleep(2000000); // Sleep for 2 seconds before rebooting
 			TWFunc::tw_reboot(rb_system);
 		} else {

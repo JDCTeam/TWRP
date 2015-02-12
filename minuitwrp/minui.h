@@ -73,6 +73,8 @@ void gr_freeze_fb(int freeze);
 void gr_set_rotation(int rot);
 int gr_get_rotation(void);
 void gr_update_surface_dimensions(void);
+
+// Functions in graphics_utils.c
 int gr_save_screenshot(const char *dest);
 
 #ifdef TW_HAS_LANDSCAPE
@@ -91,7 +93,7 @@ struct input_event;
 
 int ev_init(void);
 void ev_exit(void);
-int ev_get(struct input_event *ev, unsigned dont_wait);
+int ev_get(struct input_event *ev, int timeout_ms);
 int ev_has_mouse(void);
 
 // Resources
@@ -99,6 +101,7 @@ int ev_has_mouse(void);
 // Returns 0 if no error, else negative.
 int res_create_surface(const char* name, gr_surface* pSurface);
 void res_free_surface(gr_surface surface);
+int res_scale_surface(gr_surface source, gr_surface* destination, float scale_w, float scale_h);
 
 // Needed for AOSP:
 int ev_wait(int timeout);

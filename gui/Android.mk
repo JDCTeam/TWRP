@@ -25,7 +25,8 @@ LOCAL_SRC_FILES := \
     input.cpp \
     blanktimer.cpp \
     partitionlist.cpp \
-    mousecursor.cpp
+    mousecursor.cpp \
+    scrolllist.cpp
 
 ifneq ($(TWRP_CUSTOM_KEYBOARD),)
   LOCAL_SRC_FILES += $(TWRP_CUSTOM_KEYBOARD)
@@ -62,6 +63,10 @@ endif
 ifneq ($(TW_Y_OFFSET),)
   LOCAL_CFLAGS += -DTW_Y_OFFSET=$(TW_Y_OFFSET)
 endif
+ifeq ($(TW_ROUND_SCREEN), true)
+  LOCAL_CFLAGS += -DTW_ROUND_SCREEN
+endif
+
 ifneq ($(LANDSCAPE_RESOLUTION),)
     LOCAL_CFLAGS += -DTW_HAS_LANDSCAPE
 endif
@@ -91,6 +96,7 @@ ifeq ($(TW_CUSTOM_THEME),)
 endif
 
 LOCAL_C_INCLUDES += bionic external/stlport/stlport $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)
+LOCAL_CFLAGS += -DTWRES=\"$(TWRES_PATH)\"
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -99,8 +105,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := twrp
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
-LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/res
-TWRP_DEV_LOC := $(commands_recovery_local_path)/gui/devices/
+LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices/common/res
 TWRP_COMMON_XML := $(hide) echo "No common TWRP XML resources"
 
@@ -110,24 +115,24 @@ ifeq ($(TW_CUSTOM_THEME),)
 	WATCH := 240x240 280x280 320x320
 	TWRP_THEME_LOC := $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)/res
 	ifneq ($(filter $(DEVICE_RESOLUTION), $(PORTRAIT)),)
-		TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+		TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 	else ifneq ($(filter $(DEVICE_RESOLUTION), $(LANDSCAPE)),)
-		TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+		TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 	else ifneq ($(filter $(DEVICE_RESOLUTION), $(WATCH)),)
-		TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/watch/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+		TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/watch/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 	endif
 ifneq ($(LANDSCAPE_RESOLUTION),)
     TWRP_LAND_THEME_LOC := $(commands_recovery_local_path)/gui/devices/$(LANDSCAPE_RESOLUTION)/res
-    TWRP_LAND_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+    TWRP_LAND_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)landscape/
 endif
 else
 	TWRP_THEME_LOC := $(TW_CUSTOM_THEME)
 endif
 
 ifeq ($(TW_DISABLE_TTF), true)
-	TWRP_REMOVE_FONT := rm -f $(TARGET_RECOVERY_ROOT_OUT)/res/fonts/*.ttf
+	TWRP_REMOVE_FONT := rm -f $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)fonts/*.ttf
 else
-	TWRP_REMOVE_FONT := rm -f $(TARGET_RECOVERY_ROOT_OUT)/res/fonts/*.dat
+	TWRP_REMOVE_FONT := rm -f $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)fonts/*.dat
 endif
 
 TWRP_RES_GEN := $(intermediates)/twrp
@@ -139,9 +144,9 @@ endif
 
 ifeq ($(TWRP_LAND_THEME_LOC),)
 $(TWRP_RES_GEN):
-	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
-	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
-	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 	$(TWRP_COMMON_XML)
 	$(TWRP_REMOVE_FONT)
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
@@ -152,19 +157,19 @@ endif
 	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
 else
 $(TWRP_RES_GEN):
-	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
-	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
-	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 	$(TWRP_COMMON_XML)
-	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
-	cp -fr $(TWRP_LAND_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)/res/landscape/
+	$(TWRP_REMOVE_FONT)
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)landscape/
+	cp -fr $(TWRP_LAND_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)landscape/
 	$(TWRP_LAND_COMMON_XML)
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
 	ln -sf $(TWRP_SH_TARGET) $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
 	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
 endif
-
 
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)
 LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN)

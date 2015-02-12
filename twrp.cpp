@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
 	// Offer to decrypt if the device is encrypted
 	if (DataManager::GetIntValue(TW_IS_ENCRYPTED) != 0) {
 		LOGINFO("Is encrypted, do decrypt page first\n");
-		if (gui_startPage("decrypt") != 0) {
+		if (gui_startPage("decrypt", 1, 1) != 0) {
 			LOGERR("Failed to start decrypt GUI page.\n");
 		} else {
 			// Check for and load custom theme if present
@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
 		}
 	} else if (datamedia) {
 		if (tw_get_default_metadata(DataManager::GetSettingsStoragePath().c_str()) != 0) {
-			LOGERR("Failed to get default contexts and file mode for storage files.\n");
+			LOGINFO("Failed to get default contexts and file mode for storage files.\n");
 		} else {
 			LOGINFO("Got default contexts and file mode for storage files.\n");
 		}
@@ -361,17 +361,14 @@ int main(int argc, char **argv) {
 	// Launch the main GUI
 	gui_start();
 
+	// Disable flashing of stock recovery
+	TWFunc::Disable_Stock_Recovery_Replace();
 	// Check for su to see if the device is rooted or not
 	if (PartitionManager.Mount_By_Path("/system", false)) {
-		// Disable flashing of stock recovery
-		if (TWFunc::Path_Exists("/system/recovery-from-boot.p")) {
-			rename("/system/recovery-from-boot.p", "/system/recovery-from-boot.bak");
-			gui_print("Renamed stock recovery file in /system to prevent\nthe stock ROM from replacing TWRP.\n");
-		}
 		if (TWFunc::Path_Exists("/supersu/su") && !TWFunc::Path_Exists("/system/bin/su") && !TWFunc::Path_Exists("/system/xbin/su") && !TWFunc::Path_Exists("/system/bin/.ext/.su")) {
 			// Device doesn't have su installed
 			DataManager::SetValue("tw_busy", 1);
-			if (gui_startPage("installsu") != 0) {
+			if (gui_startPage("installsu", 1, 1) != 0) {
 				LOGERR("Failed to start SuperSU install page.\n");
 			}
 		}

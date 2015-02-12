@@ -2808,7 +2808,7 @@ void MultiROM::startSystemImageUpgrader()
 	DataManager::SetValue("tw_complete_text1", "system-image-upgrader Complete");
 	DataManager::SetValue("tw_has_cancel", 0);
 	DataManager::SetValue("tw_show_reboot", 0);
-	gui_startPage("action_page");
+	gui_startPage("action_page", 0, 1);
 }
 
 bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst, const std::string& part, bool skipMedia)
