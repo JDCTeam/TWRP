@@ -205,6 +205,7 @@ GUIAction::GUIAction(xml_node<>* node)
 		ADD_ACTION(stopmtp);
 		ADD_ACTION(cancelbackup);
 
+		ADD_ACTION(rotation);
 		ADD_ACTION(multirom);
 		ADD_ACTION(multirom_reset_roms_paths);
 		ADD_ACTION(multirom_rename);

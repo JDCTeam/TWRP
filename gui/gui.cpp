@@ -724,7 +724,7 @@ int gui_forceRender(void)
 
 int gui_setRenderEnabled(int enable)
 {
-	gDisableRender.set_value(enable);
+	gDisableRender.set_value(!enable);
 	return 0;
 }
 
@@ -1013,6 +1013,8 @@ int gui_rotate(int rotation)
 	gui_setRenderEnabled(0);
 	gr_set_rotation(rotation);
 
+	gr_update_surface_dimensions();
+
 	bool reloaded = TWFunc::reloadTheme();
 
 	// failed, try to rotate to 0
@@ -1024,7 +1026,6 @@ int gui_rotate(int rotation)
 
 	DataManager::SetValue(TW_ROTATION, rotation);
 
-	gr_update_surface_dimensions();
 	gr_freeze_fb(0);
 	gui_setRenderEnabled(1);
 
