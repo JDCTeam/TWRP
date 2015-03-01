@@ -1180,6 +1180,7 @@ bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
 				{
 					fprintf(new_script, "run_program(\"/sbin/sh\", \"-c\", \""
 						"mkdir -p /tmpsystem && mount -t ext4 $(readlink -f -n %s) /tmpsystem && "
+						"(chattr -R -i /system/* || true) && (rm -rf /system/* || true) && "
 						"(cp -a /tmpsystem/* /system/ || true) && cp_xattrs /tmpsystem /system"
 						"\");\n",
 							sys->Actual_Block_Device.c_str());
