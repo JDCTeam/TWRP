@@ -150,6 +150,7 @@ public:
 	static bool flashZip(std::string rom, std::string file);
 	static bool flashORSZip(std::string file, int *wipe_cache);
 	static bool injectBoot(std::string img_path, bool only_if_older = false);
+	static bool injectBootDeprecated(std::string img_path, bool only_if_older = false);
 	static bool extractBootForROM(std::string base);
 	static int copyBoot(std::string& orig, std::string rom);
 	static bool wipe(std::string name, std::string what);

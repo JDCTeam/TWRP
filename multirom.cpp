@@ -1250,6 +1250,22 @@ exit:
 
 bool MultiROM::injectBoot(std::string img_path, bool only_if_older)
 {
+	int tr_my_ver = getTrampolineVersion();
+	if(tr_my_ver <= 0)
+	{
+		gui_print("Failed to get trampoline version: %d\n", tr_my_ver);
+		return false;
+	}
+
+	if(tr_my_ver < 17)
+		return injectBootDeprecated(img_path, only_if_older);
+
+	return system_args("\"%s/trampoline\" --inject=\"%s\" --mrom_dir=\"%s\" %s",
+		m_path.c_str(), img_path.c_str(), m_path.c_str(), only_if_older ? "" : "-f") == 0;
+}
+
+bool MultiROM::injectBootDeprecated(std::string img_path, bool only_if_older)
+{
 	int rd_cmpr;
 	struct bootimg img;
 	std::string path_trampoline = m_path + "/trampoline";
@@ -1286,7 +1302,6 @@ bool MultiROM::injectBoot(std::string img_path, bool only_if_older)
 	{
 		int tr_rd_ver = getTrampolineVersion("/tmp/boot/rd/init", true);
 		int tr_my_ver = getTrampolineVersion();
-
 		if(tr_rd_ver >= tr_my_ver && tr_my_ver > 0)
 		{
 			gui_print("No need to inject bootimg, it has the newest trampoline (v%d)\n", tr_rd_ver);
