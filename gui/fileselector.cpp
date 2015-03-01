@@ -321,13 +321,17 @@ int GUIFileSelector::GetFileList(const std::string folder)
 			if (mShowNavFolders || (data.fileName != "." && data.fileName != TW_FILESELECTOR_UP_A_LEVEL))
 				mFolderList.push_back(data);
 		} else if (data.fileType == DT_REG || data.fileType == DT_LNK || data.fileType == DT_BLK) {
-			for(size_t i = 0; i < mExtn.size(); ++i)
-			{
-				const std::string& ext = mExtn[i];
-				if (ext.empty() || (data.fileName.length() > ext.length() && data.fileName.substr(data.fileName.length() - ext.length()) == ext))
+			if(mExtn.empty()) {
+				mFileList.push_back(data);
+			} else {
+				for(size_t i = 0; i < mExtn.size(); ++i)
 				{
-					mFileList.push_back(data);
-					break;
+					const std::string& ext = mExtn[i];
+					if (ext.empty() || (data.fileName.length() > ext.length() && data.fileName.substr(data.fileName.length() - ext.length()) == ext))
+					{
+						mFileList.push_back(data);
+						break;
+					}
 				}
 			}
 		}

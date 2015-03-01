@@ -153,7 +153,7 @@ int GUIListBox::NotifyVarChange(const std::string& varName, const std::string& v
 
 		mUpdate = 1;
 		return 0;
-	} else if(mItemsVar == varName) {
+	} else if(!mItemsVar.empty() && mItemsVar == varName) {
 		std::string n;
 		char *cstr = new char[value.size()+1];
 		strcpy(cstr, value.c_str());
