@@ -25,6 +25,7 @@
 #include "verifier.h"
 #include "variables.h"
 #include "openrecoveryscript.hpp"
+#include "fuse_sideload.h"
 
 extern "C" {
 #include "twcommon.h"
@@ -845,8 +846,9 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	int status = INSTALL_ERROR;
 	int verify_status = 0;
 	int wipe_cache = 0;
+	int sideloaded = 0;
 	bool has_block_update = false;
-	std::string boot, sideload_path, sysimg, loop_device;
+	std::string boot, sysimg, loop_device;
 	TWPartition *data, *sys;
 
 	gui_print("Flashing ZIP file %s\n", file.c_str());
@@ -905,12 +907,10 @@ exit:
 	restoreBootPartition();
 	restoreMounts();
 
-	sideload_path = DataManager::GetStrValue("tw_mrom_sideloaded");
-	if(!sideload_path.empty())
-	{
-		unlink(sideload_path.c_str());
-		DataManager::SetValue("tw_mrom_sideloaded", "");
-	}
+	sideloaded = DataManager::GetIntValue("tw_mrom_sideloaded");
+	DataManager::SetValue("tw_mrom_sideloaded", 0);
+	if(sideloaded && file.compare(FUSE_SIDELOAD_HOST_PATHNAME) != 0)
+		remove(file.c_str());
 	return (status == INSTALL_SUCCESS);
 }
 
@@ -1214,9 +1214,15 @@ bool MultiROM::prepareZIP(std::string& file, bool &has_block_update)
 		if(info.st_size < 450*1024*1024)
 		{
 			gui_print("Copying ZIP to /tmp...\n");
-			sprintf(cmd, "cp \"%s\" /tmp/mr_update.zip", file.c_str());
-			system(cmd);
+			system_args("cp \"%s\" /tmp/mr_update.zip", file.c_str());
 			file = "/tmp/mr_update.zip";
+		}
+		else if(file.compare(FUSE_SIDELOAD_HOST_PATHNAME) == 0)
+		{
+			std::string new_file = DataManager::GetStrValue("tw_storage_path") + "/sideload.zip";
+			gui_print("Copying ZIP to %s\n", new_file.c_str());
+			system_args("cp \"%s\" \"%s\"", file.c_str(), new_file.c_str());
+			file = new_file;
 		}
 		else
 		{

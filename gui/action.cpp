@@ -2293,7 +2293,7 @@ int GUIAction::multirom_sideload(std::string arg)
 			gui_print("You need adb 1.0.32 or newer to sideload to this device.\n");
 	} else {
 		DataManager::SetValue("tw_filename", FUSE_SIDELOAD_HOST_PATHNAME);
-		DataManager::SetValue("tw_mrom_sideloaded", FUSE_SIDELOAD_HOST_PATHNAME);
+		DataManager::SetValue("tw_mrom_sideloaded", 1);
 
 		if(DataManager::GetStrValue("tw_back") == "multirom_add") {
 			ret = multirom_add_rom("");
