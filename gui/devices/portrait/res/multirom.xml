@@ -279,7 +279,7 @@
 				<condition var1="tw_multirom_is_android" var2="1" />
 				<placement x="%mrom_wipe_col3_x%" y="%row3_text_y%" />
 				<font resource="font" color="%button_text_color%" />
-				<text>Wipe /cache</text>
+				<text>Wipe cache</text>
 				<image resource="medium_button" />
 				<actions>
 					<action function="set">tw_multirom_wipe=cache</action>
@@ -654,14 +654,11 @@
 				<text>Select Zip to Install</text>
 			</object>
 
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<fill color="%button_fill_color%" />
+			<object type="button" style="fillbutton">
 				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
-				<font resource="font" color="%button_text_color%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
-					<action function="set">tw_back=multirom_flash_select</action>
+					<action function="set">tw_back=install</action>
 					<action function="page">selectstorage</action>
 				</actions>
 			</object>
@@ -1289,14 +1286,11 @@
 				<text>MultiROM - Select image</text>
 			</object>
 
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<fill color="%button_fill_color%" />
+			<object type="button" style="fillbutton">
 				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
-				<font resource="font" color="%button_text_color%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
-					<action function="set">tw_back=multirom_inject_select</action>
+					<action function="set">tw_back=install</action>
 					<action function="page">selectstorage</action>
 				</actions>
 			</object>
@@ -1548,14 +1542,11 @@
 				<text>MultiROM - Add ROM</text>
 			</object>
 
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<fill color="%button_fill_color%" />
+			<object type="button" style="fillbutton">
 				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
-				<font resource="font" color="%button_text_color%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
-					<action function="set">tw_back=multirom_add_select</action>
+					<action function="set">tw_back=install</action>
 					<action function="page">selectstorage</action>
 				</actions>
 			</object>
