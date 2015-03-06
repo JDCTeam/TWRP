@@ -34,39 +34,20 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
 	xml_attribute<>* attr;
 	xml_node<>* child;
 	mIconSelected = mIconUnselected = NULL;
-	int mSelectedIconWidth = 0, mSelectedIconHeight = 0, mUnselectedIconWidth = 0, mUnselectedIconHeight = 0, mIconWidth = 0, mIconHeight = 0;
 	mUpdate = 0;
 
 	// Get the icons, if any
-	child = node->first_node("icon");
+	child = FindNode(node, "icon");
 	if (child) {
-		attr = child->first_attribute("selected");
-		if (attr)
-			mIconSelected = PageManager::FindResource(attr->value());
-		attr = child->first_attribute("unselected");
-		if (attr)
-			mIconUnselected = PageManager::FindResource(attr->value());
+		mIconSelected = LoadAttrImage(child, "selected");
+		mIconUnselected = LoadAttrImage(child, "unselected");
 	}
-	if (mIconSelected && mIconSelected->GetResource()) {
-		mSelectedIconWidth = gr_get_width(mIconSelected->GetResource());
-		mSelectedIconHeight = gr_get_height(mIconSelected->GetResource());
-		if (mSelectedIconHeight > mIconHeight)
-			mIconHeight = mSelectedIconHeight;
-		mIconWidth = mSelectedIconWidth;
-	}
-
-	if (mIconUnselected && mIconUnselected->GetResource()) {
-		mUnselectedIconWidth = gr_get_width(mIconUnselected->GetResource());
-		mUnselectedIconHeight = gr_get_height(mIconUnselected->GetResource());
-		if (mUnselectedIconHeight > mIconHeight)
-			mIconHeight = mUnselectedIconHeight;
-		if (mUnselectedIconWidth > mIconWidth)
-			mIconWidth = mUnselectedIconWidth;
-	}
-	SetMaxIconSize(mIconWidth, mIconHeight);
+	int iconWidth = std::max(mIconSelected->GetWidth(), mIconUnselected->GetWidth());
+	int iconHeight = std::max(mIconSelected->GetHeight(), mIconUnselected->GetHeight());
+	SetMaxIconSize(iconWidth, iconHeight);
 
 	// Handle the result variable
-	child = node->first_node("data");
+	child = FindNode(node, "data");
 	if (child) {
 		attr = child->first_attribute("name");
 		if (attr)
@@ -79,9 +60,8 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
 	}
 
 	// Get the data for the list
-	child = node->first_node("listitem");
-	while (child)
-	{
+	child = FindNode(node, "listitem");
+	while (child) {
 		ListData data;
 
 		attr = child->first_attribute("name");
@@ -195,14 +175,14 @@ size_t GUIListBox::GetItemCount()
 	return mList.size();
 }
 
-int GUIListBox::GetListItem(size_t item_index, Resource*& icon, std::string &text)
+void GUIListBox::RenderItem(size_t itemindex, int yPos, bool selected)
 {
-	text = mList.at(item_index).displayName;
-	if (mList.at(item_index).selected)
-		icon = mIconSelected;
-	else
-		icon = mIconUnselected;
-	return 0;
+	// note: the "selected" parameter above is for the currently touched item
+	// don't confuse it with the more persistent "selected" flag per list item used below
+	ImageResource* icon = mList.at(itemindex).selected ? mIconSelected : mIconUnselected;
+	const std::string& text = mList.at(itemindex).displayName;
+
+	RenderStdItem(yPos, selected, icon, text.c_str());
 }
 
 void GUIListBox::NotifySelect(size_t item_selected)

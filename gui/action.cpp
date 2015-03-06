@@ -271,9 +271,9 @@ GUIAction::GUIAction(xml_node<>* node)
 	}
 
 	// First, get the action
-	actions = node->first_node("actions");
-	if (actions)	child = actions->first_node("action");
-	else			child = node->first_node("action");
+	actions = FindNode(node, "actions");
+	if (actions)	child = FindNode(actions, "action");
+	else			child = FindNode(node, "action");
 
 	if (!child) return;
 
@@ -292,7 +292,7 @@ GUIAction::GUIAction(xml_node<>* node)
 	}
 
 	// Now, let's get either the key or region
-	child = node->first_node("touch");
+	child = FindNode(node, "touch");
 	if (child)
 	{
 		attr = child->first_attribute("key");
@@ -1356,6 +1356,10 @@ int GUIAction::terminalcommand(std::string arg)
 	if (simulate) {
 		simulate_progress_bar();
 		operation_end(op_status);
+	} else if (arg == "exit") {
+		LOGINFO("Exiting terminal\n");
+		operation_end(op_status);
+		page("main");
 	} else {
 		command = "cd \"" + cmdpath + "\" && " + arg + " 2>&1";;
 		LOGINFO("Actual command is: '%s'\n", command.c_str());
@@ -1391,8 +1395,7 @@ int GUIAction::terminalcommand(std::string arg)
 				} else {
 					// Try to read output
 					memset(line, 0, sizeof(line));
-					bytes_read = read(fd, line, sizeof(line));
-					if (bytes_read > 0)
+					if(fgets(line, sizeof(line), fp) != NULL)
 						gui_print("%s", line); // Display output
 					else
 						keep_going = 0; // Done executing
