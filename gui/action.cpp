@@ -267,6 +267,7 @@ GUIAction::GUIAction(xml_node<>* node)
 		ADD_ACTION(multirom_execute_swap);
 		ADD_ACTION(multirom_set_fw);
 		ADD_ACTION(multirom_remove_fw);
+		ADD_ACTION(multirom_restorecon);
 		ADD_ACTION(system_image_upgrader);
 	}
 
@@ -2490,6 +2491,14 @@ int GUIAction::multirom_remove_fw(std::string arg)
 	int res = remove(dst.c_str()) >= 0 ? 0 : 1;
 	DataManager::SetValue("tw_multirom_has_fw_image", int(access(dst.c_str(), F_OK) >= 0));
 
+	operation_end(res);
+	return 0;
+}
+
+int GUIAction::multirom_restorecon(std::string arg)
+{
+	operation_start("restorecon");
+	int res = MultiROM::restorecon(DataManager::GetStrValue("tw_multirom_rom_name")) ? 0 : -1;
 	operation_end(res);
 	return 0;
 }

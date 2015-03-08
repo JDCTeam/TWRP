@@ -398,6 +398,7 @@ protected:
 	int multirom_execute_swap(std::string arg);
 	int multirom_set_fw(std::string arg);
 	int multirom_remove_fw(std::string arg);
+	int multirom_restorecon(std::string arg);
 	int system_image_upgrader(std::string arg);
 
 	int simulate;

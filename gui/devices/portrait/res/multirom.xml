@@ -297,10 +297,10 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col1_x%" y="%row2_y%" />
+				<placement x="%col1_medium_x%" y="%row3_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Rename</text>
-				<image resource="main_button" />
+				<image resource="medium_button" />
 				<actions>
 					<action function="set">tw_multirom_new_rom_name=%tw_multirom_rom_name%</action>
 					<action function="set">tw_fileexists=0</action>
@@ -310,16 +310,35 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
-				<placement x="%col2_x%" y="%row2_y%" />
+				<placement x="%col2_medium_x%" y="%row3_medium_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Delete</text>
-				<image resource="main_button" />
+				<image resource="medium_button" />
 				<actions>
 					<action function="set">tw_back=multirom_list</action>
 					<action function="set">tw_action=multirom_delete</action>
 					<action function="set">tw_text1=Delete ROM "%tw_multirom_rom_name%"?</action>
 					<action function="set">tw_action_text1=Deleting ROM...</action>
 					<action function="set">tw_complete_text1=ROM deleted</action>
+					<action function="set">tw_slider_text=Swipe to Confirm</action>
+					<action function="set">tw_show_reboot=0</action>
+					<action function="page">confirm_action</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_multirom_is_android" var2="1" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Run restorecon</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=multirom_manage</action>
+					<action function="set">tw_action=multirom_restorecon</action>
+					<action function="set">tw_text1=Run restorecon on "%tw_multirom_rom_name%"?</action>
+					<action function="set">tw_action_text1=Running restorecon</action>
+					<action function="set">tw_complete_text1=SELinux contexts were restored</action>
 					<action function="set">tw_slider_text=Swipe to Confirm</action>
 					<action function="set">tw_show_reboot=0</action>
 					<action function="page">confirm_action</action>

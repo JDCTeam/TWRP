@@ -305,6 +305,51 @@ bool MultiROM::wipe(std::string name, std::string what)
 	return res;
 }
 
+bool MultiROM::restorecon(std::string name)
+{
+	bool res = false;
+	bool replaced_contexts = false;
+
+	std::string file_contexts = getRomsPath() + name;
+	file_contexts += "/boot/file_contexts";
+
+	if(access(file_contexts.c_str(), R_OK) >= 0)
+	{
+		gui_print("Using ROM's file_contexts\n");
+		rename("/file_contexts", "/file_contexts.orig");
+		system_args("cp -a \"%s\" /file_contexts", file_contexts.c_str());
+		replaced_contexts = true;
+	}
+
+	if(!changeMounts(name))
+		goto exit;
+
+#if PLATFORM_SDK_VERSION >= 21
+  #define RESTORECON_ARGS "-RFDv"
+#else
+  #define RESTORECON_ARGS "-RFv"
+#endif
+
+	static const char * const parts[] = { "/system", "/data", "/cache", NULL };
+	for(int i = 0; parts[i]; ++i)
+	{
+		gui_print("Running restorecon on ROM's %s\n", parts[i]);
+		system_args("restorecon %s %s", RESTORECON_ARGS, parts[i]);
+	}
+
+	// SuperSU moves the real app_process into _original
+	gui_print("Settting context for app_processXX_original\n");
+	system("chcon u:object_r:zygote_exec:s0 /system/bin/app_process32_original");
+	system("chcon u:object_r:zygote_exec:s0 /system/bin/app_process64_original");
+
+	restoreMounts();
+	res = true;
+exit:
+	if(replaced_contexts)
+		rename("/file_contexts.orig", "/file_contexts");
+	return res;
+}
+
 bool MultiROM::initBackup(const std::string& name)
 {
 	bool hadInternalStorage = (DataManager::GetStrValue("tw_storage_path").find("/data") == 0);
