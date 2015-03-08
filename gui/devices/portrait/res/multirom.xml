@@ -740,6 +740,7 @@
 			</object>
 
 			<object type="slider">
+				<text>Swipe to Confirm Flash</text>
 				<placement x="%slider_x%" y="%slider_y%" placement="5" />
 				<resource base="slider" used="slider-used" touch="slider-touch" />
 				<actions>
@@ -750,12 +751,6 @@
 					<action function="set">tw_action=%tw_mrom_flash_action%</action>
 					<action function="page">action_page</action>
 				</actions>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<font resource="font" />
-				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
-				<text>Swipe to Confirm Flash</text>
 			</object>
 
 			<object type="action">
@@ -2456,6 +2451,7 @@
 			</object>
 
 			<object type="slider">
+				<text>Swipe to swap ROMs</text>
 				<condition var1="tw_multirom_swap_rom" var2="" />
 				<placement x="%slider_x%" y="%slider_y%" placement="5" />
 				<resource base="slider" used="slider-used" touch="slider-touch" />
@@ -2469,13 +2465,6 @@
 					<action function="overlay">multirom_swap_space_info</action>
 					<action function="multirom_swap_calc_space"></action>
 				</actions>
-			</object>
-
-			<object type="text" color="%text_color%">
-				<condition var1="tw_multirom_swap_rom" var2="" />
-				<font resource="font" />
-				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
-				<text>Swipe to swap ROMs</text>
 			</object>
 
 			<object type="text" color="%text_success_color%">
