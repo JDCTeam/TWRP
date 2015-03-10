@@ -94,8 +94,8 @@
 		<variable name="col4_medium_x" value="1080" />
 		<variable name="row1_medium_y" value="259" />
 		<variable name="row2_medium_y" value="459" />
-		<variable name="row3_medium_y" value="521" />
-		<variable name="row4_medium_y" value="940" />
+		<variable name="row3_medium_y" value="940" />
+		<variable name="row4_medium_y" value="1250" />
 		<variable name="row5_medium_y" value="1505" />
 		<variable name="row6_medium_y" value="1676" />
 		<variable name="row7_medium_y" value="971" />
