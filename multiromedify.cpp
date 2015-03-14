@@ -141,13 +141,13 @@ int EdifyFunc::replaceOffendings(std::list<EdifyElement*> **parentList, std::lis
         {
             std::string info = "# MultiROM replaced run_program(";
             info += getArgsStr();
-            info += ") with \"true\"";
+            info += ") with \"/sbin/true\"";
             lastNewlineRef = (*parentList)->insert(++lastNewlineRef, new EdifyValue(info));
             lastNewlineRef = (*parentList)->insert(++lastNewlineRef, new EdifyNewline());
 
             res |= OFF_CHANGED;
             clearArgs();
-            addArg(new EdifyValue("\"true\""));
+            addArg(new EdifyValue("\"/sbin/true\""));
         }
     }
     else if(m_name == "package_extract_file" && m_args.size() >= 2)
