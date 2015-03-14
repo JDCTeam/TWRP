@@ -60,6 +60,7 @@ public:
     void write(FILE *f);
     const std::string& getName() const { return m_name; }
     int replaceOffendings(std::list<EdifyElement*> **parentList, std::list<EdifyElement*>::iterator& lastNewlineRef);
+    std::string getArgsStr() const;
 
 private:
     void clearArgs();

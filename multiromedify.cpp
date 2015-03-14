@@ -68,6 +68,17 @@ void EdifyFunc::write(FILE *f)
     fputc(')', f);
 }
 
+std::string EdifyFunc::getArgsStr() const
+{
+    std::string res;
+    for(std::list<EdifyElement*>::const_iterator itr = m_args.begin(); itr != m_args.end(); ++itr)
+    {
+        if((*itr)->getType() == EDF_VALUE)
+            res.append(((const EdifyValue*)(*itr))->getText());
+    }
+    return res;
+}
+
 int EdifyFunc::replaceOffendings(std::list<EdifyElement*> **parentList, std::list<EdifyElement*>::iterator& lastNewlineRef)
 {
     int res = 0;
@@ -76,7 +87,8 @@ int EdifyFunc::replaceOffendings(std::list<EdifyElement*> **parentList, std::lis
     {
         lastNewlineRef = (*parentList)->insert(++lastNewlineRef, new EdifyValue(
                 std::string("# MultiROM removed function ") + m_name +
-                std::string(" from following line.")));
+                "(" + getArgsStr() +
+                std::string(") from following line.")));
         lastNewlineRef = (*parentList)->insert(++lastNewlineRef, new EdifyNewline());
 
         if(m_name == "format")
@@ -128,9 +140,7 @@ int EdifyFunc::replaceOffendings(std::list<EdifyElement*> **parentList, std::lis
         if(rem)
         {
             std::string info = "# MultiROM replaced run_program(";
-            for(std::list<EdifyElement*>::iterator itr = m_args.begin(); itr != m_args.end(); ++itr)
-                if((*itr)->getType() == EDF_VALUE)
-                    info += ((EdifyValue*)(*itr))->getText();
+            info += getArgsStr();
             info += ") with \"true\"";
             lastNewlineRef = (*parentList)->insert(++lastNewlineRef, new EdifyValue(info));
             lastNewlineRef = (*parentList)->insert(++lastNewlineRef, new EdifyNewline());
@@ -138,6 +148,39 @@ int EdifyFunc::replaceOffendings(std::list<EdifyElement*> **parentList, std::lis
             res |= OFF_CHANGED;
             clearArgs();
             addArg(new EdifyValue("\"true\""));
+        }
+    }
+    else if(m_name == "package_extract_file" && m_args.size() >= 2)
+    {
+        int st = 0;
+        for(std::list<EdifyElement*>::iterator itr = m_args.begin(); itr != m_args.end(); ++itr)
+        {
+            if((*itr)->getType() != EDF_VALUE)
+                continue;
+
+            if(st == 0 && (((EdifyValue*)(*itr))->getText().find("radio") != NPOS ||
+                ((EdifyValue*)(*itr))->getText().find("bootloader") != NPOS))
+            {
+                st = 1;
+            }
+            else if(st == 1 && (((EdifyValue*)(*itr))->getText().find("/dev/block/") <= 1))
+            {
+                st = 2;
+                break;
+            }
+        }
+
+        if(st == 2)
+        {
+            lastNewlineRef = (*parentList)->insert(++lastNewlineRef, new EdifyValue(
+                std::string("# MultiROM removed function ") + m_name +
+                "(" + getArgsStr() +
+                std::string(") from following line.")));
+            lastNewlineRef = (*parentList)->insert(++lastNewlineRef, new EdifyNewline());
+            res |= OFF_CHANGED;
+            m_name = "ui_print";
+            clearArgs();
+            addArg(new EdifyValue("\"\""));
         }
     }
 
@@ -401,6 +444,9 @@ void EdifyHacker::replaceOffendings()
         lastNewline = m_elements.end();
         applyOffendingMask(--lastNewline, mask);
     }
+
+    if(m_processFlags & EDIFY_CHANGED)
+        m_elements.push_front(new EdifyValue(HACKER_IDENT_LINE));
 }
 
 bool EdifyHacker::processFile(const std::string& path)
@@ -455,8 +501,6 @@ bool EdifyHacker::writeToFile(const std::string& path)
         LOGERR("EdifyHacker: failed to open %s for writing\n", path.c_str());
         return false;
     }
-
-    m_elements.push_front(new EdifyValue(HACKER_IDENT_LINE));
 
     for(std::list<EdifyElement*>::iterator itr = m_elements.begin(); itr != m_elements.end(); ++itr)
         (*itr)->write(f);
