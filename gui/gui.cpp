@@ -353,18 +353,22 @@ void InputHandler::process_EV_ABS(input_event& ev)
 
 	if (ev.code == 0)
 	{
+#ifndef TW_USE_KEY_CODE_TOUCH_SYNC
 		if (state == AS_IN_ACTION_AREA)
 		{
 			LOGEVENT("TOUCH_RELEASE: %d,%d\n", x, y);
 			PageManager::NotifyTouch(TOUCH_RELEASE, x, y);
 		}
 		touch_status = TS_NONE;
+#endif
 	}
 	else
 	{
 		if (!touch_status)
 		{
+#ifndef TW_USE_KEY_CODE_TOUCH_SYNC
 			doTouchStart();
+#endif
 		}
 		else
 		{
@@ -414,6 +418,13 @@ void InputHandler::process_EV_KEY(input_event& ev)
 			kb->KeyUp(KEY_BACK);
 	} else if (ev.value != 0) {
 		// This is a key press
+#ifdef TW_USE_KEY_CODE_TOUCH_SYNC
+		if (ev.code == TW_USE_KEY_CODE_TOUCH_SYNC) {
+			LOGEVENT("key code %i key press == touch start %i %i\n", TW_USE_KEY_CODE_TOUCH_SYNC, x, y);
+			doTouchStart();
+			return;
+		}
+#endif
 		if (kb->KeyDown(ev.code)) {
 			// Key repeat is enabled for this key
 			key_status = KS_KEY_PRESSED;
@@ -428,6 +439,12 @@ void InputHandler::process_EV_KEY(input_event& ev)
 		kb->KeyUp(ev.code);
 		key_status = KS_NONE;
 		touch_status = TS_NONE;
+#ifdef TW_USE_KEY_CODE_TOUCH_SYNC
+		if (ev.code == TW_USE_KEY_CODE_TOUCH_SYNC) {
+			LOGEVENT("key code %i key release == touch release %i %i\n", TW_USE_KEY_CODE_TOUCH_SYNC, x, y);
+			PageManager::NotifyTouch(TOUCH_RELEASE, x, y);
+		}
+#endif
 	}
 }
 
@@ -750,35 +767,37 @@ int gui_changePackage(std::string newPackage)
 	return 0;
 }
 
-std::string gui_parse_text(string inText)
+std::string gui_parse_text(std::string str)
 {
-	// Copied from std::string GUIText::parseText(void)
 	// This function parses text for DataManager values encompassed by %value% in the XML
-	static int counter = 0;
-	std::string str = inText;
+	// and string resources (%@resource_name%)
 	size_t pos = 0;
-	size_t next = 0, end = 0;
 
 	while (1)
 	{
-		next = str.find('%', pos);
+		size_t next = str.find('%', pos);
 		if (next == std::string::npos)
 			return str;
 
-		end = str.find('%', next + 1);
+		size_t end = str.find('%', next + 1);
 		if (end == std::string::npos)
 			return str;
 
 		// We have a block of data
-		std::string var = str.substr(next + 1,(end - next) - 1);
-		str.erase(next,(end - next) + 1);
+		std::string var = str.substr(next + 1, (end - next) - 1);
+		str.erase(next, (end - next) + 1);
 
 		if (next + 1 == end)
 			str.insert(next, 1, '%');
 		else
 		{
 			std::string value;
-			if (DataManager::GetValue(var, value) == 0)
+			if (var.size() > 0 && var[0] == '@') {
+				// this is a string resource ("%@string_name%")
+				value = PageManager::GetResources()->FindString(var.substr(1));
+				str.insert(next, value);
+			}
+			else if (DataManager::GetValue(var, value) == 0)
 				str.insert(next, value);
 		}
 
@@ -794,7 +813,7 @@ extern "C" int gui_init(void)
 
 	if (res_create_surface(curtain_path.c_str(), &source_Surface))
 	{
-		printf("Unable to locate '%s'\nDid you set a DEVICE_RESOLUTION in your config files?\n", curtain_path.c_str());
+		printf("Unable to locate '%s'\nDid you set a TW_THEME in your config files?\n", curtain_path.c_str());
 		return -1;
 	}
 	if (gr_get_width(source_Surface) != gr_fb_width() || gr_get_height(source_Surface) != gr_fb_height()) {

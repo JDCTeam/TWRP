@@ -80,7 +80,7 @@
 		<style name="slider">
 			<text>Swipe to Confirm</text>
 			<font resource="font" color="%text_color%" />
-			<placement x="%slider_x%" y="%slider_y%" placement="5" />
+			<placement x="%center_x%" y="%slider_y%" placement="5" />
 			<resource base="slider" used="slider-used" touch="slider-touch" />
 		</style>
 
@@ -2842,7 +2842,7 @@
 
 			<object type="image">
 				<image resource="unlock-icon" />
-				<placement x="%lock_x%" y="%lock_y%" />
+				<placement x="%center_x%" y="%lock_y%" placement="4" />
 			</object>
 
 			<object type="slider">
@@ -3358,14 +3358,14 @@
 
 			<object type="text">
 				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
-				<text>Please Enter Your Password</text>
+				<text>Please Enter Your Pattern</text>
 			</object>
 
 			<object type="text">
 				<condition var1="tw_password_fail" var2="1" />
 				<font resource="font" color="%text_fail_color%" />
 				<placement x="%center_x%" y="%row2_text_y%" placement="5" />
-				<text>Password Failed, Please Try Again</text>
+				<text>Pattern Failed, Please Try Again</text>
 			</object>
 
 			<object type="patternpassword">
