@@ -120,17 +120,21 @@ int EdifyFunc::replaceOffendings(std::list<EdifyElement*> **parentList, std::lis
     {
         bool rem = false;
 
-        for(std::list<EdifyElement*>::iterator itr = m_args.begin(); !rem && itr != m_args.end(); ++itr)
+        for(std::list<EdifyElement*>::iterator itr = m_args.begin(); itr != m_args.end(); ++itr)
         {
             if((*itr)->getType() != EDF_VALUE)
                 continue;
 
             const std::string& t = ((EdifyValue*)(*itr))->getText();
             if(t.find("mount") != std::string::npos)
+            {
                 rem = true;
+                break;
+            }
             else if(t.find("boot.img") != NPOS || t.find(MultiROM::getBootDev()) != NPOS ||
                 t.find("zImage") != NPOS || t.find("bootimg") != NPOS)
             {
+                rem = false;
                 break;
             }
             else if(t.find("/dev/block") != NPOS)
