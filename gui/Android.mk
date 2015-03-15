@@ -173,14 +173,6 @@ ifeq ($(TW_CUSTOM_THEME),)
     else ifeq ($(TW_THEME_LANDSCAPE), landscape_hdpi)
         TWRP_THEME_LOC_LANDSCAPE := $(commands_recovery_local_path)/gui/devices/1920x1200/res
         TWRP_COMMON_XML_LANDSCAPE := cp -fr $(commands_recovery_local_path)/gui/devices/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)landscape/
-    else
-        $(warning ****************************************************************************)
-        $(warning * TW_THEME_LANDSCAPE ($(TW_THEME_LANDSCAPE)) is not valid.)
-        $(warning * Please choose an appropriate TW_THEME_LANDSCAPE or create a new one for your device.)
-        $(warning * Valid options are portrait_mdpi portrait_hdpi watch_mdpi)
-        $(warning *                   landscape_mdpi landscape_hdpi)
-        $(warning ****************************************************************************)
-        $(error stopping)
     endif
 else
     TWRP_THEME_LOC := $(TW_CUSTOM_THEME)
@@ -201,22 +193,22 @@ else
 endif
 
 $(TWRP_RES_GEN):
-    mkdir -p $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
-    cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
-    cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
-    $(TWRP_COMMON_XML)
-    $(TWRP_REMOVE_FONT)
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+	$(TWRP_COMMON_XML)
+	$(TWRP_REMOVE_FONT)
 ifneq ($(TWRP_THEME_LOC_LANDSCAPE),)
-    cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)landscape/
-    cp -fr $(TWRP_THEME_LOC_LANDSCAPE)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)landscape/
-    $(TWRP_COMMON_XML_LANDSCAPE)
+	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)landscape/
+	cp -fr $(TWRP_THEME_LOC_LANDSCAPE)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)landscape/
+	$(TWRP_COMMON_XML_LANDSCAPE)
 endif
-    mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
 ifneq ($(TW_USE_TOOLBOX), true)
-    ln -sf $(TWRP_SH_TARGET) $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
+	ln -sf $(TWRP_SH_TARGET) $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 endif
-    ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
-    ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
+	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
+	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
 
 
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)

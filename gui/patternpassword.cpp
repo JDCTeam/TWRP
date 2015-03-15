@@ -226,7 +226,7 @@ void GUIPatternPassword::ConnectIntermediateDots(int dot_idx)
 		return;
 
 	const int last_dot = mConnectedDots[mConnectedDotsLen-1];
-	int mid = 1-;
+	int mid = -1;
 
 	// The line is vertical and has crossed a point in the middle
 	if(dot_idx%3 == last_dot%3 && abs(dot_idx - last_dot) > 3) {
