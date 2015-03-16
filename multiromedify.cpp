@@ -220,6 +220,7 @@ EdifyHacker::EdifyHacker()
 
 EdifyHacker::~EdifyHacker()
 {
+    while(restoreState());
     clear();
 }
 
@@ -453,7 +454,7 @@ void EdifyHacker::replaceOffendings()
         m_elements.push_front(new EdifyValue(HACKER_IDENT_LINE));
 }
 
-bool EdifyHacker::processFile(const std::string& path)
+bool EdifyHacker::loadFile(const std::string& path)
 {
     char buf[256];
 
@@ -480,12 +481,10 @@ bool EdifyHacker::processFile(const std::string& path)
     }
 
     fclose(f);
-
-    replaceOffendings();
     return true;
 }
 
-bool EdifyHacker::processBuffer(const char *buf, size_t len)
+bool EdifyHacker::loadBuffer(const char *buf, size_t len)
 {
     clear();
     for(size_t i = 0; i < len; ++i)
@@ -493,7 +492,6 @@ bool EdifyHacker::processBuffer(const char *buf, size_t len)
         if(!add(buf[i]))
             return false;
     }
-    replaceOffendings();
     return true;
 }
 
@@ -510,4 +508,47 @@ bool EdifyHacker::writeToFile(const std::string& path)
         (*itr)->write(f);
     fclose(f);
     return true;
+}
+
+void EdifyHacker::saveState()
+{
+    std::list<EdifyElement*> state;
+    copyElements(&m_elements, &state);
+    m_savedStates.push_back(state);
+}
+
+bool EdifyHacker::restoreState()
+{
+    if(m_savedStates.empty())
+        return false;
+
+    clear();
+
+    m_elements.swap(m_savedStates.back());
+    m_savedStates.pop_back();
+    return true;
+}
+
+void EdifyHacker::copyElements(std::list<EdifyElement*> *src, std::list<EdifyElement*> *dst)
+{
+    for(std::list<EdifyElement*>::const_iterator itr = src->begin(); itr != src->end(); ++itr)
+    {
+        switch((*itr)->getType())
+        {
+            case EDF_VALUE:
+                dst->push_back(new EdifyValue(((EdifyValue*)(*itr))->getText()));
+                break;
+            case EDF_NEWLINE:
+                dst->push_back(new EdifyNewline());
+                break;
+            case EDF_FUNC:
+            {
+                EdifyFunc *src_f = (EdifyFunc*)(*itr);
+                EdifyFunc *dst_f = new EdifyFunc(src_f->getName());
+                copyElements(src_f->getArgs(), dst_f->getArgs());
+                dst->push_back(dst_f);
+                break;
+            }
+        }
+    }
 }
