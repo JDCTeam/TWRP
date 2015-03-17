@@ -1105,6 +1105,8 @@ bool MultiROM::prepareZIP(std::string& file, EdifyHacker *hacker, bool& restore_
 	if(!hacker->writeToFile("/tmp/"MR_UPDATE_SCRIPT_NAME))
 		goto exit;
 
+	hacker->writeToFile("/tmp/mrom_last_updater_script");
+
 	if(hacker->getProcessFlags() & EDIFY_BLOCK_UPDATES)
 	{
 		TWPartition *data = PartitionManager.Find_Original_Partition_By_Path("/data");
