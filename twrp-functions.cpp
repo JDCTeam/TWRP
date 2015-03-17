@@ -1275,6 +1275,17 @@ void TWFunc::trim(std::string& str)
 	str = str.substr(start, len);
 }
 
+int64_t TWFunc::getFreeSpace(const std::string& path)
+{
+	struct statfs buf; /* allocate a buffer */
+	int rc;
+
+	if (statfs(path.c_str(), &buf) < 0)
+		return -1;
+
+	return int64_t(buf.f_bsize) * int64_t(buf.f_bavail);
+}
+
 #ifdef HAVE_SELINUX
 bool TWFunc::restorecon(const std::string& path, struct selabel_handle *sh)
 {

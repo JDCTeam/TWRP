@@ -98,6 +98,7 @@ public:
 	static std::string getROMName();
 	static void stringReplace(std::string& str, char before, char after);
 	static void trim(std::string& str);
+	static int64_t getFreeSpace(const std::string& path);
 #ifdef HAVE_SELINUX
 	static bool restorecon(const std::string& path, struct selabel_handle *sh);
 #endif

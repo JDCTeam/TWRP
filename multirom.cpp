@@ -1117,7 +1117,15 @@ bool MultiROM::prepareZIP(std::string& file, EdifyHacker *hacker, bool& restore_
 
 	if(hacker->getProcessFlags() & EDIFY_CHANGED)
 	{
-		if(info.st_size < 450*1024*1024)
+		int64_t max_tmp_size = TWFunc::getFreeSpace("/tmp");
+		if(max_tmp_size < 0)
+			max_tmp_size = 450*1024*1024;
+		else
+			max_tmp_size *= 0.45;
+
+		LOGINFO("ZIP size limit for /tmp: %.2f MB\n", double(max_tmp_size)/1024/1024);
+
+		if(info.st_size < max_tmp_size)
 		{
 			gui_print("Copying ZIP to /tmp...\n");
 			system_args("cp \"%s\" /tmp/mr_update.zip", file.c_str());
