@@ -712,7 +712,7 @@
 
 			<object type="slider">
 				<text>Swipe to Confirm Flash</text>
-				<placement x="%slider_x%" y="%slider_y%" placement="5" />
+				<placement x="%center_x%" y="%slider_y%" placement="5" />
 				<resource base="slider" used="slider-used" touch="slider-touch" />
 				<actions>
 					<action function="set">tw_back=multirom_manage</action>
@@ -2439,7 +2439,7 @@
 			<object type="slider">
 				<text>Swipe to swap ROMs</text>
 				<condition var1="tw_multirom_swap_rom" var2="" />
-				<placement x="%slider_x%" y="%slider_y%" placement="5" />
+				<placement x="%center_x%" y="%slider_y%" placement="5" />
 				<resource base="slider" used="slider-used" touch="slider-touch" />
 				<actions>
 					<action function="set">tw_back=multirom_main</action>
