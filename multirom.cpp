@@ -2376,6 +2376,7 @@ bool MultiROM::sailfishProcessBoot(const std::string& root)
 	int rd_cmpr;
 	struct bootimg img;
 	bool res = false;
+	int ret;
 
 	gui_print("Processing boot.img for SailfishOS\n");
 	system("rm /tmp/boot.img");
@@ -2399,9 +2400,15 @@ bool MultiROM::sailfishProcessBoot(const std::string& root)
 		goto fail_inject;
 	}
 
+	ret = libbootimg_dump_dtb(&img, "/tmp/boot/dtb.img");
+	if(ret < 0 && ret != LIBBOOTIMG_ERROR_NO_BLOB_DATA)
+		gui_print("Failed to extract dtb.img from boot.img!\n");
+	else if(ret >= 0)
+		system_args("cp /tmp/boot/dtb.img \"%s/dtb.img\"", root.c_str());
+
 	// DEPLOY
-	system_args("cp /tmp/boot/initrd.img %s/initrd.img", root.c_str());
-	system_args("cp /tmp/boot/zImage %s/zImage", root.c_str());
+	system_args("cp /tmp/boot/initrd.img \"%s/initrd.img\"", root.c_str());
+	system_args("cp /tmp/boot/zImage \"%s/zImage\"", root.c_str());
 
 	res = true;
 fail_inject:
