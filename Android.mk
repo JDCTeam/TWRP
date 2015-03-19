@@ -362,6 +362,13 @@ LOCAL_ADDITIONAL_DEPENDENCIES := \
     fsck_msdos_symlink \
     mkdosfs
 
+# MultiROM additions
+LOCAL_ADDITIONAL_DEPENDENCIES += \
+    zip \
+    gnutar \
+    lz4 \
+    ntfs-3g \
+
 ifneq ($(TARGET_ARCH), arm64)
     ifneq ($(TARGET_ARCH), x86_64)
         LOCAL_LDFLAGS += -Wl,-dynamic-linker,/sbin/linker
