@@ -157,15 +157,28 @@ int EdifyFunc::replaceOffendings(std::list<EdifyElement*> **parentList, std::lis
     else if(m_name == "package_extract_file" && m_args.size() >= 2)
     {
         int st = 0;
+
+        static const char * const forbidden_images[] = {
+            "radio", "bootloader", "NON-HLOS.bin", "emmc_appsboot.mbn",
+            "rpm.mbn", "logo.bin", "sdi.mbn", "tz.mbn", "sbl1.mbn",
+            NULL
+        };
+
         for(std::list<EdifyElement*>::iterator itr = m_args.begin(); itr != m_args.end(); ++itr)
         {
             if((*itr)->getType() != EDF_VALUE)
                 continue;
 
-            if(st == 0 && (((EdifyValue*)(*itr))->getText().find("radio") != NPOS ||
-                ((EdifyValue*)(*itr))->getText().find("bootloader") != NPOS))
+            if(st == 0)
             {
-                st = 1;
+                for(int i = 0; forbidden_images[i]; ++i)
+                {
+                    if(((EdifyValue*)(*itr))->getText().find(forbidden_images[i]) != NPOS)
+                    {
+                        st = 1;
+                        break;
+                    }
+                }
             }
             else if(st == 1 && (((EdifyValue*)(*itr))->getText().find("/dev/block/") <= 1))
             {
