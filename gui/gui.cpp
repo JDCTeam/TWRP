@@ -755,6 +755,7 @@ int gui_changePage(std::string newPage)
 
 int gui_changeOverlay(std::string overlay)
 {
+	LOGINFO("Set overlay: '%s'\n", overlay.c_str());
 	PageManager::ChangeOverlay(overlay);
 	gForceRender.set_value(1);
 	return 0;
