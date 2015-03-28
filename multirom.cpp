@@ -951,8 +951,8 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	else
 		gui_print("ZIP successfully installed\n");
 
-	if(hacker.getProcessFlags() & EDIFY_BLOCK_UPDATES)
-		system_args("busybox umount -d /tmpsystem");
+	if((hacker.getProcessFlags() & EDIFY_BLOCK_UPDATES) && system_args("busybox umount -d /tmpsystem") != 0)
+		system_args("dev=\"$(losetup | grep 'system\\.img' | grep -o '/.*:')\"; losetup -d \"${dev%%:}\"");
 
 exit:
 	if(hacker.getProcessFlags() & EDIFY_BLOCK_UPDATES)
@@ -1012,7 +1012,8 @@ bool MultiROM::flashORSZip(std::string file, int *wipe_cache)
 
 	if(hacker.getProcessFlags() & EDIFY_BLOCK_UPDATES)
 	{
-		system_args("busybox umount -d /tmpsystem");
+		if(system_args("busybox umount -d /tmpsystem") != 0)
+			system_args("dev=\"$(losetup | grep 'system\\.img' | grep -o '/.*:')\"; losetup -d \"${dev%%:}\"");
 		failsafeCheckPartition("/tmp/mrom_fakesyspart");
 	}
 
