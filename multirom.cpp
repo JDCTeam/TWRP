@@ -724,6 +724,9 @@ bool MultiROM::changeMounts(std::string name)
 
 	// We really don't want scripts to be able to write to real partitions
 	system("mv /sbin/umount /sbin/umount.bak");
+	// SuperSU tries *very* hard to mount /data and /system, even looks through
+	// recovery.fstab and manages to mount the real /system
+	system("mv /etc/recovery.fstab /etc/recovery.fstab.bak");
 
 	return true;
 }
@@ -736,6 +739,8 @@ void MultiROM::restoreMounts()
 	gui_print("Restoring mounts...\n");
 
 	system("mv /sbin/umount.bak /sbin/umount");
+	system("mv /etc/recovery.fstab.bak /etc/recovery.fstab");
+
 	// script might have mounted it several times over, we _have_ to umount it all
 	system("sync;"
 		"i=0;"
