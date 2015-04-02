@@ -145,6 +145,9 @@ LOCAL_CFLAGS += -DTWRES=\"$(TWRES_PATH)\"
 ifneq ($(LANDSCAPE_RESOLUTION),)
   LOCAL_CFLAGS += -DTW_HAS_LANDSCAPE
 endif
+ifneq ($(TW_THEME_LANDSCAPE),)
+  LOCAL_CFLAGS += -DTW_HAS_LANDSCAPE
+endif
 
 LOCAL_SHARED_LIBRARIES += libz libc libcutils libjpeg libpng
 LOCAL_STATIC_LIBRARIES += libpixelflinger_static
