@@ -421,6 +421,15 @@ do
             cat recovery/$2 | unxz | tar xf -
             rm -f removed
 
+            if [ -e /etc/recovery.fstab ]; then
+                fstab_path="/etc/recovery.fstab"
+            elif [ -e /etc/recovery.fstab.bak ]; then
+                fstab_path="/etc/recovery.fstab.bak"
+            else
+                echo "Failed to find path to recovery.fstab!"
+                continue
+            fi
+
             # Process partition images
             while read line; do
                 set -- $line
@@ -437,7 +446,7 @@ do
                     fi
                     rm partitions/${part}.img
                 fi
-            done < /etc/recovery.fstab
+            done < $fstab_path
         ;;
 
         *)
