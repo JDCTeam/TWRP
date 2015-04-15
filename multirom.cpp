@@ -1537,6 +1537,11 @@ bool MultiROM::createDirs(std::string name, int type)
 				gui_print("Failed to create android folders!\n");
 				return false;
 			}
+			system_args(
+				"chcon u:object_r:system_file:s0 \"%s/system\";"
+				"chcon u:object_r:system_data_file:s0 \"%s/data\";"
+				"chcon u:object_r:cache_file:s0 \"%s/cache\";",
+				base.c_str(), base.c_str(), base.c_str());
 			break;
 		case ROM_UTOUCH_INTERNAL:
 		case ROM_UTOUCH_USB_DIR:
