@@ -371,6 +371,8 @@ LOCAL_ADDITIONAL_DEPENDENCIES += \
     gnutar \
     lz4 \
     ntfs-3g \
+    cp_xattrs \
+    ls_xattrs \
 
 ifneq ($(TARGET_ARCH), arm64)
     ifneq ($(TARGET_ARCH), x86_64)

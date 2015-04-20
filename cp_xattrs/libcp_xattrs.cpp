@@ -10,38 +10,120 @@
 
 #include "libcp_xattrs.h"
 
-bool cp_xattrs_single_file(const std::string& from, const std::string& to)
+static bool cp_xattrs_list_xattrs_callback(const std::string& from,
+        bool (*callback)(const char *attr, const char *data, ssize_t data_size, void *cookie),
+        void *cookie)
 {
     ssize_t res;
-    char selabel[512];
-    struct vfs_cap_data cap_data;
+    char static_names[512];
+    char static_data[256];
+    char *names = static_names;
+    char *data = static_data;
+    char *names_itr;
+    ssize_t list_size;
+    ssize_t value_size;
+    ssize_t data_size = sizeof(static_data);
 
-    res = lgetxattr(from.c_str(), "security.capability", &cap_data, sizeof(struct vfs_cap_data));
-    if (res == sizeof(struct vfs_cap_data))
+    list_size = llistxattr(from.c_str(), NULL, 0);
+    if(list_size == 0)
+        return true;
+    else if(list_size < 0)
     {
-        res = lsetxattr(to.c_str(), "security.capability", &cap_data, sizeof(struct vfs_cap_data), 0);
-        if(res < 0 && errno != ENOENT)
-        {
-            fprintf(stderr, "Failed to lsetxattr capability on %s: %d (%s)\n", to.c_str(), errno, strerror(errno));
-            return false;
-        }
+        fprintf(stderr, "Failed to llistxattr on %s: %s", from.c_str(), strerror(errno));
+        return false;
+    }
+    else if(list_size > 16*1024)
+    {
+        fprintf(stderr, "Failed to llistxattr: list is too long! %s (%d)", from.c_str(), list_size);
+        return false;
     }
 
-    res = lgetxattr(from.c_str(), "security.selinux", selabel, sizeof(selabel));
-    if(res > 0)
+    if(list_size > (ssize_t)sizeof(static_names))
     {
-        selabel[sizeof(selabel)-1] = 0;
-        res = lsetxattr(to.c_str(), "security.selinux", selabel, strlen(selabel)+1, 0);
-        if(res < 0 && errno != ENOENT)
+        names = (char*)malloc(list_size);
+        printf("alloc names %d\n", list_size);
+    }
+
+    list_size = llistxattr(from.c_str(), names, list_size);
+    if(list_size < 0)
+    {
+        fprintf(stderr, "Failed to llistxattr on %s: %s", from.c_str(), strerror(errno));
+        return false;
+    }
+
+    for(names_itr = names; names_itr < names + list_size; names_itr += strlen(names_itr) + 1)
+    {
+        value_size = lgetxattr(from.c_str(), names_itr, NULL, 0);
+        if(value_size < 0)
         {
-            fprintf(stderr, "Failed to lsetxattr selinux on %s: %d (%s)\n", to.c_str(), errno, strerror(errno));
+            if(errno == ENOENT)
+                continue;
+            fprintf(stderr, "Failed lgetxattr on %s: %d (%s)\n", from.c_str(), errno, strerror(errno));
             return false;
         }
+
+        if(value_size > 16*1024)
+        {
+            fprintf(stderr, "Failed to lgetxattr: value is too long! %s (%d)", from.c_str(), value_size);
+            return false;
+        }
+
+        if(value_size > (ssize_t)sizeof(static_data) && value_size > data_size)
+        {
+            if(data == static_data)
+                data = NULL;
+            data_size = value_size;
+            data = (char*)realloc(data, data_size);
+            printf("alloc data %d\n", data_size);
+        }
+
+        res = lgetxattr(from.c_str(), names_itr, data, value_size);
+        if(res < 0)
+        {
+            fprintf(stderr, "Failed lgetxattr on %s: %d (%s)\n", from.c_str(), errno, strerror(errno));
+            return false;
+        }
+
+        if(!callback(names_itr, data, value_size, cookie))
+            return false;
     }
-    else if(res < 0 && errno == ERANGE)
-        fprintf(stderr, "lgetxattr selinux on %s failed: label is too long\n", from.c_str());
+
+    if(names != static_names)
+        free(names);
+    if(data != static_data)
+        free(data);
 
     return true;
+}
+
+static bool cp_xattrs_single_file_callback(const char *attr, const char *data, ssize_t data_size, void *cookie)
+{
+    std::string *to = (std::string*)cookie;
+    ssize_t res = lsetxattr(to->c_str(), attr, data, data_size, 0);
+    if(res < 0 && errno != ENOENT)
+    {
+        fprintf(stderr, "Failed to lsetxattr %s on %s: %d (%s)\n", attr, to->c_str(), errno, strerror(errno));
+        return false;
+    }
+    return true;
+}
+
+bool cp_xattrs_single_file(const std::string& from, const std::string& to)
+{
+    return cp_xattrs_list_xattrs_callback(from, &cp_xattrs_single_file_callback, (void*)&to);
+}
+
+static bool cp_xattrs_list_xattrs_map_callback(const char *attr, const char *data, ssize_t data_size, void *cookie)
+{
+    std::map<std::string, std::vector<char> > *res = (std::map<std::string, std::vector<char> >*)cookie;
+    std::vector<char> data_vec(data, data+data_size);
+    res->insert(std::make_pair(attr, data_vec));
+    return true;
+}
+
+bool cp_xattrs_list_xattrs(const std::string& path, std::map<std::string, std::vector<char> > &res)
+{
+    return cp_xattrs_list_xattrs_callback(path, &cp_xattrs_list_xattrs_map_callback, (void*)&res);
 }
 
 bool cp_xattrs_recursive(const std::string& from, const std::string& to, unsigned char type)
