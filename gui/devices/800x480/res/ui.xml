@@ -160,6 +160,7 @@
 		<variable name="fileselector_highlight_color" value="#505050" />
 		<variable name="fileselector_highlight_font_color" value="#33B5E5" />
 		<variable name="fileselector_spacing" value="12" />
+		<variable name="fileselector_width" value="400" /> 
 		<variable name="fastscroll_linecolor" value="#50505080" />
 		<variable name="fastscroll_rectcolor" value="#33B5E580" />
 		<variable name="fastscroll_w" value="25" />
