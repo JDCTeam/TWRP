@@ -2325,7 +2325,7 @@ int GUIAction::multirom_swap_calc_space(std::string arg)
 {
 	static const char *parts[] = { "/cache", "/system", "/data" };
 	TWPartition *p;
-	unsigned long long int_size = 0, int_data_size = 0, sec_data_size = 0;
+	unsigned long long int_size = 0, int_data_size = 0;
 	unsigned long long needed = 0, free = 0;
 
 	std::string swap_rom = DataManager::GetStrValue("tw_multirom_swap_rom");
@@ -2360,26 +2360,29 @@ int GUIAction::multirom_swap_calc_space(std::string arg)
 			int_data_size = p->GetSizeBackup();
 	}
 
-	if(type == MROM_SWAP_WITH_SECONDARY || type == MROM_SWAP_COPY_SECONDARY)
-		sec_data_size = du.Get_Folder_Size(MultiROM::getRomsPath() + swap_rom + "/data");
-
 	switch(type)
 	{
 		case MROM_SWAP_WITH_SECONDARY:
-			needed = int_size + sec_data_size;
+			needed = int_size + du.Get_Folder_Size(MultiROM::getRomsPath() + swap_rom + "/data");
 			break;
 		case MROM_SWAP_COPY_SECONDARY:
+		{
+			uint64_t sec_data_size = du.Get_Folder_Size(MultiROM::getRomsPath() + swap_rom + "/data");
 			if(sec_data_size > int_data_size)
 				needed = sec_data_size - int_data_size + 50*1024*1024;
 			break;
+		}
 		case MROM_SWAP_COPY_INTERNAL:
 		case MROM_SWAP_MOVE_INTERNAL:
-			needed = int_size;
+			needed = du.Get_Folder_Size(MultiROM::getRomsPath() + swap_rom + "/data");
+			break;
+		case MROM_SWAP_DUPLICATE:
+			needed = du.Get_Folder_Size(MultiROM::getRomsPath() + swap_rom);
 			break;
 	}
 
-	needed >>= 20; // divide by (1024*1024) to MB
-	free >>= 20;
+	needed /= 1024*1024;
+	free /= 1024*1024;
 	DataManager::SetValue("tw_multirom_swap_needed", needed);
 	DataManager::SetValue("tw_multirom_swap_free", free);
 
@@ -2455,6 +2458,14 @@ int GUIAction::multirom_execute_swap(std::string arg)
 			if(!MultiROM::wipeInternal())
 				break;
 
+			res = 0;
+			break;
+		}
+		case MROM_SWAP_DUPLICATE:
+		{
+			std::string src_rom = DataManager::GetStrValue("tw_multirom_swap_rom");
+			if(!MultiROM::duplicateSecondary(src_rom, int_target))
+				break;
 			res = 0;
 			break;
 		}

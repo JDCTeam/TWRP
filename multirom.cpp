@@ -2937,6 +2937,35 @@ bool MultiROM::copySecondaryToInternal(const std::string& rom_name)
 	return true;
 }
 
+bool MultiROM::duplicateSecondary(const std::string& src, const std::string& dst)
+{
+	gui_print("Copying cecondary ROM \"%s\" to \"%s\"\n", src.c_str(), dst.c_str());
+
+	std::string src_dir = getRomsPath() + src;
+	std::string dest_dir = getRomsPath() + dst;
+	if(access(dest_dir.c_str(), F_OK) >= 0)
+	{
+		LOGERR("This ROM name is taken!\n");
+		return false;
+	}
+
+	if(system_args("cp -a \"%s\" \"%s\"", src_dir.c_str(), dest_dir.c_str()) != 0)
+	{
+		LOGERR("Copying failed, see log for more info!\n");
+		goto erase_incomplete;
+	}
+
+	if(!cp_xattrs_recursive(src_dir, dest_dir, DT_DIR))
+		goto erase_incomplete;
+
+	return true;
+
+erase_incomplete:
+	gui_print("Failed, removing incomplete ROM...\n");
+	system_args("rm -rf \"%s\"", dest_dir.c_str());
+	return false;
+}
+
 std::string MultiROM::getRecoveryVersion()
 {
 	TWPartition *recovery = PartitionManager.Find_Partition_By_Path("/recovery");

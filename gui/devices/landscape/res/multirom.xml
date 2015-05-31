@@ -2359,12 +2359,55 @@
 				</actions>
 			</object>
 
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_swap_type" var2="4" />
+				<placement x="%col1_x%" y="%row7_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Duplicate secondary ROM</text>
+				<image resource="radio_true" />
+				<actions>
+					<action function="set">tw_multirom_swap_type=4</action>
+					<action function="set">tw_multirom_swap_rom=</action>
+					<action function="page">multirom_swap</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_multirom_swap_type" var2="4" op="!=" />
+				<placement x="%col1_x%" y="%row7_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>Duplicate secondary ROM</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_multirom_swap_type=4</action>
+					<action function="set">tw_multirom_swap_rom=</action>
+					<action function="page">multirom_swap</action>
+				</actions>
+			</object>
+
 			<object type="listbox">
 				<condition var1="tw_multirom_swap_type" var2="1" op="<=" />
 				<highlight color="%fileselector_highlight_color%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
 				<text>Select secondary ROM to swap with:</text>
+				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
+				<placement x="%col3_x%" y="%row2_text_y%" w="%listbox_width%" h="%wipe_list_height%" />
+				<icon selected="radio_true" unselected="radio_false" />
+				<background color="%listbox_background%" />
+				<font resource="font" spacing="%listbox_spacing%" color="%text_color%" highlightcolor="%fileselector_highlight_font_color%" />
+				<data name="tw_multirom_swap_rom" />
+				<items>tw_multirom_roms</items>
+			</object>
+
+			<object type="listbox">
+				<condition var1="tw_multirom_swap_type" var2="4" op="=" />
+				<highlight color="%fileselector_highlight_color%" />
+				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
+				<fastscroll linecolor="%fastscroll_linecolor%" rectcolor="%fastscroll_rectcolor%" w="%fastscroll_w%" linew="%fastscroll_linew%" rectw="%fastscroll_rectw%" recth="%fastscroll_recth%" />
+				<text>Select secondary ROM to duplicate:</text>
 				<separator color="%fileselector_separatorcolor%" height="%fileselector_separatorheight%" />
 				<placement x="%col3_x%" y="%row2_text_y%" w="%listbox_width%" h="%wipe_list_height%" />
 				<icon selected="radio_true" unselected="radio_false" />
@@ -2471,6 +2514,16 @@
 				<font resource="font" />
 				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
 				<text>Select secondary ROM to copy into primary slot.</text>
+			</object>
+
+			<object type="text" color="%text_success_color%">
+				<conditions>
+					<condition var1="tw_multirom_swap_rom" var2="" op="!=" />
+					<condition var1="tw_multirom_swap_type" var2="1" />
+				</conditions>
+				<font resource="font" />
+				<placement x="%center_x%" y="%slider_text_y%" placement="4" />
+				<text>Select secondary ROM to duplicate.</text>
 			</object>
 
 			<object type="action">

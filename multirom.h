@@ -82,6 +82,7 @@ enum
 #define MROM_SWAP_COPY_SECONDARY 1
 #define MROM_SWAP_COPY_INTERNAL  2
 #define MROM_SWAP_MOVE_INTERNAL  3
+#define MROM_SWAP_DUPLICATE      4
 
 #define MROM_AUTOBOOT_LAST       0x01
 #define MROM_AUTOBOOT_CHECK_KEYS 0x04
@@ -184,6 +185,7 @@ public:
 	static bool copyInternal(const std::string& dest_name);
 	static bool wipeInternal();
 	static bool copySecondaryToInternal(const std::string& rom_name);
+	static bool duplicateSecondary(const std::string& src, const std::string& dst);
 
 	static std::string getRecoveryVersion();
 
