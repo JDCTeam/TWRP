@@ -2123,6 +2123,8 @@ int GUIAction::multirom_flash_zip(std::string arg)
 	std::string boot = MultiROM::getRomsPath() + name + "/boot.img";
 	int had_boot = access(boot.c_str(), F_OK) >= 0;
 
+	DataManager::SetValue("multirom_rom_name_title", 1);
+
 	if (!MultiROM::flashZip(name, DataManager::GetStrValue("tw_filename")))
 		op_status = 1;
 
@@ -2134,6 +2136,8 @@ int GUIAction::multirom_flash_zip(std::string arg)
 		if(!MultiROM::extractBootForROM(MultiROM::getRomsPath() + name))
 			op_status = 1;
 	}
+
+	DataManager::SetValue("multirom_rom_name_title", 0);
 
 	operation_end(op_status);
 	return op_status;
@@ -2286,6 +2290,9 @@ int GUIAction::multirom_sideload(std::string arg)
 	operation_start("Sideload");
 	bool mtp_was_enabled = TWFunc::Toggle_MTP(false);
 
+	if(DataManager::GetStrValue("tw_back") == "multirom_manage")
+		DataManager::SetValue("multirom_rom_name_title", 1);
+
 	gui_print("Starting ADB sideload feature...\n");
 	ret = apply_from_adb("/", &sideload_child_pid);
 	DataManager::SetValue("tw_has_cancel", 0); // Remove cancel button from gui now that the zip install is going to start
@@ -2318,6 +2325,8 @@ int GUIAction::multirom_sideload(std::string arg)
 	TWFunc::Toggle_MTP(mtp_was_enabled);
 	reinject_after_flash();
 	operation_end(ret);
+
+	DataManager::SetValue("multirom_rom_name_title", 0);
 	return 0;
 }
 
