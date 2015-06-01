@@ -734,8 +734,12 @@ int TWFunc::read_file(string fn, uint64_t& results) {
 }
 
 int TWFunc::write_file(string fn, const string& line) {
+	return write_file(fn, line, "we");
+}
+
+int TWFunc::write_file(string fn, const string& line, const char *mode) {
 	FILE *file;
-	file = fopen(fn.c_str(), "w");
+	file = fopen(fn.c_str(), mode);
 	if (file != NULL) {
 		fwrite(line.c_str(), line.size(), 1, file);
 		fclose(file);

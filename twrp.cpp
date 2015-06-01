@@ -103,6 +103,16 @@ int main(int argc, char **argv) {
 #ifdef HAVE_SELINUX
 	printf("Setting SELinux to permissive\n");
 	TWFunc::write_file("/sys/fs/selinux/enforce", "0");
+
+	TWFunc::write_file("/file_contexts",
+        "\n\n# MultiROM folders\n"
+        "/data/media/multirom(/.*)?          <<none>>\n"
+        "/data/media/0/multirom(/.*)?        <<none>>\n"
+        "/realdata/media/multirom(/.*)?      <<none>>\n"
+        "/realdata/media/0/multirom(/.*)?    <<none>>\n"
+        "/sdcard/multirom(/.*)?              <<none>>\n"
+        "/mnt/mrom(/.*)?                     <<none>>\n",
+        "ae");
 #endif
 
 	// MultiROM _might_ have crashed the recovery while the boot device was redirected.
