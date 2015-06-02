@@ -677,7 +677,7 @@
 				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
-					<action function="set">tw_back=install</action>
+					<action function="set">tw_back=multirom_flash_select</action>
 					<action function="page">selectstorage</action>
 				</actions>
 			</object>
@@ -1304,7 +1304,7 @@
 				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
-					<action function="set">tw_back=install</action>
+					<action function="set">tw_back=multirom_inject_select</action>
 					<action function="page">selectstorage</action>
 				</actions>
 			</object>
@@ -1560,7 +1560,7 @@
 				<placement x="%col1_x%" y="%row1_text_y%" w="%button_fill_full_width%" h="%button_fill_quarter_height%" />
 				<text>Storage: %tw_storage_display_name% (%tw_storage_free_size% MB)</text>
 				<actions>
-					<action function="set">tw_back=install</action>
+					<action function="set">tw_back=multirom_add_select</action>
 					<action function="page">selectstorage</action>
 				</actions>
 			</object>
