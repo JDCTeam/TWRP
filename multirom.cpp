@@ -2258,6 +2258,15 @@ bool MultiROM::ubuntuTouchProcessBoot(const std::string& root, const char *init_
 		gui_print("Failed to unpack boot img!\n");
 		goto fail_inject;
 	}
+	if (libbootimg_dump_dtb(&img, "/tmp/boot/dtb.img") < 0)
+	{
+		gui_print("Didn't find dtb, ignoring\n");
+	}
+	else
+	{
+		gui_print("Found dtb\n");
+		system_args("cp /tmp/boot/dtb.img %s/dtb.img", root.c_str());
+	}
 
 	// DECOMPRESS RAMDISK
 	gui_print("Decompressing ramdisk...\n");
