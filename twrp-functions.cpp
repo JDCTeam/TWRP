@@ -76,10 +76,7 @@ int TWFunc::Exec_Cmd(const string& cmd, string &result) {
 	exec = __popen(cmd.c_str(), "r");
 	if (!exec) return -1;
 	while(!feof(exec)) {
-		memset(&buffer, 0, sizeof(buffer));
 		if (fgets(buffer, 128, exec) != NULL) {
-			buffer[128] = '\n';
-			buffer[129] = 0;
 			result += buffer;
 		}
 	}
@@ -158,19 +155,19 @@ int TWFunc::Wait_For_Child(pid_t pid, int *status, string Child_Name) {
 	rc_pid = waitpid(pid, status, 0);
 	if (rc_pid > 0) {
 		if (WIFSIGNALED(*status)) {
-			LOGINFO("%s process ended with signal: %d\n", Child_Name.c_str(), WTERMSIG(*status)); // Seg fault or some other non-graceful termination
+			LOGERR("%s process ended with signal: %d\n", Child_Name.c_str(), WTERMSIG(*status)); // Seg fault or some other non-graceful termination
 			return -1;
 		} else if (WEXITSTATUS(*status) == 0) {
 			LOGINFO("%s process ended with RC=%d\n", Child_Name.c_str(), WEXITSTATUS(*status)); // Success
 		} else {
-			LOGINFO("%s process ended with ERROR=%d\n", Child_Name.c_str(), WEXITSTATUS(*status)); // Graceful exit, but there was an error
+			LOGERR("%s process ended with ERROR=%d\n", Child_Name.c_str(), WEXITSTATUS(*status)); // Graceful exit, but there was an error
 			return -1;
 		}
 	} else { // no PID returned
 		if (errno == ECHILD)
-			LOGINFO("%s no child process exist\n", Child_Name.c_str());
+			LOGERR("%s no child process exist\n", Child_Name.c_str());
 		else {
-			LOGINFO("%s Unexpected error\n", Child_Name.c_str());
+			LOGERR("%s Unexpected error %d\n", Child_Name.c_str(), errno);
 			return -1;
 		}
 	}
@@ -520,15 +517,8 @@ void TWFunc::Update_Log_File(void) {
 	if (Part != NULL) {
 		struct bootloader_message boot;
 		memset(&boot, 0, sizeof(boot));
-		if (Part->Current_File_System == "mtd") {
-			if (set_bootloader_message_mtd_name(&boot, Part->MTD_Name.c_str()) != 0)
-				LOGERR("Unable to set MTD bootloader message.\n");
-		} else if (Part->Current_File_System == "emmc") {
-			if (set_bootloader_message_block_name(&boot, Part->Actual_Block_Device.c_str()) != 0)
-				LOGERR("Unable to set emmc bootloader message.\n");
-		} else {
-			LOGERR("Unknown file system for /misc: '%s'\n", Part->Current_File_System.c_str());
-		}
+		if (set_bootloader_message(&boot) != 0)
+			LOGERR("Unable to set bootloader message.\n");
 	}
 
 	if (PartitionManager.Mount_By_Path("/cache", true)) {

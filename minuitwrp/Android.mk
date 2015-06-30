@@ -26,6 +26,10 @@ else
   LOCAL_C_INCLUDES += $(commands_recovery_local_path)/minuitwrp/include
 endif
 
+ifeq ($(TW_NEW_ION_HEAP), true)
+  LOCAL_CFLAGS += -DNEW_ION_HEAP
+endif
+
 LOCAL_C_INCLUDES += \
     external/libpng \
     external/zlib \
@@ -46,6 +50,10 @@ endif
 
 ifeq ($(RECOVERY_GRAPHICS_USE_LINELENGTH), true)
 LOCAL_CFLAGS += -DRECOVERY_GRAPHICS_USE_LINELENGTH
+endif
+
+ifeq ($(TW_DISABLE_DOUBLE_BUFFERING), true)
+LOCAL_CFLAGS += -DTW_DISABLE_DOUBLE_BUFFERING
 endif
 
 #Remove the # from the line below to enable event logging

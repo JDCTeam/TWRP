@@ -86,7 +86,6 @@ static bool isMDP5 = false;
 
 bool target_has_overlay(char *version)
 {
-    int ret;
     int mdp_version;
 
     if (strlen(version) >= 8) {
@@ -158,7 +157,11 @@ int alloc_ion_mem(unsigned int size)
     ionAllocData.flags = 0;
     ionAllocData.len = size;
     ionAllocData.align = sysconf(_SC_PAGESIZE);
+#ifdef NEW_ION_HEAP
+    ionAllocData.heap_id_mask =
+#else
     ionAllocData.heap_mask =
+#endif
             ION_HEAP(ION_IOMMU_HEAP_ID) |
             ION_HEAP(ION_SYSTEM_CONTIG_HEAP_ID);
 

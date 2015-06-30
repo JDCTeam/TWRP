@@ -171,7 +171,8 @@ static int get_framebuffer(GGLSurface *fb)
     void *bits;
 
     fd = open("/dev/graphics/fb0", O_RDWR);
-    while (fd < 0 && index < 10) {
+    
+    while (fd < 0 && index < 30) {
         usleep(1000);
         fd = open("/dev/graphics/fb0", O_RDWR);
         index++;
@@ -298,8 +299,12 @@ static int get_framebuffer(GGLSurface *fb)
 
     fb++;
 
+#ifndef TW_DISABLE_DOUBLE_BUFFERING
     /* check if we can use double buffering */
     if (vi.yres * fi.line_length * 2 > fi.smem_len)
+#else
+    printf("TW_DISABLE_DOUBLE_BUFFERING := true\n");
+#endif
         return fd;
 
     double_buffering = 1;
