@@ -217,6 +217,9 @@ case $(get_base_url) in
     "http://system-image.tasemnice.eu"|"https://system-image.tasemnice.eu")
         load_keyring archive-master-tasemnice
         ;;
+    "http://system-image.ubports.com"|"https://system-image.ubports.com")
+        load_keyring archive-master-ubports
+        ;;
     *)
         load_keyring archive-master
         ;;
