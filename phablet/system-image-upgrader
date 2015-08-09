@@ -220,6 +220,9 @@ case $(get_base_url) in
     "http://system-image.ubports.com"|"https://system-image.ubports.com")
         load_keyring archive-master-ubports
         ;;
+    "http://kubuntu.plasma-mobile.org/"|"https://kubuntu.plasma-mobile.org/")
+        load_keyring archive-master-kubuntu
+        ;;
     *)
         load_keyring archive-master
         ;;
