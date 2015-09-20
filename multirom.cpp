@@ -2948,7 +2948,7 @@ bool MultiROM::copySecondaryToInternal(const std::string& rom_name)
 
 bool MultiROM::duplicateSecondary(const std::string& src, const std::string& dst)
 {
-	gui_print("Copying cecondary ROM \"%s\" to \"%s\"\n", src.c_str(), dst.c_str());
+	gui_print("Copying secondary ROM \"%s\" to \"%s\"\n", src.c_str(), dst.c_str());
 
 	std::string src_dir = getRomsPath() + src;
 	std::string dest_dir = getRomsPath() + dst;
