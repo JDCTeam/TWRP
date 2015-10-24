@@ -392,7 +392,7 @@ endif
 ifneq ($(TW_NO_EXFAT), true)
     LOCAL_ADDITIONAL_DEPENDENCIES += mkexfatfs
 endif
-ifeq ($(BOARD_HAS_NO_REAL_SDCARD),)
+ifneq ($(BOARD_HAS_NO_REAL_SDCARD), true)
     LOCAL_ADDITIONAL_DEPENDENCIES += parted
 endif
 ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
