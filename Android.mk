@@ -372,7 +372,6 @@ LOCAL_ADDITIONAL_DEPENDENCIES := \
 LOCAL_ADDITIONAL_DEPENDENCIES += \
     zip \
     gnutar \
-    lz4 \
     ntfs-3g \
     cp_xattrs \
     ls_xattrs \
